@@ -19,110 +19,170 @@
             <TextBlock Text="Server Configuration &amp; Setup" Foreground="White" FontSize="20" FontWeight="Bold"/>
         </Border>
 
-        <!-- Main Scrollable Config Area -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
-            <StackPanel x:Name="SettingsPanel">
-                <!-- Icon Upload & Instance Metadata -->
-                <Expander x:Name="ExpanderGeneral" Header="General" IsExpanded="True" Foreground="White" Margin="0,0,0,10">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Server Icon (64x64 PNG):" Foreground="Silver" Margin="0,5"/>
-                        <Button x:Name="BtnBrowseIcon" Content="Select Icon" Click="BtnBrowseIcon_Click" Width="100" HorizontalAlignment="Left" Padding="5"/>
-                        <Image x:Name="ImgIconPreview" Width="64" Height="64" HorizontalAlignment="Left" Margin="0,10,0,10" Stretch="UniformToFill"/>
+        <!-- Tab Control -->
+        <TabControl x:Name="MainTabControl" Grid.Row="1" Background="#1E1E1E" BorderThickness="0" Margin="0">
+            
+            <!-- ═══════════════════════ TAB 1: PROPERTIES ═══════════════════════ -->
+            <TabItem Header="  Properties  " Foreground="White">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+                    <StackPanel x:Name="SettingsPanel">
+                        <!-- Icon Upload & Instance Metadata -->
+                        <Expander x:Name="ExpanderGeneral" Header="General" IsExpanded="True" Foreground="White" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Server Icon (64x64 PNG):" Foreground="Silver" Margin="0,5"/>
+                                <Button x:Name="BtnBrowseIcon" Content="Select Icon" Click="BtnBrowseIcon_Click" Width="100" HorizontalAlignment="Left" Padding="5"/>
+                                <Image x:Name="ImgIconPreview" Width="64" Height="64" HorizontalAlignment="Left" Margin="0,10,0,10" Stretch="UniformToFill"/>
+                                
+                                <TextBlock Text="MOTD (Message of the Day):" Foreground="Silver" Margin="0,5"/>
+                                <TextBox x:Name="TxtMotd" TextChanged="TxtMotd_TextChanged" Background="#3E3E42" Foreground="White" Padding="5" />
+                                <TextBlock x:Name="TxtMotdPreview" Foreground="LightGray" Margin="0,5,0,10"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- World Properties -->
+                        <Expander x:Name="ExpanderWorld" Header="World" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Level Seed (Leave blank for random):" Foreground="Silver" Margin="0,5"/>
+                                <TextBox x:Name="TxtSeed" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Level Type:" Foreground="Silver" Margin="0,5"/>
+                                <ComboBox x:Name="CmbLevelType" Background="#3E3E42" Foreground="White" Margin="0,0,0,10">
+                                    <ComboBoxItem Content="minecraft:normal" IsSelected="True"/>
+                                    <ComboBoxItem Content="minecraft:flat"/>
+                                    <ComboBoxItem Content="minecraft:large_biomes"/>
+                                    <ComboBoxItem Content="minecraft:amplified"/>
+                                    <ComboBoxItem Content="minecraft:single_biome_surface"/>
+                                </ComboBox>
+
+                                <TextBlock Text="Spawn Protection Area:" Foreground="Silver" Margin="0,5"/>
+                                <TextBox x:Name="TxtSpawnProtection" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Memory & Performance Options -->
+                        <Expander x:Name="ExpanderMemory" Header="Memory &amp; Performance" IsExpanded="True" Foreground="White" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Minimum RAM (Xms):" Foreground="Silver" Margin="0,5"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Slider x:Name="SldMinRam" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" ValueChanged="RamSlider_ValueChanged" />
+                                    <TextBlock x:Name="TxtMinRamVal" Text="{Binding ElementName=SldMinRam, Path=Value, StringFormat={}{0:N0} MB}" Margin="10,0,0,0" Foreground="White"/>
+                                </StackPanel>
+
+                                <TextBlock Text="Maximum RAM (Xmx):" Foreground="Silver" Margin="0,15,0,5"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Slider x:Name="SldMaxRam" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" ValueChanged="RamSlider_ValueChanged" />
+                                    <TextBlock x:Name="TxtMaxRamVal" Text="{Binding ElementName=SldMaxRam, Path=Value, StringFormat={}{0:N0} MB}" Margin="10,0,0,0" Foreground="White"/>
+                                </StackPanel>
+
+                                <TextBlock x:Name="TxtRamWarning" Text="WARNING: Allocation exceeds 80% of physical memory!" Foreground="Red" FontWeight="Bold" Margin="0,10,0,0" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Players Options -->
+                        <Expander x:Name="ExpanderPlayers" Header="Players" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Max Players:" Foreground="Silver" Margin="0,5"/>
+                                <TextBox x:Name="TxtMaxPlayers" Text="20" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
+                                
+                                <CheckBox x:Name="ChkOnlineMode" Content="Online Mode (Authenticate with Mojang)" IsChecked="True" Foreground="White" Margin="0,5"/>
+                                <CheckBox x:Name="ChkPvp" Content="PvP Enabled" IsChecked="True" Foreground="White" Margin="0,5"/>
+                                <CheckBox x:Name="ChkWhiteList" Content="Whitelist Enabled" IsChecked="False" Foreground="White" Margin="0,5"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Network Options -->
+                        <Expander x:Name="ExpanderNetwork" Header="Network" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Server Port:" Foreground="Silver" Margin="0,5"/>
+                                <TextBox x:Name="TxtServerPort" Text="25565" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
+                                <TextBlock Text="Server IP (Leave blank for default):" Foreground="Silver" Margin="0,5"/>
+                                <TextBox x:Name="TxtServerIp" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Gameplay Options -->
+                        <Expander x:Name="ExpanderGameplay" Header="Gameplay" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
+                            <StackPanel Margin="10">
+                                <TextBlock Text="Gamemode:" Foreground="Silver" Margin="0,5"/>
+                                <ComboBox x:Name="CmbGamemode" Background="#3E3E42" Foreground="White" Margin="0,0,0,10">
+                                    <ComboBoxItem Content="survival" IsSelected="True"/>
+                                    <ComboBoxItem Content="creative"/>
+                                    <ComboBoxItem Content="adventure"/>
+                                    <ComboBoxItem Content="spectator"/>
+                                </ComboBox>
+
+                                <TextBlock Text="Difficulty:" Foreground="Silver" Margin="0,5"/>
+                                <ComboBox x:Name="CmbDifficulty" Background="#3E3E42" Foreground="White" Margin="0,0,0,10">
+                                    <ComboBoxItem Content="peaceful"/>
+                                    <ComboBoxItem Content="easy" IsSelected="True"/>
+                                    <ComboBoxItem Content="normal"/>
+                                    <ComboBoxItem Content="hard"/>
+                                </ComboBox>
+
+                                <CheckBox x:Name="ChkAllowBlock" Content="Allow Command Blocks" Foreground="White" Margin="0,5"/>
+                                <CheckBox x:Name="ChkAllowFlight" Content="Allow Flight" Foreground="White" Margin="0,5"/>
+                                <CheckBox x:Name="ChkAllowNether" Content="Allow Nether" IsChecked="True" Foreground="White" Margin="0,5"/>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ═══════════════════════ TAB 2: WORLDS ═══════════════════════ -->
+            <TabItem Header="  Worlds  " Foreground="White">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+                    <StackPanel Margin="20">
+                        <TextBlock x:Name="TxtWorldStatus" Text="Checking world..." Foreground="White" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <TextBlock x:Name="TxtWorldSize" Foreground="Silver" FontSize="12" Margin="0,0,0,20"/>
                         
-                        <TextBlock Text="MOTD (Message of the Day):" Foreground="Silver" Margin="0,5"/>
-                        <TextBox x:Name="TxtMotd" TextChanged="TxtMotd_TextChanged" Background="#3E3E42" Foreground="White" Padding="5" />
-                        <TextBlock x:Name="TxtMotdPreview" Foreground="LightGray" Margin="0,5,0,10"/>
-                    </StackPanel>
-                </Expander>
-
-                <!-- World Properties -->
-                <Expander x:Name="ExpanderWorld" Header="World" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Level Seed (Leave blank for random):" Foreground="Silver" Margin="0,5"/>
-                        <TextBox x:Name="TxtSeed" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
-
-                        <TextBlock Text="Level Type:" Foreground="Silver" Margin="0,5"/>
-                        <ComboBox x:Name="CmbLevelType" Background="#3E3E42" Foreground="White" Margin="0,0,0,10">
-                            <ComboBoxItem Content="minecraft:normal" IsSelected="True"/>
-                            <ComboBoxItem Content="minecraft:flat"/>
-                            <ComboBoxItem Content="minecraft:large_biomes"/>
-                            <ComboBoxItem Content="minecraft:amplified"/>
-                            <ComboBoxItem Content="minecraft:single_biome_surface"/>
-                        </ComboBox>
-
-                        <TextBlock Text="Spawn Protection Area:" Foreground="Silver" Margin="0,5"/>
-                        <TextBox x:Name="TxtSpawnProtection" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
-                    </StackPanel>
-                </Expander>
-
-                <!-- Memory & Performance Options -->
-                <Expander x:Name="ExpanderMemory" Header="Memory &amp; Performance" IsExpanded="True" Foreground="White" Margin="0,0,0,10">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Minimum RAM (Xms):" Foreground="Silver" Margin="0,5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider x:Name="SldMinRam" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" ValueChanged="RamSlider_ValueChanged" />
-                            <TextBlock x:Name="TxtMinRamVal" Text="{Binding ElementName=SldMinRam, Path=Value, StringFormat={}{0:N0} MB}" Margin="10,0,0,0" Foreground="White"/>
-                        </StackPanel>
-
-                        <TextBlock Text="Maximum RAM (Xmx):" Foreground="Silver" Margin="0,15,0,5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Slider x:Name="SldMaxRam" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" ValueChanged="RamSlider_ValueChanged" />
-                            <TextBlock x:Name="TxtMaxRamVal" Text="{Binding ElementName=SldMaxRam, Path=Value, StringFormat={}{0:N0} MB}" Margin="10,0,0,0" Foreground="White"/>
-                        </StackPanel>
-
-                        <TextBlock x:Name="TxtRamWarning" Text="WARNING: Allocation exceeds 80% of physical memory!" Foreground="Red" FontWeight="Bold" Margin="0,10,0,0" Visibility="Collapsed"/>
-                    </StackPanel>
-                </Expander>
-
-                <!-- Players Options -->
-                <Expander x:Name="ExpanderPlayers" Header="Players" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Max Players:" Foreground="Silver" Margin="0,5"/>
-                        <TextBox x:Name="TxtMaxPlayers" Text="20" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
+                        <TextBlock x:Name="TxtWorldLockWarning" Text="⚠ Server is running — stop the server before managing worlds." 
+                                   Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
                         
-                        <CheckBox x:Name="ChkOnlineMode" Content="Online Mode (Authenticate with Mojang)" IsChecked="True" Foreground="White" Margin="0,5"/>
-                        <CheckBox x:Name="ChkPvp" Content="PvP Enabled" IsChecked="True" Foreground="White" Margin="0,5"/>
-                        <CheckBox x:Name="ChkWhiteList" Content="Whitelist Enabled" IsChecked="False" Foreground="White" Margin="0,5"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Button x:Name="BtnUploadWorld" Content="📦 Upload World (ZIP)" Click="BtnUploadWorld_Click" 
+                                    Padding="12,8" Background="#007ACC" Foreground="White" Margin="0,0,10,0"/>
+                            <Button x:Name="BtnDeleteWorld" Content="🗑 Delete Current World" Click="BtnDeleteWorld_Click" 
+                                    Padding="12,8" Background="#C62828" Foreground="White"/>
+                        </StackPanel>
+                        
+                        <TextBlock x:Name="TxtWorldProgress" Foreground="LimeGreen" Visibility="Collapsed" Margin="0,10,0,0"/>
                     </StackPanel>
-                </Expander>
+                </ScrollViewer>
+            </TabItem>
 
-                <!-- Network Options -->
-                <Expander x:Name="ExpanderNetwork" Header="Network" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Server Port:" Foreground="Silver" Margin="0,5"/>
-                        <TextBox x:Name="TxtServerPort" Text="25565" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
-                        <TextBlock Text="Server IP (Leave blank for default):" Foreground="Silver" Margin="0,5"/>
-                        <TextBox x:Name="TxtServerIp" Background="#3E3E42" Foreground="White" Padding="5" Margin="0,0,0,10"/>
+            <!-- ═══════════════════════ TAB 3: PLUGINS ═══════════════════════ -->
+            <TabItem x:Name="TabPlugins" Header="  Plugins  " Foreground="White">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+                    <StackPanel Margin="20">
+                        <TextBlock x:Name="TxtPluginLockWarning" Text="⚠ Server is running — stop the server before managing plugins." 
+                                   Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        
+                        <TextBlock x:Name="TxtVanillaWarning" Text="⚠ Vanilla servers do not support plugins. Switch to Paper for plugin support." 
+                                   Foreground="Orange" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        
+                        <Button x:Name="BtnAddPlugin" Content="➕ Add Plugin (.jar)" Click="BtnAddPlugin_Click" 
+                                Padding="12,8" Background="#007ACC" Foreground="White" Margin="0,0,0,15"/>
+                        
+                        <ItemsControl x:Name="PluginList"/>
                     </StackPanel>
-                </Expander>
+                </ScrollViewer>
+            </TabItem>
 
-                <!-- Gameplay Options -->
-                <Expander x:Name="ExpanderGameplay" Header="Gameplay" IsExpanded="False" Foreground="White" Margin="0,0,0,10">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Gamemode:" Foreground="Silver" Margin="0,5"/>
-                        <ComboBox x:Name="CmbGamemode" Background="#3E3E42" Foreground="White" Margin="0,0,0,10">
-                            <ComboBoxItem Content="survival" IsSelected="True"/>
-                            <ComboBoxItem Content="creative"/>
-                            <ComboBoxItem Content="adventure"/>
-                            <ComboBoxItem Content="spectator"/>
-                        </ComboBox>
-
-                        <TextBlock Text="Difficulty:" Foreground="Silver" Margin="0,5"/>
-                        <ComboBox x:Name="CmbDifficulty" Background="#3E3E42" Foreground="White" Margin="0,0,0,10">
-                            <ComboBoxItem Content="peaceful"/>
-                            <ComboBoxItem Content="easy" IsSelected="True"/>
-                            <ComboBoxItem Content="normal"/>
-                            <ComboBoxItem Content="hard"/>
-                        </ComboBox>
-
-                        <CheckBox x:Name="ChkAllowBlock" Content="Allow Command Blocks" Foreground="White" Margin="0,5"/>
-                        <CheckBox x:Name="ChkAllowFlight" Content="Allow Flight" Foreground="White" Margin="0,5"/>
-                        <CheckBox x:Name="ChkAllowNether" Content="Allow Nether" IsChecked="True" Foreground="White" Margin="0,5"/>
+            <!-- ═══════════════════════ TAB 4: MODS ═══════════════════════ -->
+            <TabItem Header="  Mods  " Foreground="White">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+                    <StackPanel Margin="20">
+                        <TextBlock x:Name="TxtModLockWarning" Text="⚠ Server is running — stop the server before managing mods." 
+                                   Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        
+                        <Button x:Name="BtnAddMod" Content="➕ Add Mod (.jar)" Click="BtnAddMod_Click" 
+                                Padding="12,8" Background="#007ACC" Foreground="White" Margin="0,0,0,15"/>
+                        
+                        <ItemsControl x:Name="ModList"/>
                     </StackPanel>
-                </Expander>
-
-            </StackPanel>
-        </ScrollViewer>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
 
         <!-- Footer Actions -->
         <Border Grid.Row="2" Background="#2D2D30" Padding="15">

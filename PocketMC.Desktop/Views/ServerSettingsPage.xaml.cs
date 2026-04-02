@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -18,6 +19,7 @@ namespace PocketMC.Desktop.Views
         private InstanceMetadata _metadata;
         private string _appRoot;
         private string _serverDir;
+        private readonly WorldManager _worldManager = new();
 
         public ServerSettingsPage(InstanceMetadata metadata, string appRoot)
         {
@@ -25,10 +27,6 @@ namespace PocketMC.Desktop.Views
             _metadata = metadata;
             _appRoot = appRoot;
             
-            // Assume the format is servers/<slug/id>
-            string potentialSlug = SlugHelper.GenerateSlug(_metadata.Name);
-            // Quick implementation relies on getting exact path from the Manager.
-            // But we will scan servers dir to find the .pocket-mc.json with same ID
             _serverDir = Path.Combine(_appRoot, "servers");
             foreach (var dir in Directory.GetDirectories(_serverDir))
             {
@@ -50,7 +48,50 @@ namespace PocketMC.Desktop.Views
             }
 
             LoadSettings();
+            LoadWorldTab();
+            LoadPluginTab();
+            LoadModTab();
+
+            // Tab change handler to refresh lock states
+            MainTabControl.SelectionChanged += (s, e) =>
+            {
+                if (e.Source is TabControl)
+                {
+                    RefreshLockStates();
+                }
+            };
         }
+
+        // ════════════════════════════════════════════════
+        //  LOCK STATE (running server protection)
+        // ════════════════════════════════════════════════
+
+        private void RefreshLockStates()
+        {
+            bool isRunning = ServerProcessManager.IsRunning(_metadata.Id);
+
+            // Worlds tab
+            TxtWorldLockWarning.Visibility = isRunning ? Visibility.Visible : Visibility.Collapsed;
+            BtnUploadWorld.IsEnabled = !isRunning;
+            BtnDeleteWorld.IsEnabled = !isRunning;
+
+            // Plugins tab
+            TxtPluginLockWarning.Visibility = isRunning ? Visibility.Visible : Visibility.Collapsed;
+            BtnAddPlugin.IsEnabled = !isRunning;
+
+            // Mods tab
+            TxtModLockWarning.Visibility = isRunning ? Visibility.Visible : Visibility.Collapsed;
+            BtnAddMod.IsEnabled = !isRunning;
+
+            // Vanilla warning for plugins
+            bool isVanilla = _metadata.ServerType?.Equals("Vanilla", StringComparison.OrdinalIgnoreCase) == true;
+            TxtVanillaWarning.Visibility = isVanilla ? Visibility.Visible : Visibility.Collapsed;
+            if (isVanilla) BtnAddPlugin.IsEnabled = false;
+        }
+
+        // ════════════════════════════════════════════════
+        //  TAB 1: PROPERTIES (existing logic preserved)
+        // ════════════════════════════════════════════════
 
         private void LoadSettings()
         {
@@ -125,20 +166,12 @@ namespace PocketMC.Desktop.Views
             if (totalMb > 0)
             {
                 double totalRequested = SldMaxRam.Value;
-                if (totalRequested > (totalMb * 0.8))
-                {
-                    TxtRamWarning.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    TxtRamWarning.Visibility = Visibility.Collapsed;
-                }
+                TxtRamWarning.Visibility = totalRequested > (totalMb * 0.8) ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
         private void TxtMotd_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // Simple implementation of MOTD parsing for § and &
             TxtMotdPreview.Text = TxtMotd.Text;
         }
 
@@ -167,7 +200,6 @@ namespace PocketMC.Desktop.Views
                     }
 
                     ImgIconPreview.Source = bmp;
-                    // File is copied on "Save" or we can copy it instantly:
                     var dest = Path.Combine(_serverDir, "server-icon.png");
                     File.Copy(dlg.FileName, dest, true);
                 }
@@ -189,11 +221,9 @@ namespace PocketMC.Desktop.Views
             _metadata.MinRamMb = (int)SldMinRam.Value;
             _metadata.MaxRamMb = (int)SldMaxRam.Value;
 
-            // Save JSON explicitly
             var metaFile = Path.Combine(_serverDir, ".pocket-mc.json");
             File.WriteAllText(metaFile, System.Text.Json.JsonSerializer.Serialize(_metadata, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
 
-            // Save Props
             var propsFile = Path.Combine(_serverDir, "server.properties");
             var props = ServerPropertiesParser.Read(propsFile);
 
@@ -210,7 +240,7 @@ namespace PocketMC.Desktop.Views
             props["white-list"] = ChkWhiteList.IsChecked == true ? "true" : "false";
             props["gamemode"] = ((ComboBoxItem)CmbGamemode.SelectedItem).Content.ToString();
             props["difficulty"] = ((ComboBoxItem)CmbDifficulty.SelectedItem).Content.ToString();
-            
+
             props["enable-command-block"] = ChkAllowBlock.IsChecked == true ? "true" : "false";
             props["allow-flight"] = ChkAllowFlight.IsChecked == true ? "true" : "false";
             props["allow-nether"] = ChkAllowNether.IsChecked == true ? "true" : "false";
@@ -218,6 +248,346 @@ namespace PocketMC.Desktop.Views
             ServerPropertiesParser.Write(propsFile, props);
 
             MessageBox.Show("Settings configuration saved successfully.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        // ════════════════════════════════════════════════
+        //  TAB 2: WORLDS
+        // ════════════════════════════════════════════════
+
+        private void LoadWorldTab()
+        {
+            var worldDir = Path.Combine(_serverDir, "world");
+            if (Directory.Exists(worldDir))
+            {
+                TxtWorldStatus.Text = "✅ World folder exists";
+                double sizeMb = FileUtils.GetDirectorySizeMb(worldDir);
+                TxtWorldSize.Text = $"Size: {sizeMb} MB";
+            }
+            else
+            {
+                TxtWorldStatus.Text = "No world folder found (will be generated on first start)";
+                TxtWorldSize.Text = "";
+            }
+            RefreshLockStates();
+        }
+
+        private async void BtnUploadWorld_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "ZIP Files (*.zip)|*.zip",
+                Title = "Select World ZIP"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                try
+                {
+                    BtnUploadWorld.IsEnabled = false;
+                    BtnDeleteWorld.IsEnabled = false;
+                    TxtWorldProgress.Visibility = Visibility.Visible;
+
+                    var targetWorldPath = Path.Combine(_serverDir, "world");
+                    await _worldManager.ImportWorldZipAsync(dlg.FileName, targetWorldPath, progress =>
+                    {
+                        Dispatcher.Invoke(() => TxtWorldProgress.Text = progress);
+                    });
+
+                    LoadWorldTab();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"World import failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    TxtWorldProgress.Visibility = Visibility.Collapsed;
+                    RefreshLockStates();
+                }
+            }
+        }
+
+        private async void BtnDeleteWorld_Click(object sender, RoutedEventArgs e)
+        {
+            var worldDir = Path.Combine(_serverDir, "world");
+            if (!Directory.Exists(worldDir))
+            {
+                MessageBox.Show("No world folder found.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var result = MessageBox.Show(
+                "Are you sure you want to delete the current world? This cannot be undone.",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    await FileUtils.CleanDirectoryAsync(worldDir);
+                    LoadWorldTab();
+                    MessageBox.Show("World deleted successfully.", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete world: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        // ════════════════════════════════════════════════
+        //  TAB 3: PLUGINS
+        // ════════════════════════════════════════════════
+
+        private void LoadPluginTab()
+        {
+            var pluginsDir = Path.Combine(_serverDir, "plugins");
+            if (!Directory.Exists(pluginsDir))
+            {
+                Directory.CreateDirectory(pluginsDir);
+            }
+
+            PluginList.Items.Clear();
+            var jars = Directory.GetFiles(pluginsDir, "*.jar");
+
+            foreach (var jar in jars)
+            {
+                var fi = new FileInfo(jar);
+                string apiVersion = PluginScanner.TryGetApiVersion(jar) ?? "Unknown";
+                string pluginName = PluginScanner.TryGetPluginName(jar) ?? fi.Name;
+                
+                // Only flag as incompatible if the plugin requires a NEWER API
+                // than the server provides. Backward compat is guaranteed by Spigot/Paper:
+                // e.g. api-version 1.14 on server 1.20.4 = FINE (backward compatible)
+                // e.g. api-version 1.21 on server 1.20.4 = MISMATCH (too new)
+                bool mismatch = PluginScanner.IsIncompatible(apiVersion == "Unknown" ? null : apiVersion, _metadata.MinecraftVersion);
+
+                var row = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(0x3E, 0x3E, 0x42)),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(12, 8, 12, 8),
+                    Margin = new Thickness(0, 0, 0, 6)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var infoPanel = new StackPanel();
+                var nameText = new TextBlock
+                {
+                    Text = pluginName + (mismatch ? "  ⚠ Version Mismatch" : ""),
+                    Foreground = mismatch ? Brushes.Orange : Brushes.White,
+                    FontWeight = FontWeights.SemiBold
+                };
+                var detailText = new TextBlock
+                {
+                    Text = $"Size: {Math.Round(fi.Length / 1024.0, 1)} KB  |  API: {apiVersion}  |  Modified: {fi.LastWriteTime:yyyy-MM-dd}",
+                    Foreground = Brushes.Silver,
+                    FontSize = 11
+                };
+                infoPanel.Children.Add(nameText);
+                infoPanel.Children.Add(detailText);
+                Grid.SetColumn(infoPanel, 0);
+                grid.Children.Add(infoPanel);
+
+                var deleteBtn = new Button
+                {
+                    Content = "🗑",
+                    Padding = new Thickness(8, 4, 8, 4),
+                    Background = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)),
+                    Foreground = Brushes.White,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Tag = jar,
+                    IsEnabled = !ServerProcessManager.IsRunning(_metadata.Id)
+                };
+                deleteBtn.Click += DeletePlugin_Click;
+                Grid.SetColumn(deleteBtn, 2);
+                grid.Children.Add(deleteBtn);
+
+                row.Child = grid;
+                PluginList.Items.Add(row);
+            }
+
+            if (jars.Length == 0)
+            {
+                PluginList.Items.Add(new TextBlock
+                {
+                    Text = "No plugins installed.",
+                    Foreground = Brushes.Gray,
+                    FontStyle = FontStyles.Italic
+                });
+            }
+
+            RefreshLockStates();
+        }
+
+        private void BtnAddPlugin_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "JAR Files (*.jar)|*.jar",
+                Title = "Select Plugin JAR",
+                Multiselect = true
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                var pluginsDir = Path.Combine(_serverDir, "plugins");
+                foreach (var file in dlg.FileNames)
+                {
+                    var dest = Path.Combine(pluginsDir, Path.GetFileName(file));
+                    File.Copy(file, dest, true);
+                }
+                LoadPluginTab();
+            }
+        }
+
+        private void DeletePlugin_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string path)
+            {
+                var result = MessageBox.Show(
+                    $"Delete plugin '{Path.GetFileName(path)}'?",
+                    "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        File.Delete(path);
+                        LoadPluginTab();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to delete: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+        }
+
+        // ════════════════════════════════════════════════
+        //  TAB 4: MODS
+        // ════════════════════════════════════════════════
+
+        private void LoadModTab()
+        {
+            var modsDir = Path.Combine(_serverDir, "mods");
+            if (!Directory.Exists(modsDir))
+            {
+                Directory.CreateDirectory(modsDir);
+            }
+
+            ModList.Items.Clear();
+            var jars = Directory.GetFiles(modsDir, "*.jar");
+
+            foreach (var jar in jars)
+            {
+                var fi = new FileInfo(jar);
+
+                var row = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(0x3E, 0x3E, 0x42)),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(12, 8, 12, 8),
+                    Margin = new Thickness(0, 0, 0, 6)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var infoPanel = new StackPanel();
+                infoPanel.Children.Add(new TextBlock
+                {
+                    Text = fi.Name,
+                    Foreground = Brushes.White,
+                    FontWeight = FontWeights.SemiBold
+                });
+                infoPanel.Children.Add(new TextBlock
+                {
+                    Text = $"Size: {Math.Round(fi.Length / 1024.0, 1)} KB  |  Modified: {fi.LastWriteTime:yyyy-MM-dd}",
+                    Foreground = Brushes.Silver,
+                    FontSize = 11
+                });
+                Grid.SetColumn(infoPanel, 0);
+                grid.Children.Add(infoPanel);
+
+                var deleteBtn = new Button
+                {
+                    Content = "🗑",
+                    Padding = new Thickness(8, 4, 8, 4),
+                    Background = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)),
+                    Foreground = Brushes.White,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Tag = jar,
+                    IsEnabled = !ServerProcessManager.IsRunning(_metadata.Id)
+                };
+                deleteBtn.Click += DeleteMod_Click;
+                Grid.SetColumn(deleteBtn, 1);
+                grid.Children.Add(deleteBtn);
+
+                row.Child = grid;
+                ModList.Items.Add(row);
+            }
+
+            if (jars.Length == 0)
+            {
+                ModList.Items.Add(new TextBlock
+                {
+                    Text = "No mods installed.",
+                    Foreground = Brushes.Gray,
+                    FontStyle = FontStyles.Italic
+                });
+            }
+
+            RefreshLockStates();
+        }
+
+        private void BtnAddMod_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "JAR Files (*.jar)|*.jar",
+                Title = "Select Mod JAR",
+                Multiselect = true
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                var modsDir = Path.Combine(_serverDir, "mods");
+                foreach (var file in dlg.FileNames)
+                {
+                    var dest = Path.Combine(modsDir, Path.GetFileName(file));
+                    File.Copy(file, dest, true);
+                }
+                LoadModTab();
+            }
+        }
+
+        private void DeleteMod_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string path)
+            {
+                var result = MessageBox.Show(
+                    $"Delete mod '{Path.GetFileName(path)}'?",
+                    "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        File.Delete(path);
+                        LoadModTab();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to delete: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
         }
     }
 }
