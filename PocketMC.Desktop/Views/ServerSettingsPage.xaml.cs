@@ -55,7 +55,6 @@ namespace PocketMC.Desktop.Views
             LoadModTab();
             LoadBackupTab();
             LoadCrashRestartTab();
-            PopulateNetworkingTab();
 
             // Tab change handler to refresh lock states
             MainTabControl.SelectionChanged += (s, e) =>
@@ -855,109 +854,6 @@ namespace PocketMC.Desktop.Views
             ChkEnableAutoRestart.IsChecked = _metadata.EnableAutoRestart;
             TxtMaxAutoRestarts.Text = _metadata.MaxAutoRestarts.ToString();
             TxtAutoRestartDelay.Text = _metadata.AutoRestartDelaySeconds.ToString();
-        }
-
-        // ════════════════════════════════════════════════
-        //  TAB 7: NETWORKING
-        // ════════════════════════════════════════════════
-
-        private void PopulateNetworkingTab()
-        {
-            // Account status
-            if (PlayitCoordinator.IsAgentClaimed())
-            {
-                TxtPlayitAccountStatus.Text = "✓ Logged in to Playit.gg";
-                TxtPlayitAccountStatus.Foreground = System.Windows.Media.Brushes.LimeGreen;
-            }
-            else
-            {
-                TxtPlayitAccountStatus.Text = "Not logged in — click 'Get Public IP' on the Dashboard to set up";
-                TxtPlayitAccountStatus.Foreground = System.Windows.Media.Brushes.Orange;
-            }
-
-            // Stored public address
-            if (!string.IsNullOrEmpty(_metadata.PlayitPublicAddress))
-            {
-                TxtPlayitAddress.Text = _metadata.PlayitPublicAddress;
-                TxtPlayitAddressHint.Text = "This address is stored and shown on the Dashboard as 'Copy IP'.";
-                BtnDeleteTunnel.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                TxtPlayitAddress.Text = "No address configured";
-                TxtPlayitAddress.Foreground = System.Windows.Media.Brushes.Gray;
-                TxtPlayitAddressHint.Text = "Start a tunnel from the Dashboard to set up your public address.";
-                BtnDeleteTunnel.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        private async void BtnDeleteTunnel_Click(object sender, RoutedEventArgs e)
-        {
-            var result = System.Windows.MessageBox.Show(
-                "Are you sure you want to delete this public address?\n\nYour friends will no longer be able to connect using it.",
-                "Delete Tunnel",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-
-            if (result != MessageBoxResult.Yes) return;
-
-            BtnDeleteTunnel.IsEnabled = false;
-            BtnDeleteTunnel.Content = "Deleting...";
-
-            try
-            {
-                int serverPort = 25565;
-                if (int.TryParse(TxtServerPort.Text.Trim(), out var p)) serverPort = p;
-
-                var tunnel = await PlayitApiClient.FindTunnelByLocalPortAsync(serverPort);
-                if (tunnel != null && !string.IsNullOrEmpty(tunnel.TunnelId))
-                {
-                    await PlayitApiClient.DeleteTunnelAsync(tunnel.TunnelId);
-                }
-
-                // If no exception thrown, it succeeded, so clear it locally
-                _metadata.PlayitPublicAddress = null;
-                
-                var metaFile = Path.Combine(_serverDir, ".pocket-mc.json");
-                File.WriteAllText(metaFile, System.Text.Json.JsonSerializer.Serialize(_metadata, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
-
-                PopulateNetworkingTab();
-
-                System.Windows.MessageBox.Show(
-                    "Tunnel successfully deleted.",
-                    "Tunnel Deleted",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("NotAllowedWithReadOnly") || ex.Message.Contains("Unauthorized"))
-                {
-                    // If Playit forbids deletion using the local agent key, instruct the user
-                    try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://playit.gg/account/tunnels") { UseShellExecute = true }); } catch { }
-
-                    System.Windows.MessageBox.Show(
-                        "Playit.gg doesn't allow third-party apps to delete tunnels directly.\n\n" +
-                        "The Playit dashboard has opened in your browser.\n" +
-                        "Please delete the tunnel there manually.",
-                        "Cannot Auto-Delete Tunnel",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                }
-                else
-                {
-                    System.Windows.MessageBox.Show(
-                        $"Error deleting tunnel: {ex.Message}",
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                }
-            }
-            finally
-            {
-                BtnDeleteTunnel.IsEnabled = true;
-                BtnDeleteTunnel.Content = "Delete Tunnel";
-            }
         }
     }
 }

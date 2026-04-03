@@ -253,56 +253,6 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
-
-            <!-- ═══════════════════════ TAB 7: NETWORKING ═══════════════════════ -->
-            <TabItem Header="  Networking  " Foreground="White">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
-                    <StackPanel Margin="20">
-
-                        <TextBlock Text="Playit.gg Tunneling" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                        <TextBlock Text="Expose your server to the public internet without port forwarding using Playit.gg." Foreground="Silver" TextWrapping="Wrap" Margin="0,0,0,20"/>
-
-                        <!-- Account Status -->
-                        <TextBlock Text="Account Status" Foreground="White" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                        <Border Background="#252526" CornerRadius="6" Padding="12,10" Margin="0,0,0,20">
-                            <StackPanel>
-                                <TextBlock x:Name="TxtPlayitAccountStatus" Foreground="#4CAF50" FontWeight="SemiBold" FontSize="13"/>
-                                <TextBlock Text="The Playit.gg agent runs in the background when you start a tunnel from the Dashboard."
-                                           Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Public Address for this instance -->
-                        <TextBlock Text="Public Address" Foreground="White" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                        <Border Background="#252526" CornerRadius="6" Padding="12,10" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock x:Name="TxtPlayitAddress" Foreground="#64B5F6" FontSize="14" FontWeight="SemiBold"/>
-                                    <TextBlock x:Name="TxtPlayitAddressHint" Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                                </StackPanel>
-                                <Button x:Name="BtnDeleteTunnel" Content="Delete Tunnel" Grid.Column="1" VerticalAlignment="Center" Cursor="Hand" Click="BtnDeleteTunnel_Click" Background="#cc3333" Foreground="White" BorderThickness="0" Padding="10,5" Visibility="Collapsed" />
-                            </Grid>
-                        </Border>
-
-                        <!-- How it works -->
-                        <TextBlock Text="How It Works" Foreground="White" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                        <Border Background="#252526" CornerRadius="6" Padding="12,10">
-                            <StackPanel>
-                                <TextBlock Text="1. Start your server from the Dashboard" Foreground="Silver" FontSize="12" Margin="0,2"/>
-                                <TextBlock Text="2. Click 'Get Public IP' on the server card" Foreground="Silver" FontSize="12" Margin="0,2"/>
-                                <TextBlock Text="3. Log in to Playit.gg when prompted (first time only)" Foreground="Silver" FontSize="12" Margin="0,2"/>
-                                <TextBlock Text="4. Copy your tunnel address from the Playit dashboard" Foreground="Silver" FontSize="12" Margin="0,2"/>
-                                <TextBlock Text="5. Share the address with friends — they can join directly!" Foreground="Silver" FontSize="12" Margin="0,2"/>
-                            </StackPanel>
-                        </Border>
-
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
         </TabControl>
 
         <!-- Footer Actions -->

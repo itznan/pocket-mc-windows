@@ -34,7 +34,6 @@ namespace PocketMC.Desktop.Views
         private const int MAX_LOG_LINES = 5000;
 
         public ObservableCollection<LogLine> Logs { get; } = new();
-        public ObservableCollection<LogLine> PlayitLogs { get; } = new();
 
         public string ServerName => _metadata.Name;
         public string StatusText => _serverProcess.State switch
@@ -80,44 +79,6 @@ namespace PocketMC.Desktop.Views
             {
                 _pendingLines.Enqueue(ColorizeLogLine(existingLine));
             }
-
-            // Try to hook up existing PlayitCoordinator if one is running
-            TryAttachPlayitCoordinator();
-        }
-
-        private PlayitCoordinator? _playitCoordinator;
-        private readonly ConcurrentQueue<LogLine> _pendingPlayitLines = new();
-
-        private void TryAttachPlayitCoordinator()
-        {
-            // Access the tunnel dictionary from DashboardPage if available
-            // For now, we hook up if a coordinator is started later via OnLogLine event
-        }
-
-        /// <summary>
-        /// Attach an active PlayitCoordinator to stream its logs to the Playit Logs tab.
-        /// Called externally when the DashboardPage starts a tunnel.
-        /// </summary>
-        public void AttachPlayitCoordinator(PlayitCoordinator coordinator)
-        {
-            if (_playitCoordinator != null)
-            {
-                _playitCoordinator.OnLogLine -= OnPlayitLogReceived;
-            }
-            _playitCoordinator = coordinator;
-            _playitCoordinator.OnLogLine += OnPlayitLogReceived;
-
-            // Drain existing buffer
-            while (coordinator.LogBuffer.TryDequeue(out var line))
-            {
-                _pendingPlayitLines.Enqueue(new LogLine { Text = line, TextColor = System.Windows.Media.Brushes.CornflowerBlue });
-            }
-        }
-
-        private void OnPlayitLogReceived(string line)
-        {
-            var color = line.StartsWith("[ERR]") ? System.Windows.Media.Brushes.OrangeRed : System.Windows.Media.Brushes.CornflowerBlue;
-            _pendingPlayitLines.Enqueue(new LogLine { Text = line, TextColor = color });
         }
 
         private void OnOutputReceived(string line)
@@ -166,21 +127,9 @@ namespace PocketMC.Desktop.Views
             while (Logs.Count > MAX_LOG_LINES)
                 Logs.RemoveAt(0);
 
-            // Auto-scroll server logs
+            // Auto-scroll to bottom
             if (count > 0 && LogScroller != null)
                 LogScroller.ScrollToEnd();
-
-            // Flush Playit logs
-            int playitCount = 0;
-            while (_pendingPlayitLines.TryDequeue(out var pLine) && playitCount < 200)
-            {
-                PlayitLogs.Add(pLine);
-                playitCount++;
-            }
-            while (PlayitLogs.Count > MAX_LOG_LINES)
-                PlayitLogs.RemoveAt(0);
-            if (playitCount > 0 && PlayitLogScroller != null)
-                PlayitLogScroller.ScrollToEnd();
         }
 
         /// <summary>
@@ -237,8 +186,6 @@ namespace PocketMC.Desktop.Views
             _serverProcess.OnErrorLine -= OnErrorReceived;
             _serverProcess.OnStateChanged -= OnStateChanged;
             _serverProcess.OnServerCrashed -= OnServerCrashed;
-            if (_playitCoordinator != null)
-                _playitCoordinator.OnLogLine -= OnPlayitLogReceived;
 
             if (NavigationService.CanGoBack)
                 NavigationService.GoBack();

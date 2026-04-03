@@ -35,61 +35,32 @@
                        Icon="{ui:SymbolIcon ArrowSync24}" Click="BtnRestart_Click" Cursor="Hand"/>
         </Grid>
         
-        <!-- Tab control for Server Console and Playit Logs -->
-        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
-            
-            <!-- Server Console Tab -->
-            <TabItem Header="Server Console" Foreground="White">
-                <Border Background="#1E1E1E" CornerRadius="8" Padding="8">
-                    <Grid>
-                        <ScrollViewer x:Name="LogScroller" VerticalScrollBarVisibility="Auto" 
-                                      HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl x:Name="LogView" ItemsSource="{Binding Logs}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <VirtualizingStackPanel VirtualizationMode="Recycling"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Text}" Foreground="{Binding TextColor}" 
-                                                   FontFamily="Consolas" FontSize="13" TextWrapping="Wrap"
-                                                   Padding="4,1"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                        
-                        <Border x:Name="CrashBanner" VerticalAlignment="Top" Background="#33FF0000" BorderBrush="#88FF0000" BorderThickness="1" CornerRadius="4" Padding="12" Margin="10" Visibility="Collapsed">
-                            <TextBlock x:Name="TxtCrashLog" Foreground="#FF6B6B" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
-                        </Border>
-                    </Grid>
+        <!-- Console output area -->
+        <Border Grid.Row="1" Background="#1E1E1E" CornerRadius="8" Padding="8">
+            <Grid>
+                <ScrollViewer x:Name="LogScroller" VerticalScrollBarVisibility="Auto" 
+                              HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="LogView" ItemsSource="{Binding Logs}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel VirtualizationMode="Recycling"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Text}" Foreground="{Binding TextColor}" 
+                                           FontFamily="Consolas" FontSize="13" TextWrapping="Wrap"
+                                           Padding="4,1"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                
+                <Border x:Name="CrashBanner" VerticalAlignment="Top" Background="#33FF0000" BorderBrush="#88FF0000" BorderThickness="1" CornerRadius="4" Padding="12" Margin="10" Visibility="Collapsed">
+                    <TextBlock x:Name="TxtCrashLog" Foreground="#FF6B6B" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" />
                 </Border>
-            </TabItem>
-            
-            <!-- Playit Logs Tab -->
-            <TabItem Header="Playit Logs" Foreground="White">
-                <Border Background="#1E1E1E" CornerRadius="8" Padding="8">
-                    <ScrollViewer x:Name="PlayitLogScroller" VerticalScrollBarVisibility="Auto" 
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl x:Name="PlayitLogView" ItemsSource="{Binding PlayitLogs}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <VirtualizingStackPanel VirtualizationMode="Recycling"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Text}" Foreground="{Binding TextColor}" 
-                                               FontFamily="Consolas" FontSize="13" TextWrapping="Wrap"
-                                               Padding="4,1"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Border>
-            </TabItem>
-        </TabControl>
+            </Grid>
+        </Border>
         
         <!-- Command input bar -->
         <Grid Grid.Row="2" Margin="0,8,0,0">

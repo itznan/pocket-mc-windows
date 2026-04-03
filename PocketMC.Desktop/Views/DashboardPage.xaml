@@ -67,7 +67,6 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 
                                 <!-- Title row -->
@@ -119,23 +118,8 @@
                                                Foreground="{Binding StatusColor}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,-22,0,0" />
                                 </Grid>
 
-                                <!-- Networking panel -->
-                                <StackPanel Grid.Row="3" Style="{StaticResource VisibleWhenRunning}" Margin="0,0,0,8">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding TunnelStatusText}" FontSize="11" 
-                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" 
-                                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                        <ui:Button Grid.Column="1" Content="{Binding TunnelButtonText}" Appearance="Secondary" 
-                                                   Padding="6,2" FontSize="11" Click="BtnTunnel_Click" Cursor="Hand"/>
-                                    </Grid>
-                                </StackPanel>
-
                                 <!-- Action buttons: STOPPED state -->
-                                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
                                             Style="{StaticResource HiddenWhenRunning}">
                                     <ui:Button Content="Start" Appearance="Primary" Margin="0,0,4,0"
                                                Icon="{ui:SymbolIcon Play24}" Click="BtnStart_Click" Cursor="Hand"/>
@@ -145,7 +129,7 @@
                                 </StackPanel>
                                 
                                 <!-- Action buttons: RUNNING state -->
-                                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
                                             Style="{StaticResource VisibleWhenRunning}">
                                     <ui:Button Content="Console" Appearance="Primary" Margin="0,0,4,0"
                                                Icon="{ui:SymbolIcon WindowConsole20}" Click="BtnConsole_Click" Cursor="Hand"/>
