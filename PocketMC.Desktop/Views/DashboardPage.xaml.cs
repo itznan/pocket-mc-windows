@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -620,6 +621,32 @@ namespace PocketMC.Desktop.Views
             }
         }
 
+        private void BtnBrowseModpacks_Click(object sender, RoutedEventArgs e)
+        {
+            var browser = new PluginBrowserWindow(null, "*", "project_type:modpack");
+            browser.Owner = Window.GetWindow(this);
+            browser.OnModpackDownloaded += async (tempZip) =>
+            {
+                await ImportModpackAsync(tempZip);
+                try { File.Delete(tempZip); } catch { }
+            };
+            browser.ShowDialog();
+        }
+
+        private async void BtnImportModpack_Click(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Modpack ZIP (*.zip)|*.zip|All Files (*.*)|*.*",
+                Title = "Select Modpack ZIP"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                await ImportModpackAsync(openFileDialog.FileName);
+            }
+        }
+
         private async void DeleteInstance_Click(object sender, RoutedEventArgs e)
         {
             InstanceCardViewModel? vm = null;
@@ -689,6 +716,65 @@ namespace PocketMC.Desktop.Views
                         LoadInstances();
                     }
                 }
+            }
+        }
+
+        private void Page_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effects = DragDropEffects.Copy;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+            e.Handled = true;
+        }
+
+        private async void Page_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files.Length > 0)
+                {
+                    string zipPath = files[0];
+                    if (Path.GetExtension(zipPath).Equals(".zip", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await ImportModpackAsync(zipPath);
+                    }
+                }
+            }
+        }
+
+        private async Task ImportModpackAsync(string zipPath)
+        {
+            var modpackService = _serviceProvider.GetRequiredService<ModpackService>();
+            
+            try
+            {
+                var result = await modpackService.ParseModpackZipAsync(zipPath);
+                
+                var confirm = System.Windows.MessageBox.Show(
+                    $"Import modpack '{result.Name}' for Minecraft {result.MinecraftVersion} ({result.Loader})?",
+                    "Import Modpack",
+                    MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (confirm == MessageBoxResult.Yes)
+                {
+                    // Show a progress indicator or dialog here if possible
+                    // For now, let's just do it in the background
+                    await modpackService.ImportAsync(result, result.Name, _applicationState.GetRequiredAppRootPath(), _instanceManager, zipPath);
+                    LoadInstances();
+                    System.Windows.MessageBox.Show("Modpack imported successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to import modpack from {ZipPath}.", zipPath);
+                System.Windows.MessageBox.Show($"Failed to import modpack: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

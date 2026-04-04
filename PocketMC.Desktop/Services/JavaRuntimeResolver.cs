@@ -6,8 +6,7 @@ namespace PocketMC.Desktop.Services;
 
 public static class JavaRuntimeResolver
 {
-    private static readonly int[] BundledJavaVersions = { 8, 11, 17, 21 };
-
+    private static readonly int[] BundledJavaVersions = { 8, 17, 21, 25 };
     private static readonly Regex LeadingVersionRegex = new(
         @"^\d+(?:\.\d+){0,2}",
         RegexOptions.Compiled,
@@ -29,7 +28,7 @@ public static class JavaRuntimeResolver
 
         if (IsVersionInRange(version, "1.16.5", "1.17.1"))
         {
-            return 11;
+            return 17; // Minecraft 1.17+ requires at least Java 16/17
         }
 
         if (IsVersionInRange(version, "1.18", "1.20.4"))
@@ -37,7 +36,13 @@ public static class JavaRuntimeResolver
             return 17;
         }
 
-        return 21;
+        if (IsVersionInRange(version, "1.20.5", "1.21.1"))
+        {
+            return 21;
+        }
+
+        // Minecraft 1.21.2+ requires Java 25
+        return 25;
     }
 
     public static string? GetBundledJavaPath(string appRootPath, int javaVersion)

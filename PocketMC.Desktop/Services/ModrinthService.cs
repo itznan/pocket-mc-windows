@@ -65,13 +65,19 @@ namespace PocketMC.Desktop.Services
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop");
         }
 
-        public async Task<List<ModrinthHit>> SearchAsync(string type, string mcVersion, string sort = "relevance")
+        public async Task<List<ModrinthHit>> SearchAsync(string type, string mcVersion, string sort = "relevance", string query = "", int offset = 0)
         {
             try
             {
-                // type is expected as "project_type:plugin" or "project_type:mod"
-                string facets = $"[[\"{type}\"],[\"versions:{mcVersion}\"]]";
-                string url = $"https://api.modrinth.com/v2/search?facets={Uri.EscapeDataString(facets)}&limit=20&index={sort}";
+                // type is expected as "project_type:plugin" or "project_type:mod" or "project_type:modpack"
+                string facetsStr = $"[\"{type}\"]";
+                if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
+                {
+                    facetsStr += $",[\"versions:{mcVersion}\"]";
+                }
+                string facets = $"[{facetsStr}]";
+                
+                string url = $"https://api.modrinth.com/v2/search?query={Uri.EscapeDataString(query)}&facets={Uri.EscapeDataString(facets)}&limit=20&offset={offset}&index={sort}";
                 
                 var result = await _httpClient.GetFromJsonAsync<ModrinthSearchResult>(url);
                 return result?.Hits ?? new();
@@ -86,7 +92,12 @@ namespace PocketMC.Desktop.Services
         {
             try
             {
-                string url = $"https://api.modrinth.com/v2/project/{slug}/version?game_versions=[\"{mcVersion}\"]";
+                string url = $"https://api.modrinth.com/v2/project/{slug}/version";
+                if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
+                {
+                    url += $"?game_versions=[\"{mcVersion}\"]";
+                }
+                
                 var versions = await _httpClient.GetFromJsonAsync<List<ModrinthVersion>>(url);
                 
                 // Return the first (latest) version

@@ -41,6 +41,9 @@ public partial class App : Application
                 services.AddSingleton<InstanceManager>();
                 services.AddSingleton<WorldManager>();
                 services.AddHttpClient<VanillaProvider>();
+                services.AddHttpClient<FabricProvider>();
+                services.AddHttpClient<ForgeProvider>();
+                services.AddSingleton<ModpackService>();
                 services.AddHttpClient<PaperProvider>(client =>
                 {
                     client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop");

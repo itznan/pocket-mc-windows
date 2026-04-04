@@ -30,6 +30,8 @@
             <ComboBox x:Name="CmbServerType" Margin="0,0,0,12" SelectionChanged="CmbServerType_SelectionChanged">
                 <ComboBoxItem Content="Vanilla" IsSelected="True"/>
                 <ComboBoxItem Content="Paper"/>
+                <ComboBoxItem Content="Fabric"/>
+                <ComboBoxItem Content="Forge"/>
             </ComboBox>
 
             <CheckBox x:Name="ChkShowSnapshots" Content="Show snapshots &amp; pre-releases" Margin="0,0,0,12" Checked="ChkShowSnapshots_Changed" Unchecked="ChkShowSnapshots_Changed"/>

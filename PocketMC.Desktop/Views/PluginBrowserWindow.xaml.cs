@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PocketMC.Desktop.Services;
 using Wpf.Ui.Controls;
+using System.Collections.ObjectModel;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
 
@@ -16,32 +17,53 @@ namespace PocketMC.Desktop.Views
     public partial class PluginBrowserWindow : FluentWindow
     {
         private readonly ModrinthService _modrinth = new();
-        private readonly string _serverDir;
+        private readonly string? _serverDir;
         private readonly string _mcVersion;
-        private readonly string _projectType; // "project_type:plugin" or "project_type:mod"
+        private readonly string _projectType;
+        private readonly bool _isModpackMode;
+        private readonly ObservableCollection<ModrinthHit> _results = new();
+        private int _currentOffset = 0;
+        private bool _isChanging = false;
 
-        public PluginBrowserWindow(string serverDir, string mcVersion, string projectType)
+        public event Action<string>? OnModpackDownloaded;
+
+        public PluginBrowserWindow(string? serverDir, string mcVersion, string projectType)
         {
             InitializeComponent();
             _serverDir = serverDir;
             _mcVersion = mcVersion;
             _projectType = projectType;
+            _isModpackMode = projectType.Contains("modpack");
 
-            TxtTitle.Text = projectType.Contains("plugin") ? "Plugin Marketplace" : "Mod Marketplace";
-            TxtMcVersion.Text = $"Minecraft {_mcVersion}";
+            ListResults.ItemsSource = _results;
+            TxtTitle.Text = _isModpackMode ? "Modpack Marketplace" : (projectType.Contains("plugin") ? "Plugin Marketplace" : "Mod Marketplace");
+            TxtMcVersion.Text = _mcVersion == "*" ? "All Versions" : $"Minecraft {_mcVersion}";
             
             Loaded += async (s, e) => await RefreshResultsAsync();
         }
 
-        private async Task RefreshResultsAsync()
+        private async Task RefreshResultsAsync(bool append = false)
         {
-            ProgressSearching.Visibility = Visibility.Visible;
-            ListResults.Visibility = Visibility.Collapsed;
+            if (!append)
+            {
+                _currentOffset = 0;
+                _results.Clear();
+                ProgressSearching.Visibility = Visibility.Visible;
+                ListResults.Visibility = Visibility.Collapsed;
+            }
 
             var sort = (CmbSort.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "relevance";
-            var hits = await _modrinth.SearchAsync(_projectType, _mcVersion, sort);
+            var query = TxtSearch.Text ?? "";
             
-            ListResults.ItemsSource = hits;
+            var hits = await _modrinth.SearchAsync(_projectType, _mcVersion, sort, query, _currentOffset);
+            
+            foreach (var hit in hits)
+            {
+                _results.Add(hit);
+            }
+
+            _currentOffset += hits.Count;
+            BtnLoadMore.Visibility = hits.Count >= 20 ? Visibility.Visible : Visibility.Collapsed;
             
             ProgressSearching.Visibility = Visibility.Collapsed;
             ListResults.Visibility = Visibility.Visible;
@@ -50,6 +72,32 @@ namespace PocketMC.Desktop.Views
         private async void CmbSort_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsLoaded) await RefreshResultsAsync();
+        }
+
+        private System.Threading.CancellationTokenSource? _searchCts;
+
+        private async void TxtSearch_TextChanged(Wpf.Ui.Controls.AutoSuggestBox sender, Wpf.Ui.Controls.AutoSuggestBoxTextChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+
+            _searchCts?.Cancel();
+            _searchCts = new System.Threading.CancellationTokenSource();
+            var token = _searchCts.Token;
+
+            try
+            {
+                await Task.Delay(500, token); // Wait 500ms
+                await RefreshResultsAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignore
+            }
+        }
+
+        private async void BtnLoadMore_Click(object sender, RoutedEventArgs e)
+        {
+            await RefreshResultsAsync(append: true);
         }
 
         private async void BtnInstall_Click(object sender, RoutedEventArgs e)
@@ -61,24 +109,35 @@ namespace PocketMC.Desktop.Views
 
             try
             {
-                var version = await _modrinth.GetLatestVersionAsync(slug, _mcVersion);
+                var version = await _modrinth.GetLatestVersionAsync(slug, _mcVersion == "*" ? "" : _mcVersion);
                 if (version == null || version.Files.Count == 0)
                 {
-                    System.Windows.MessageBox.Show("No compatible version found for " + _mcVersion, "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show("No compatible version found.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                // Pick the primary file or the first one
                 var file = version.Files.FirstOrDefault(f => f.IsPrimary) ?? version.Files[0];
+                
+                using var httpClient = new HttpClient();
+                var data = await httpClient.GetByteArrayAsync(file.Url);
+
+                if (_isModpackMode)
+                {
+                    string tempFile = Path.Combine(Path.GetTempPath(), file.FileName);
+                    await File.WriteAllBytesAsync(tempFile, data);
+
+                    OnModpackDownloaded?.Invoke(tempFile);
+                    Close();
+                    return;
+                }
+
+                if (_serverDir == null) return;
                 
                 string targetSubDir = _projectType.Contains("plugin") ? "plugins" : "mods";
                 string destDir = Path.Combine(_serverDir, targetSubDir);
                 if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
-
                 string destFile = Path.Combine(destDir, file.FileName);
 
-                using var httpClient = new HttpClient();
-                var data = await httpClient.GetByteArrayAsync(file.Url);
                 await File.WriteAllBytesAsync(destFile, data);
 
                 TxtStatus.Text = $"Successfully installed {file.FileName}";

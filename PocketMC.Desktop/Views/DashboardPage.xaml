@@ -26,7 +26,7 @@
         </Style>
     </Page.Resources>
     
-    <Grid Margin="24">
+    <Grid Margin="24" AllowDrop="True" Drop="Page_Drop" DragOver="Page_DragOver">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -37,7 +37,9 @@
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
                 <ui:TextBlock FontTypography="Title" Text="Instances" Foreground="White" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnNewInstance_Click" Cursor="Hand"/>
+                <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnNewInstance_Click" Cursor="Hand" Margin="0,0,8,0"/>
+                <ui:Button Content="Import Modpack" Icon="{ui:SymbolIcon FolderZip24}" Appearance="Secondary" Click="BtnImportModpack_Click" Cursor="Hand" Margin="0,0,8,0"/>
+                <ui:Button Content="Browse Modpacks" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="BtnBrowseModpacks_Click" Cursor="Hand"/>
             </StackPanel>
 
             <!-- Playit Health Banner (NET-05, D-02) -->

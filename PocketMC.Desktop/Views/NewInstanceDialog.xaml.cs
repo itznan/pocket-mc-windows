@@ -15,6 +15,8 @@ namespace PocketMC.Desktop.Views
         private readonly InstanceManager _instanceManager;
         private readonly VanillaProvider _vanillaProvider;
         private readonly PaperProvider _paperProvider;
+        private readonly FabricProvider _fabricProvider;
+        private readonly ForgeProvider _forgeProvider;
         private readonly ILogger<NewInstanceDialog> _logger;
 
         public bool WasCreated { get; private set; }
@@ -23,12 +25,16 @@ namespace PocketMC.Desktop.Views
             InstanceManager instanceManager,
             VanillaProvider vanillaProvider,
             PaperProvider paperProvider,
+            FabricProvider fabricProvider,
+            ForgeProvider forgeProvider,
             ILogger<NewInstanceDialog> logger)
         {
             InitializeComponent();
             _instanceManager = instanceManager;
             _vanillaProvider = vanillaProvider;
             _paperProvider = paperProvider;
+            _fabricProvider = fabricProvider;
+            _forgeProvider = forgeProvider;
             _logger = logger;
             
             Loaded += async (s, e) => await LoadVersionsAsync("Vanilla");
@@ -155,9 +161,14 @@ namespace PocketMC.Desktop.Views
 
         private IServerJarProvider GetProvider(string serverType)
         {
-            return string.Equals(serverType, "Paper", StringComparison.OrdinalIgnoreCase)
-                ? _paperProvider
-                : _vanillaProvider;
+            if (string.Equals(serverType, "Paper", StringComparison.OrdinalIgnoreCase))
+                return _paperProvider;
+            if (string.Equals(serverType, "Fabric", StringComparison.OrdinalIgnoreCase))
+                return _fabricProvider;
+            if (string.Equals(serverType, "Forge", StringComparison.OrdinalIgnoreCase))
+                return _forgeProvider;
+            
+            return _vanillaProvider;
         }
     }
 }

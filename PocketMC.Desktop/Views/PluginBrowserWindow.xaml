@@ -18,6 +18,9 @@
         <ui:TextBlock Grid.Row="0" FontTypography="Title" x:Name="TxtTitle" Text="Plugin Marketplace" Margin="0,0,0,16"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
+            <ui:AutoSuggestBox x:Name="TxtSearch" PlaceholderText="Search mods/plugins..." Width="250" Margin="0,0,16,0" 
+                               Icon="{ui:SymbolIcon Search24}" TextChanged="TxtSearch_TextChanged"/>
+            
             <TextBlock Text="Sort By:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="Silver"/>
             <ComboBox x:Name="CmbSort" Width="150" SelectionChanged="CmbSort_SelectionChanged">
                 <ComboBoxItem Content="Trending" Tag="relevance" IsSelected="True"/>
@@ -29,38 +32,53 @@
         </StackPanel>
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="ListResults">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="#2D2D30" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="64"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+            <StackPanel>
+                <ItemsControl x:Name="ListResults">
+                    <ItemsControl.ItemTemplate>
+                        <!-- Existing Template -->
+                        <DataTemplate>
+                            <Border Background="#2D2D30" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="64"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Width="64" Height="64" CornerRadius="4" ClipToBounds="True" VerticalAlignment="Top">
-                                    <Image Source="{Binding IconUrl}" Stretch="UniformToFill"/>
-                                </Border>
+                                    <Border Grid.Column="0" Width="64" Height="64" CornerRadius="4" ClipToBounds="True" VerticalAlignment="Top">
+                                        <Image Source="{Binding IconUrl}" Stretch="UniformToFill"/>
+                                    </Border>
 
-                                <StackPanel Grid.Column="1" Margin="12,0">
-                                    <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,4"/>
-                                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="Silver" TextWrapping="Wrap" MaxHeight="40" Margin="0,0,0,8"/>
-                                    <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon Symbol="ArrowDownload24" Margin="0,0,4,0" FontSize="12" Foreground="Gray"/>
-                                        <TextBlock Text="{Binding Downloads, StringFormat={}{0:N0}}" FontSize="11" Foreground="Gray" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Margin="12,0">
+                                        <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding Description}" FontSize="12" Foreground="Silver" TextWrapping="Wrap" MaxHeight="40" Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="ArrowDownload24" Margin="0,0,4,0" FontSize="12" Foreground="Gray"/>
+                                            <TextBlock Text="{Binding Downloads, StringFormat={}{0:N0}}" FontSize="11" Foreground="Gray" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </StackPanel>
-                                </StackPanel>
 
-                                <Button Grid.Column="2" Content="Install" Width="80" Height="32" 
-                                        Background="#007ACC" Foreground="White" 
-                                        Click="BtnInstall_Click" Tag="{Binding Slug}" VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                                    <Button Grid.Column="2" x:Name="BtnAction" Width="80" Height="32" 
+                                            Background="#007ACC" Foreground="White" 
+                                            Click="BtnInstall_Click" Tag="{Binding Slug}" VerticalAlignment="Center">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Content" Value="Install"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Title}" Value="Modpack Marketplace">
+                                                        <Setter Property="Content" Value="Import"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ui:Button x:Name="BtnLoadMore" Content="Load More" Appearance="Secondary" HorizontalAlignment="Center" Margin="0,0,0,16" Click="BtnLoadMore_Click" Visibility="Collapsed"/>
+            </StackPanel>
         </ScrollViewer>
 
         <ui:ProgressRing Grid.Row="2" x:Name="ProgressSearching" IsIndeterminate="True" Width="40" Height="40" Visibility="Collapsed"/>
