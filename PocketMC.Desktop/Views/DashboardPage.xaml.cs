@@ -224,8 +224,16 @@ namespace PocketMC.Desktop.Views
             PlayitAgent.Start();
         }
 
+        private int _metricTicks = 0;
+
         private void UpdateMetrics()
         {
+            _metricTicks++;
+            if (_metricTicks % 5 == 0) // Roughly every 10 seconds based on global monitor ticks
+            {
+                RunBackgroundTunnelPoll();
+            }
+
             Application.Current.Dispatcher.Invoke(() =>
             {
                 var dictionary = MainWindow.GlobalMonitor.Metrics;
@@ -259,6 +267,43 @@ namespace PocketMC.Desktop.Views
                         vm.RamText = "RAM 0 MB";
                     }
                 }
+            });
+        }
+
+        private void RunBackgroundTunnelPoll()
+        {
+            // Only search for running instances missing a tunnel IP
+            var missingTunnels = _viewModels.Where(v => v.IsRunning && string.IsNullOrEmpty(v.TunnelAddress)).ToList();
+            if (!missingTunnels.Any()) return;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var apiClient = new PlayitApiClient();
+                    var result = await apiClient.GetTunnelsAsync();
+                    if (!result.Success) return;
+
+                    foreach (var vm in missingTunnels)
+                    {
+                        string? folderName = FindFolderById(vm.Id);
+                        if (folderName == null) continue;
+
+                        string serverDir = System.IO.Path.Combine(_appRootPath, "servers", folderName);
+                        string propsPath = System.IO.Path.Combine(serverDir, "server.properties");
+                        var props = ServerPropertiesParser.Read(propsPath);
+                        int serverPort = 25565;
+                        if (props.TryGetValue("server-port", out var portStr) && int.TryParse(portStr, out var parsed))
+                            serverPort = parsed;
+
+                        var match = PlayitApiClient.FindTunnelForPort(result.Tunnels, serverPort);
+                        if (match != null)
+                        {
+                            Dispatcher.Invoke(() => vm.TunnelAddress = match.PublicAddress);
+                        }
+                    }
+                }
+                catch { }
             });
         }
 
