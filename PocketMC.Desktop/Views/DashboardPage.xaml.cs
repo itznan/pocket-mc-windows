@@ -397,6 +397,26 @@ namespace PocketMC.Desktop.Views
                         vm.TunnelAddress = guideWindow.ResolvedAddress;
                     break;
 
+                case TunnelResolutionResult.TunnelStatus.Error:
+                    if (result.IsTokenInvalid)
+                    {
+                        System.Windows.MessageBox.Show(
+                            "Your Playit.gg account link is invalid or has been revoked (maybe you deleted the agent on the website).\n\nPlease delete the 'playit.toml' file in %LOCALAPPDATA%\\playit_gg and restart PocketMC to link a new agent.",
+                            "Playit Not Linked",
+                            MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Error);
+                    }
+                    else
+                    {
+                        System.Windows.MessageBox.Show(
+                            result.ErrorMessage ?? "Failed to connect to Playit.gg API.",
+                            "Playit API Error",
+                            MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Warning);
+                    }
+                    vm.TunnelAddress = null;
+                    break;
+
                 default:
                     vm.TunnelAddress = null;
                     break;
