@@ -7,11 +7,11 @@
 **A professional Minecraft Java Edition server manager for Windows.**  
 Run, monitor, and share servers from your own machine, no sysadmin skills required.
 
-[![Build](https://img.shields.io/github/actions/workflow/status/divyviradiya2/pocket-mc-desktop/build.yml?branch=main&style=flat-square&logo=github)](https://github.com/your-org/pocket-mc-desktop/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/divyviradiya2/pocket-mc-desktop/build.yml?branch=main&style=flat-square&logo=github)](https://github.com/divyviradiya2/pocket-mc-desktop/actions)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-22C55E?style=flat-square)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/divyviradiya2/pocket-mc-desktop?style=flat-square)](https://github.com/divyviradiya/pocket-mc-desktop/releases)
+[![Release](https://img.shields.io/github/v/release/divyviradiya2/pocket-mc-desktop?style=flat-square)](https://github.com/divyviradiya2/pocket-mc-desktop/releases)
 
 ---
 
@@ -126,7 +126,7 @@ It is not a hosting panel. It runs on your PC. Your server, your hardware, your 
 
 ### Installer (Recommended)
 
-1. Download `PocketMC_Setup.exe` from the [latest release](https://github.com/your-org/pocket-mc-desktop/releases/latest).
+1. Download `PocketMC_Setup.exe` from the [latest release](https://github.com/divyviradiya2/pocket-mc-desktop/releases/latest).
 2. Run the installer. No admin rights required, installs per-user.
 3. Launch PocketMC Desktop from the Start Menu or desktop shortcut.
 4. On first run, choose a root folder where server instances and runtimes will be stored.
