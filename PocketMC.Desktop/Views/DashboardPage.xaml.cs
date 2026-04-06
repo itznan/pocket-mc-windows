@@ -315,13 +315,12 @@ namespace PocketMC.Desktop.Views
                     break;
 
                 case TunnelResolutionResult.TunnelStatus.CreationStarted:
-                    var guideWindow = ActivatorUtilities.CreateInstance<TunnelCreationGuideWindow>(_serviceProvider, serverPort);
-                    guideWindow.Owner = Window.GetWindow(this);
-                    guideWindow.OnTunnelResolved += (address) => 
+                    var guidePage = ActivatorUtilities.CreateInstance<TunnelCreationGuidePage>(_serviceProvider, serverPort);
+                    guidePage.OnTunnelResolved += (address) =>
                     {
                         Dispatcher.Invoke(() => vm.TunnelAddress = address);
                     };
-                    guideWindow.Show();
+                    NavigationService.Navigate(guidePage);
                     break;
 
                 case TunnelResolutionResult.TunnelStatus.Error:
