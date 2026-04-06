@@ -18,10 +18,7 @@
         <StackPanel Grid.Row="0">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
                 <ui:TextBlock FontTypography="Title" Text="Instances" Foreground="White" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnNewInstance_Click" Cursor="Hand" Margin="0,0,8,0"/>
-                <ui:Button Content="Import Modpack" Icon="{ui:SymbolIcon FolderZip24}" Appearance="Secondary" Click="BtnImportModpack_Click" Cursor="Hand" Margin="0,0,8,0"/>
-                <ui:Button Content="Browse Modpacks" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="BtnBrowseModpacks_Click" Cursor="Hand"/>
-            </StackPanel>
+                <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnNewInstance_Click" Cursor="Hand" Margin="0,0,8,0"/>            </StackPanel>
         </StackPanel>
         
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">

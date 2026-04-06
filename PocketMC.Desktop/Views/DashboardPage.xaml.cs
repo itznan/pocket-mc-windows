@@ -432,30 +432,9 @@ namespace PocketMC.Desktop.Views
             }
         }
 
-        private void BtnBrowseModpacks_Click(object sender, RoutedEventArgs e)
-        {
-            var browserPage = new PluginBrowserPage(null, "*", "project_type:modpack");
-            browserPage.OnModpackDownloaded += async (tempZip) =>
-            {
-                await ImportModpackAsync(tempZip);
-                try { File.Delete(tempZip); } catch { }
-            };
-            NavigationService.Navigate(browserPage);
-        }
 
-        private async void BtnImportModpack_Click(object sender, RoutedEventArgs e)
-        {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "Modpack ZIP (*.zip)|*.zip|All Files (*.*)|*.*",
-                Title = "Select Modpack ZIP"
-            };
 
-            if (openFileDialog.ShowDialog() == true)
-            {
-                await ImportModpackAsync(openFileDialog.FileName);
-            }
-        }
+
 
         private async void DeleteInstance_Click(object sender, RoutedEventArgs e)
         {
@@ -552,41 +531,13 @@ namespace PocketMC.Desktop.Views
                     string zipPath = files[0];
                     if (Path.GetExtension(zipPath).Equals(".zip", StringComparison.OrdinalIgnoreCase))
                     {
-                        await ImportModpackAsync(zipPath);
+                        System.Windows.MessageBox.Show("Modpack import is now available from Server Settings > Mods.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
             }
         }
 
-        private async Task ImportModpackAsync(string zipPath)
-        {
-            var modpackService = _serviceProvider.GetRequiredService<ModpackService>();
-            
-            try
-            {
-                var result = await modpackService.ParseModpackZipAsync(zipPath);
-                
-                var confirm = System.Windows.MessageBox.Show(
-                    $"Import modpack '{result.Name}' for Minecraft {result.MinecraftVersion} ({result.Loader})?",
-                    "Import Modpack",
-                    MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Question);
 
-                if (confirm == MessageBoxResult.Yes)
-                {
-                    // Show a progress indicator or dialog here if possible
-                    // For now, let's just do it in the background
-                    await modpackService.ImportAsync(result, result.Name, _applicationState.GetRequiredAppRootPath(), _instanceManager, zipPath);
-                    LoadInstances();
-                    System.Windows.MessageBox.Show("Modpack imported successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to import modpack from {ZipPath}.", zipPath);
-                System.Windows.MessageBox.Show($"Failed to import modpack: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
 
         private void CopyCrashReport_Click(object sender, RoutedEventArgs e)
         {
