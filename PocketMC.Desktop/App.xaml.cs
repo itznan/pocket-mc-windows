@@ -5,6 +5,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Services;
 using PocketMC.Desktop.Views;
+using PocketMC.Desktop.Core.Interfaces;
+using PocketMC.Desktop.Infrastructure;
+
 using System.IO;
 
 namespace PocketMC.Desktop;
@@ -33,6 +36,10 @@ public partial class App : Application
                     client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop");
                     client.Timeout = TimeSpan.FromMinutes(20);
                 });
+                services.AddSingleton<IDialogService, WpfDialogService>();
+                services.AddSingleton<IAppDispatcher, WpfAppDispatcher>();
+                services.AddSingleton<IFileSystem, PhysicalFileSystem>();
+                services.AddSingleton<IAppNavigationService, AppNavigationService>();
                 services.AddSingleton<SettingsManager>();
                 services.AddSingleton<ApplicationState>();
                 services.AddSingleton<JobObject>();
@@ -58,6 +65,8 @@ public partial class App : Application
                 services.AddTransient<MainWindow>();
                 services.AddTransient<JavaSetupPage>();
                 services.AddTransient<TunnelPage>();
+                services.AddTransient<PocketMC.Desktop.ViewModels.DashboardViewModel>();
+                services.AddTransient<PocketMC.Desktop.ViewModels.ServerSettingsViewModel>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<NewInstancePage>();
             })

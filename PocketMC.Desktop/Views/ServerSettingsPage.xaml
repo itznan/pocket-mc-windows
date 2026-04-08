@@ -180,12 +180,12 @@
                         <Expander x:Name="ExpanderGeneral" Header="General" IsExpanded="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0">
                             <StackPanel Margin="18,14,18,18">
                                 <TextBlock Text="Server Icon (64x64 PNG):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ui:Button x:Name="BtnBrowseIcon" Content="Select Icon" Appearance="Secondary" Click="BtnBrowseIcon_Click" Width="120" HorizontalAlignment="Left"/>
-                                <Image x:Name="ImgIconPreview" Width="64" Height="64" HorizontalAlignment="Left" Margin="0,10,0,10" Stretch="UniformToFill"/>
+                                <ui:Button Content="Select Icon" Appearance="Secondary" Command="{Binding BrowseIconCommand}" Width="120" HorizontalAlignment="Left"/>
+                                <Image Source="{Binding ServerIcon}" Width="64" Height="64" HorizontalAlignment="Left" Margin="0,10,0,10" Stretch="UniformToFill"/>
                                 
                                 <TextBlock Text="MOTD (Message of the Day):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,15,0,5"/>
-                                <ui:TextBox x:Name="TxtMotd" TextChanged="TxtMotd_TextChanged" />
-                                <TextBlock x:Name="TxtMotdPreview" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5,0,10"/>
+                                <ui:TextBox Text="{Binding Motd, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="{Binding Motd}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5,0,10"/>
 
                                 <TextBlock Text="Java Runtime (Override Path):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,15,0,5"/>
                                 <Grid>
@@ -193,16 +193,13 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <ui:TextBox x:Name="TxtJavaPath" IsReadOnly="False" PlaceholderText="Default (PocketMC-Desktop Runtimes)"/>
-                                    <ui:Button x:Name="BtnBrowseJava" Grid.Column="1" Content="Browse" Appearance="Secondary" Click="BtnBrowseJava_Click" Margin="8,0,0,0" Cursor="Hand"/>
+                                    <ui:TextBox Text="{Binding JavaPath, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Default (PocketMC-Desktop Runtimes)"/>
+                                    <ui:Button Grid.Column="1" Content="Browse" Appearance="Secondary" Command="{Binding BrowseJavaCommand}" Margin="8,0,0,0" Cursor="Hand"/>
                                 </Grid>
                                 <TextBlock Text="Note: Leave blank to use PocketMC's automatic internal Java versioning." FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5,0,12"/>
 
                                 <TextBlock Text="Advanced JVM Arguments:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5,0,5"/>
-                                <ui:TextBox x:Name="TxtAdvancedJvmArgs"
-                                            AcceptsReturn="True"
-                                            TextWrapping="Wrap"
-                                            MinHeight="96"/>
+                                <ui:TextBox Text="{Binding AdvancedJvmArgs, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="96"/>
                                 <TextBlock Text="One flag per token, for example: -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
                                            FontSize="11"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -216,10 +213,10 @@
                         <Expander x:Name="ExpanderWorld" Header="World" IsExpanded="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0">
                             <StackPanel Margin="18,14,18,18">
                                 <TextBlock Text="Level Seed (Leave blank for random):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ui:TextBox x:Name="TxtSeed" Margin="0,0,0,10"/>
+                                <ui:TextBox Text="{Binding Seed, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
 
                                 <TextBlock Text="Level Type:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ComboBox x:Name="CmbLevelType" Margin="0,0,0,10">
+                                <ComboBox SelectedItem="{Binding LevelType}" Margin="0,0,0,10">
                                     <ComboBoxItem Content="minecraft:normal" IsSelected="True"/>
                                     <ComboBoxItem Content="minecraft:flat"/>
                                     <ComboBoxItem Content="minecraft:large_biomes"/>
@@ -228,7 +225,7 @@
                                 </ComboBox>
 
                                 <TextBlock Text="Spawn Protection Area:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ui:TextBox x:Name="TxtSpawnProtection" Margin="0,0,0,10"/>
+                                <ui:TextBox Text="{Binding SpawnProtection, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                             </StackPanel>
                         </Expander>
                         </Border>
@@ -239,17 +236,17 @@
                             <StackPanel Margin="18,14,18,18">
                                 <TextBlock Text="Minimum RAM (Xms):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
                                 <StackPanel Orientation="Horizontal">
-                                    <Slider x:Name="SldMinRam" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" ValueChanged="RamSlider_ValueChanged" />
-                                    <TextBlock x:Name="TxtMinRamVal" Text="{Binding ElementName=SldMinRam, Path=Value, StringFormat={}{0:N0} MB}" Margin="10,0,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                    <Slider Value="{Binding MinRam}" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" />
+                                    <TextBlock Text="{Binding MinRamDisplay}" Margin="10,0,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 </StackPanel>
 
                                 <TextBlock Text="Maximum RAM (Xmx):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,15,0,5"/>
                                 <StackPanel Orientation="Horizontal">
-                                    <Slider x:Name="SldMaxRam" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" ValueChanged="RamSlider_ValueChanged" />
-                                    <TextBlock x:Name="TxtMaxRamVal" Text="{Binding ElementName=SldMaxRam, Path=Value, StringFormat={}{0:N0} MB}" Margin="10,0,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                    <Slider Value="{Binding MaxRam}" Width="300" Minimum="512" Maximum="16384" TickFrequency="512" />
+                                    <TextBlock Text="{Binding MaxRamDisplay}" Margin="10,0,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 </StackPanel>
 
-                                <TextBlock x:Name="TxtRamWarning" Text="WARNING: Allocation exceeds 80% of physical memory!" Foreground="#FFB4AB" FontWeight="Bold" Margin="0,10,0,0" Visibility="Collapsed"/>
+                                <TextBlock Visibility="{Binding ShowRamWarning, Converter={StaticResource BooleanToVisibilityConverter}}" Foreground="#FFB4AB" FontWeight="Bold" Margin="0,10,0,0" Text="WARNING: Allocation exceeds 80% of physical memory!"/>
                             </StackPanel>
                         </Expander>
                         </Border>
@@ -259,11 +256,11 @@
                         <Expander x:Name="ExpanderPlayers" Header="Players" IsExpanded="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0">
                             <StackPanel Margin="18,14,18,18">
                                 <TextBlock Text="Max Players:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ui:TextBox x:Name="TxtMaxPlayers" Text="20" Margin="0,0,0,10"/>
+                                <ui:TextBox Text="{Binding MaxPlayers, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                 
-                                <ui:ToggleSwitch x:Name="ChkOnlineMode" Content="Online Mode (Authenticate with Mojang)" OnContent="On" OffContent="Off" IsChecked="True"/>
-                                <ui:ToggleSwitch x:Name="ChkPvp" Content="PvP Enabled" OnContent="On" OffContent="Off" IsChecked="True"/>
-                                <ui:ToggleSwitch x:Name="ChkWhiteList" Content="Whitelist Enabled" OnContent="On" OffContent="Off" IsChecked="False"/>
+                                <ui:ToggleSwitch IsChecked="{Binding OnlineMode}" Content="Online Mode (Authenticate with Mojang)" OnContent="On" OffContent="Off"/>
+                                <ui:ToggleSwitch IsChecked="{Binding Pvp}" Content="PvP Enabled" OnContent="On" OffContent="Off"/>
+                                <ui:ToggleSwitch IsChecked="{Binding WhiteList}" Content="Whitelist Enabled" OnContent="On" OffContent="Off"/>
                             </StackPanel>
                         </Expander>
                         </Border>
@@ -273,21 +270,19 @@
                         <Expander x:Name="ExpanderNetwork" Header="Network" IsExpanded="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0">
                             <StackPanel Margin="18,14,18,18">
                                 <TextBlock Text="Server Port:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ui:TextBox x:Name="TxtServerPort" Text="25565" Margin="0,0,0,10"/>
+                                <ui:TextBox Text="{Binding ServerPort, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                 <TextBlock Text="Server IP (Leave blank for default):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ui:TextBox x:Name="TxtServerIp" Margin="0,0,0,10"/>
+                                <ui:TextBox Text="{Binding ServerIp, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
                                 
                                 <TextBlock Text="Playit.gg Status:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <TextBlock x:Name="TxtPlayitAgentStatus" Text="Checking..." Foreground="#F9E2AF" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <TextBlock Text="{Binding PlayitAgentStatusText}" Foreground="#F9E2AF" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
                                 <TextBlock Text="Playit.gg Public Address:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ui:TextBox x:Name="TxtPlayitAddress" IsReadOnly="True" Foreground="#89B4FA" Margin="0,0,0,10" 
-                                            BorderBrush="#89B4FA" BorderThickness="1"
-                                            Text="Resolving tunnel from agent..."/>
+                                <ui:TextBox Text="{Binding PlayitAddress}" IsReadOnly="True" Foreground="#89B4FA" Margin="0,0,0,10" BorderBrush="#89B4FA" BorderThickness="1"/>
                                 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <ui:Button x:Name="BtnResolvePlayit" Content="Refresh Tunnel Address" Appearance="Secondary" Click="BtnResolvePlayit_Click" Margin="0,0,8,0"/>
-                                    <ui:Button x:Name="BtnOpenPlayitDashboard" Content="Manage Tunnels" Appearance="Secondary" Click="BtnOpenPlayitDashboard_Click"/>
+                                    <ui:Button Content="Refresh Tunnel Address" Appearance="Secondary" Command="{Binding ResolvePlayitCommand}" Margin="0,0,8,0"/>
+                                    <ui:Button Content="Manage Tunnels" Appearance="Secondary" Command="{Binding OpenPlayitDashboardCommand}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Expander>
@@ -298,7 +293,7 @@
                         <Expander x:Name="ExpanderGameplay" Header="Gameplay" IsExpanded="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0">
                             <StackPanel Margin="18,14,18,18">
                                 <TextBlock Text="Gamemode:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ComboBox x:Name="CmbGamemode" Margin="0,0,0,10">
+                                <ComboBox SelectedItem="{Binding Gamemode}" Margin="0,0,0,10">
                                     <ComboBoxItem Content="survival" IsSelected="True"/>
                                     <ComboBoxItem Content="creative"/>
                                     <ComboBoxItem Content="adventure"/>
@@ -306,16 +301,16 @@
                                 </ComboBox>
 
                                 <TextBlock Text="Difficulty:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5"/>
-                                <ComboBox x:Name="CmbDifficulty" Margin="0,0,0,10">
+                                <ComboBox SelectedItem="{Binding Difficulty}" Margin="0,0,0,10">
                                     <ComboBoxItem Content="peaceful"/>
                                     <ComboBoxItem Content="easy" IsSelected="True"/>
                                     <ComboBoxItem Content="normal"/>
                                     <ComboBoxItem Content="hard"/>
                                 </ComboBox>
 
-                                <ui:ToggleSwitch x:Name="ChkAllowBlock" Content="Allow Command Blocks" OnContent="On" OffContent="Off"/>
-                                <ui:ToggleSwitch x:Name="ChkAllowFlight" Content="Allow Flight" OnContent="On" OffContent="Off"/>
-                                <ui:ToggleSwitch x:Name="ChkAllowNether" Content="Allow Nether" OnContent="On" OffContent="Off" IsChecked="True"/>
+                                <ui:ToggleSwitch IsChecked="{Binding AllowBlock}" Content="Allow Command Blocks" OnContent="On" OffContent="Off"/>
+                                <ui:ToggleSwitch IsChecked="{Binding AllowFlight}" Content="Allow Flight" OnContent="On" OffContent="Off"/>
+                                <ui:ToggleSwitch IsChecked="{Binding AllowNether}" Content="Allow Nether" OnContent="On" OffContent="Off"/>
                             </StackPanel>
                         </Expander>
                         </Border>
@@ -325,7 +320,7 @@
                         <Expander x:Name="ExpanderAdvanced" Header="Advanced Properties" IsExpanded="False" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0">
                             <StackPanel Margin="18,14,18,18">
                                 <TextBlock Text="Edit direct server.properties values not covered in the UI." FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,10"/>
-                                <ui:DataGrid x:Name="AdvancedPropsGrid" AutoGenerateColumns="False"
+                                <ui:DataGrid ItemsSource="{Binding AdvancedProperties}" AutoGenerateColumns="False"
                                           CanUserAddRows="True" CanUserDeleteRows="True" GridLinesVisibility="None"
                                           HeadersVisibility="Column" SelectionMode="Single"
                                           Margin="0,0,0,10" MaxHeight="300">
@@ -346,20 +341,17 @@
                 <ScrollViewer x:Name="WorldsScrollViewer" VerticalScrollBarVisibility="Auto" Padding="0,0,16,0" Background="Transparent">
                     <ui:Card Padding="20">
                     <StackPanel>
-                        <TextBlock x:Name="TxtWorldStatus" Text="Checking world..." Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <TextBlock x:Name="TxtWorldSize" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,20"/>
+                        <TextBlock Text="{Binding WorldStatusText}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBlock Text="{Binding WorldSizeText}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,20"/>
                         
-                        <TextBlock x:Name="TxtWorldLockWarning" Text="Server is running — stop the server before managing worlds." 
-                                   Foreground="#FFB4AB" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        <TextBlock Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Server is running — stop the server before managing worlds." Foreground="#FFB4AB" FontWeight="SemiBold" Margin="0,0,0,15"/>
                         
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <ui:Button x:Name="BtnUploadWorld" Content="Upload World (ZIP)" Click="BtnUploadWorld_Click" 
-                                       Appearance="Primary" Margin="0,0,10,0"/>
-                            <ui:Button x:Name="BtnDeleteWorld" Content="Delete Current World" Click="BtnDeleteWorld_Click" 
-                                       Appearance="Danger"/>
+                            <ui:Button Content="Upload World (ZIP)" Command="{Binding UploadWorldCommand}" Appearance="Primary" Margin="0,0,10,0"/>
+                            <ui:Button Content="Delete Current World" Command="{Binding DeleteWorldCommand}" Appearance="Danger"/>
                         </StackPanel>
                         
-                        <TextBlock x:Name="TxtWorldProgress" Foreground="#A6E3A1" Visibility="Collapsed" Margin="0,10,0,0"/>
+                        <TextBlock Visibility="{Binding ShowWorldProgress, Converter={StaticResource BooleanToVisibilityConverter}}" Text="{Binding WorldProgressText}" Foreground="#A6E3A1" Margin="0,10,0,0"/>
                     </StackPanel>
                     </ui:Card>
                 </ScrollViewer>
@@ -370,20 +362,38 @@
                 <ScrollViewer x:Name="PluginsScrollViewer" VerticalScrollBarVisibility="Auto" Padding="0,0,16,0" Background="Transparent">
                     <ui:Card Padding="20">
                     <StackPanel>
-                        <TextBlock x:Name="TxtPluginLockWarning" Text="Server is running — stop the server before managing plugins." 
-                                   Foreground="#FFB4AB" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        <TextBlock Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Server is running — stop the server before managing plugins." Foreground="#FFB4AB" FontWeight="SemiBold" Margin="0,0,0,15"/>
                         
-                        <TextBlock x:Name="TxtVanillaWarning" Text="Vanilla servers do not support plugins. Switch to Paper for plugin support." 
-                                   Foreground="#F9E2AF" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        <TextBlock Visibility="{Binding ShowVanillaWarning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Vanilla servers do not support plugins. Switch to Paper for plugin support." Foreground="#F9E2AF" FontWeight="SemiBold" Margin="0,0,0,15"/>
                         
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <ui:Button x:Name="BtnAddPlugin" Content="Add Plugin (.jar)" Click="BtnAddPlugin_Click" 
-                                       Appearance="Primary" Margin="0,0,8,0"/>
-                            <ui:Button x:Name="BtnBrowseModrinthPlugins" Content="Browse Modrinth" Click="BtnBrowseModrinth_Click"
-                                       Tag="project_type:plugin" Appearance="Secondary"/>
+                            <ui:Button Content="Add Plugin (.jar)" Command="{Binding AddPluginCommand}" Appearance="Primary" Margin="0,0,8,0"/>
+                            <ui:Button Content="Browse Modrinth" Command="{Binding BrowseModrinthPluginsCommand}" Appearance="Secondary"/>
                         </StackPanel>
                         
-                        <ItemsControl x:Name="PluginList"/>
+                        <ItemsControl ItemsSource="{Binding Plugins}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold"/>
+                                                    <TextBlock Visibility="{Binding IsMismatch, Converter={StaticResource BooleanToVisibilityConverter}}" Text=" ⚠ Version Mismatch" Foreground="Orange" FontWeight="SemiBold"/>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding SizeKb, StringFormat=Size: {0:N1} KB}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
+                                                <TextBlock Text="{Binding ApiVersion, StringFormat=API: {0}}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
+                                            </StackPanel>
+                                            <ui:Button Grid.Column="1" Content="Remove" Appearance="Danger" Command="{Binding DataContext.DeletePluginCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Path}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                     </ui:Card>
                 </ScrollViewer>
@@ -394,21 +404,34 @@
                 <ScrollViewer x:Name="ModsScrollViewer" VerticalScrollBarVisibility="Auto" Padding="0,0,16,0" Background="Transparent">
                     <ui:Card Padding="20">
                     <StackPanel>
-                        <TextBlock x:Name="TxtModLockWarning" Text="Server is running — stop the server before managing mods." 
-                                   Foreground="#FFB4AB" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        <TextBlock Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Server is running — stop the server before managing mods." Foreground="#FFB4AB" FontWeight="SemiBold" Margin="0,0,0,15"/>
                         
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <ui:Button x:Name="BtnAddMod" Content="Add Mod (.jar)" Click="BtnAddMod_Click" 
-                                       Appearance="Primary" Margin="0,0,8,0"/>
-                            <ui:Button x:Name="BtnBrowseModrinthMods" Content="Browse Modrinth" Click="BtnBrowseModrinth_Click"
-                                       Tag="project_type:mod" Appearance="Secondary" Margin="0,0,8,0"/>
-                            <ui:Button x:Name="BtnImportModpack" Content="Import Modpack" Click="BtnImportModpack_Click"
-                                       Appearance="Secondary" Margin="0,0,8,0"/>
-                            <ui:Button x:Name="BtnBrowseModpacks" Content="Browse Modpacks" Click="BtnBrowseModrinth_Click"
-                                       Tag="project_type:modpack" Appearance="Secondary"/>
+                            <ui:Button Content="Add Mod (.jar)" Command="{Binding AddModCommand}" Appearance="Primary" Margin="0,0,8,0"/>
+                            <ui:Button Content="Browse Modrinth" Command="{Binding BrowseModrinthModsCommand}" Appearance="Secondary" Margin="0,0,8,0"/>
+                            <ui:Button Content="Import Modpack" Command="{Binding ImportModpackCommand}" Appearance="Secondary" Margin="0,0,8,0"/>
+                            <ui:Button Content="Browse Modpacks" Command="{Binding BrowseModpacksCommand}" Appearance="Secondary"/>
                         </StackPanel>
                         
-                        <ItemsControl x:Name="ModList"/>
+                        <ItemsControl ItemsSource="{Binding Mods}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding SizeKb, StringFormat=Size: {0:N1} KB}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
+                                            </StackPanel>
+                                            <ui:Button Grid.Column="1" Content="Remove" Appearance="Danger" Command="{Binding DataContext.DeleteModCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Path}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                     </ui:Card>
                 </ScrollViewer>
@@ -424,10 +447,9 @@
                             <StackPanel>
                                 <TextBlock Text="Manual Backup" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <ui:Button x:Name="BtnCreateBackup" Content="Create Backup Now" Click="BtnCreateBackup_Click" 
-                                               Appearance="Primary" Margin="0,0,10,0"/>
+                                    <ui:Button Content="Create Backup Now" Command="{Binding CreateBackupCommand}" Appearance="Primary" Margin="0,0,10,0"/>
                                 </StackPanel>
-                                <TextBlock x:Name="TxtBackupProgress" Foreground="#A6E3A1" Visibility="Collapsed" Margin="0,0,0,0"/>
+                                <TextBlock Visibility="{Binding ShowBackupProgress, Converter={StaticResource BooleanToVisibilityConverter}}" Text="{Binding BackupProgressText}" Foreground="#A6E3A1" Margin="0,0,0,0"/>
                             </StackPanel>
                         </ui:Card>
 
@@ -437,8 +459,8 @@
                                 <TextBlock Text="Automatic Schedule" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="Backup Every:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <ComboBox x:Name="CmbBackupInterval" Width="150"
-                                              SelectionChanged="CmbBackupInterval_Changed">
+                                    <ComboBox SelectedValue="{Binding BackupIntervalHours}" SelectedValuePath="Tag" Width="150"
+                                              >
                                         <ComboBoxItem Content="Manual Only" Tag="0"/>
                                         <ComboBoxItem Content="Every 6 Hours" Tag="6"/>
                                         <ComboBoxItem Content="Every 12 Hours" Tag="12"/>
@@ -447,8 +469,8 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
                                     <TextBlock Text="Keep Max:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <ComboBox x:Name="CmbMaxBackups" Width="150"
-                                              SelectionChanged="CmbMaxBackups_Changed">
+                                    <ComboBox SelectedValue="{Binding MaxBackupsToKeep}" SelectedValuePath="Tag" Width="150"
+                                              >
                                         <ComboBoxItem Content="5 backups" Tag="5"/>
                                         <ComboBoxItem Content="10 backups" Tag="10"/>
                                         <ComboBoxItem Content="20 backups" Tag="20"/>
@@ -462,9 +484,29 @@
                         <ui:Card Padding="20">
                             <StackPanel>
                                 <TextBlock Text="Available Backups" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                                <TextBlock x:Name="TxtBackupLockWarning" Text="Server must be stopped to restore backups." 
-                                           Foreground="#FFB4AB" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,10"/>
-                                <ItemsControl x:Name="BackupList"/>
+                                <TextBlock Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Text="Server must be stopped to restore backups." Foreground="#FFB4AB" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <ItemsControl ItemsSource="{Binding Backups}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding SizeMb, StringFormat=Size: {0:N1} MB}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
+                                                    <TextBlock Text="{Binding Created, StringFormat=Created: {0:yyyy-MM-dd HH:mm}}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
+                                                </StackPanel>
+                                                <ui:Button Grid.Column="1" Content="Restore" Appearance="Primary" Command="{Binding DataContext.RestoreBackupCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Path}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <ui:Button Grid.Column="2" Content="Delete" Appearance="Danger" Command="{Binding DataContext.DeleteBackupCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Path}" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                             </StackPanel>
                         </ui:Card>
                     </StackPanel>
@@ -480,17 +522,17 @@
                         <TextBlock Text="Crash Recovery" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
                         <TextBlock Text="Configure automatic restarts when the server crashes unexpectedly." Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,15"/>
 
-                        <ui:ToggleSwitch x:Name="ChkEnableAutoRestart" Content="Enable Auto-Restart on Crash" OnContent="On" OffContent="Off" Margin="0,0,0,20"/>
+                        <ui:ToggleSwitch IsChecked="{Binding EnableAutoRestart}" Content="Enable Auto-Restart on Crash" OnContent="On" OffContent="Off" Margin="0,0,0,20"/>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                             <TextBlock Text="Max Auto-Restarts:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <ui:TextBox x:Name="TxtMaxAutoRestarts" Width="76" Text="3"/>
+                            <ui:TextBox Text="{Binding MaxAutoRestarts, UpdateSourceTrigger=PropertyChanged}" Width="76"/>
                             <TextBlock Text=" times" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="5,0,0,0"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                             <TextBlock Text="Restart Delay:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <ui:TextBox x:Name="TxtAutoRestartDelay" Width="76" Text="10"/>
+                            <ui:TextBox Text="{Binding AutoRestartDelay, UpdateSourceTrigger=PropertyChanged}" Width="76"/>
                             <TextBlock Text=" seconds" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="5,0,0,0"/>
                         </StackPanel>
 
@@ -505,8 +547,8 @@
         <!-- Footer Actions -->
         <Grid Grid.Row="2" Margin="0,18,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:Button x:Name="BtnCancel" Content="Cancel" Appearance="Secondary" Margin="0,0,10,0" Click="BtnCancel_Click"/>
-                <ui:Button x:Name="BtnSave" Content="Save Configurations" Appearance="Primary" Click="BtnSave_Click"/>
+                <ui:Button Content="Cancel" Appearance="Secondary" Margin="0,0,10,0" Command="{Binding CancelCommand}"/>
+                <ui:Button Content="Save Configurations" Appearance="Primary" Command="{Binding SaveCommand}"/>
             </StackPanel>
         </Grid>
 
