@@ -27,7 +27,9 @@
                            PaneDisplayMode="Left"
                            IsBackButtonVisible="Collapsed"
                            IsPaneToggleVisible="True"
-                           OpenPaneLength="240">
+                           OpenPaneLength="240"
+                           ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
             <!-- ─── Title Bar ─── -->
             <ui:NavigationView.Header>

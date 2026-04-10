@@ -146,11 +146,6 @@
                                     Padding="16,14"
                                     Margin="0,0,0,10">
                                 <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
                                     <StackPanel Grid.Column="0">
                                         <!-- Tunnel Name -->
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
@@ -171,6 +166,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="16"/>
                                                 <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
                                             <!-- Local Port Badge -->
@@ -215,20 +211,20 @@
                                                                TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
                                             </Border>
+
+                                            <!-- Copy Button aligned with badges -->
+                                            <ui:Button Grid.Column="3"
+                                                       ToolTip="Copy public address"
+                                                       Appearance="Secondary"
+                                                       Icon="{ui:SymbolIcon Copy24}"
+                                                       Padding="8"
+                                                       Margin="8,0,0,0"
+                                                       VerticalAlignment="Stretch" 
+                                                       Click="BtnCopyAddress_Click"
+                                                       Tag="{Binding PublicAddress}"
+                                                       Cursor="Hand"/>
                                         </Grid>
                                     </StackPanel>
-
-                                    <!-- Copy Button -->
-                                    <ui:Button Grid.Column="1"
-                                               ToolTip="Copy public address"
-                                               Appearance="Secondary"
-                                               Icon="{ui:SymbolIcon Copy24}"
-                                               Padding="8"
-                                               Margin="12,0,0,0"
-                                               VerticalAlignment="Center"
-                                               Click="BtnCopyAddress_Click"
-                                               Tag="{Binding PublicAddress}"
-                                               Cursor="Hand"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>

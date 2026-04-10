@@ -38,15 +38,12 @@
         </Style>
     </Page.Resources>
 
-    <Grid Margin="28,20,28,24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Grid Margin="28,20,28,24" VerticalAlignment="Stretch">
+        <DockPanel LastChildFill="True">
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+
+            <!-- Header -->
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <ui:Button Icon="{ui:SymbolIcon ArrowLeft24}" 
                            Appearance="Transparent" 
@@ -65,8 +62,22 @@
                        TextWrapping="Wrap"/>
         </StackPanel>
 
-        <!-- Sidebar Layout -->
-        <Grid Grid.Row="1">
+        <!-- Footer Actions (pinned at bottom) -->
+        <Border DockPanel.Dock="Bottom"
+                Margin="0,12,0,0"
+                Padding="16,14"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="0,0,8,8">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="Cancel" Appearance="Secondary" Margin="0,0,10,0" Command="{Binding CancelCommand}"/>
+                <ui:Button Content="Save Configurations" Appearance="Primary" Command="{Binding SaveCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Sidebar Layout (Fill) -->
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="230"/>
                 <ColumnDefinition Width="20"/>
@@ -91,11 +102,20 @@
             </ui:NavigationView>
 
             <!-- Content Area (Headerless TabControl) -->
-            <Border x:Name="ContentAreaCard" Grid.Column="2" Padding="18" RenderTransformOrigin="0.5,0">
+            <Border x:Name="ContentAreaCard" 
+                    Grid.Column="2" 
+                    Padding="18" 
+                    VerticalAlignment="Stretch"
+                    RenderTransformOrigin="0.5,0">
             <Border.RenderTransform>
                 <TranslateTransform/>
             </Border.RenderTransform>
-            <TabControl x:Name="MainTabControl" Background="Transparent" BorderThickness="0" Margin="0">
+            <TabControl x:Name="MainTabControl" 
+                        Background="Transparent" 
+                        BorderThickness="0" 
+                        Margin="0"
+                        VerticalAlignment="Stretch"
+                        VerticalContentAlignment="Stretch">
                 <TabControl.Resources>
                     <Style TargetType="TabPanel">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -267,7 +287,8 @@
                                 <ui:DataGrid ItemsSource="{Binding AdvancedProperties}" AutoGenerateColumns="False"
                                           CanUserAddRows="True" CanUserDeleteRows="True" GridLinesVisibility="None"
                                           HeadersVisibility="Column" SelectionMode="Single"
-                                          Margin="0,0,0,10" MaxHeight="300">
+                                          Margin="0,0,0,10" MaxHeight="300"
+                                          ScrollViewer.CanContentScroll="False">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Property Key" Binding="{Binding Key}" Width="*" />
                                         <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*" />
@@ -483,21 +504,7 @@
             </TabItem>
         </TabControl>
         </Border>
-        </Grid>
-
-        <!-- Footer Actions (pinned at bottom) -->
-        <Border Grid.Row="2"
-                Margin="0,12,0,0"
-                Padding="16,14"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-                BorderThickness="0,1,0,0"
-                CornerRadius="0,0,8,8">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:Button Content="Cancel" Appearance="Secondary" Margin="0,0,10,0" Command="{Binding CancelCommand}"/>
-                <ui:Button Content="Save Configurations" Appearance="Primary" Command="{Binding SaveCommand}"/>
-            </StackPanel>
-        </Border>
-
+            </Grid>
+        </DockPanel>
     </Grid>
 </Page>

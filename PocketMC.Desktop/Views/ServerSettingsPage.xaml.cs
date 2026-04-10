@@ -2,6 +2,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using PocketMC.Desktop.ViewModels;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Controls.Primitives;
 
@@ -53,6 +54,23 @@ namespace PocketMC.Desktop.Views
             if (Window.GetWindow(this) as MainWindow is { } mainWindow)
             {
                 mainWindow.RootNavigation.IsPaneOpen = false;
+                
+                // CRITICAL: Disable any parent ScrollViewer that might be allowing the page to grow infinitely
+                DisableParentScrollViewer(this);
+            }
+        }
+
+        private void DisableParentScrollViewer(DependencyObject obj)
+        {
+            var parent = VisualTreeHelper.GetParent(obj);
+            while (parent != null)
+            {
+                if (parent is ScrollViewer sv)
+                {
+                    sv.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                    sv.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                }
+                parent = VisualTreeHelper.GetParent(parent);
             }
         }
 
@@ -162,20 +180,19 @@ namespace PocketMC.Desktop.Views
         {
             if (_isForwardingMouseWheel || e.OriginalSource is not DependencyObject source) return;
 
-            // Let scrollbars handle their own wheel events
+            // 1. Never intercept if a ScrollBar is being interacted with directly
             if (FindAncestor<ScrollBar>(source) != null) return;
 
-            // Let open ComboBox dropdowns handle their own scrolling
+            // 2. Only skip if it's an OPEN ComboBox (we want to scroll the list inside)
+            // If it's closed, we should allow scrolling the page
             ComboBox? comboBox = FindAncestor<ComboBox>(source);
             if (comboBox?.IsDropDownOpen == true) return;
 
-            // Let DataGrids with scrollable content handle their own scrolling
-            var dataGrid = FindAncestor<DataGrid>(source);
-            if (dataGrid != null) return;
+            // 3. Let multi-line TextBox controls handle their own scrolling if they have scrollbars
+            if (source is TextBox { AcceptsReturn: true, VerticalScrollBarVisibility: ScrollBarVisibility.Auto or ScrollBarVisibility.Visible }) return;
 
-            // Don't intercept scroll events originating from the sidebar NavigationView
-            if (FindAncestor<Wpf.Ui.Controls.NavigationView>(source) is { } nav && ReferenceEquals(nav, SidebarList)) return;
-
+            // 4. For everything else (sidebar, spacers, cards, labels, sliders), 
+            // forward the event to the active tab's ScrollViewer.
             ScrollViewer? activeScrollViewer = GetActiveTabScrollViewer();
             if (activeScrollViewer == null || activeScrollViewer.ScrollableHeight <= 0) return;
 
@@ -184,6 +201,7 @@ namespace PocketMC.Desktop.Views
             try
             {
                 _isForwardingMouseWheel = true;
+                // Scroll by 3 lines for better responsiveness
                 int steps = System.Math.Max(1, System.Math.Abs(e.Delta) / Mouse.MouseWheelDeltaForOneLine) * 3;
                 for (int i = 0; i < steps; i++)
                 {
