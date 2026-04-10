@@ -44,7 +44,8 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Breadcrumb trail -->
-                            <StackPanel Grid.Column="0" Orientation="Horizontal"
+                            <StackPanel x:Name="BreadcrumbHost"
+                                        Grid.Column="0" Orientation="Horizontal"
                                         VerticalAlignment="Center" Margin="8,0,16,0">
                                 <TextBlock x:Name="BreadcrumbRoot"
                                            Text="PocketMC"
@@ -96,7 +97,8 @@
                             </Border>
 
                             <!-- Global resource health pill -->
-                            <Border Grid.Column="2"
+                            <Border x:Name="GlobalHealthBorder"
+                                    Grid.Column="2"
                                     Background="#18FFFFFF"
                                     CornerRadius="4"
                                     Padding="10,3"

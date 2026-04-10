@@ -9,11 +9,13 @@ namespace PocketMC.Desktop.Views
     public partial class PlayitGuidePage : Page
     {
         private readonly Services.PlayitAgentService _agentService;
+        private readonly bool _navigateToDashboardOnCompletion;
 
-        public PlayitGuidePage(Services.PlayitAgentService agentService, string claimUrl)
+        public PlayitGuidePage(Services.PlayitAgentService agentService, string claimUrl, bool navigateToDashboardOnCompletion)
         {
             InitializeComponent();
             _agentService = agentService;
+            _navigateToDashboardOnCompletion = navigateToDashboardOnCompletion;
 
             // Open the claim URL in the user's default browser (NET-03)
             try
@@ -44,6 +46,7 @@ namespace PocketMC.Desktop.Views
                 _agentService.OnTunnelRunning -= OnTunnelRunning;
 
                 var mainWindow = Window.GetWindow(this) as MainWindow;
+                if (_navigateToDashboardOnCompletion && mainWindow?.NavigateToDashboard() == true) return;
                 if (mainWindow?.NavigateBackFromDetail() == true) return;
                 if (NavigationService?.CanGoBack == true) NavigationService.GoBack();
             });

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Views;
 using Wpf.Ui;
 using Wpf.Ui.Controls;
@@ -32,6 +33,10 @@ public partial class MainWindow : FluentWindow
     private bool _paneWasOpenBeforeManagedDetail;
     private bool _managedDetailPaneModified;
     private bool _isApplyingPaneStateProgrammatically;
+    private bool _startupServicesStarted;
+    private bool _playitStartupAttempted;
+    private bool _isNavigationLockedToRootSetup;
+
     public MainWindow(
         IServiceProvider serviceProvider,
         SettingsManager settingsManager,
@@ -61,9 +66,9 @@ public partial class MainWindow : FluentWindow
 
         // Set up the NavigationView to resolve pages via DI
         RootNavigation.SetServiceProvider(_serviceProvider);
-        SyncNavigationSelection(typeof(DashboardPage));
 
         // Listen for navigation events to update breadcrumb
+        RootNavigation.Navigating += OnNavigating;
         RootNavigation.Navigated += OnNavigated;
         RootNavigation.PaneOpened += RootNavigation_PaneOpened;
         RootNavigation.PaneClosed += RootNavigation_PaneClosed;
@@ -71,6 +76,7 @@ public partial class MainWindow : FluentWindow
         Closing += MainWindow_Closing;
         _globalMonitor.OnGlobalMetricsUpdated += UpdateGlobalHealth;
         _playitAgentService.OnClaimUrlReceived += OnPlayitClaimUrlReceived;
+        _playitAgentService.OnTunnelRunning += OnPlayitTunnelRunning;
 
         // Win10 fallback: listen for wallpaper changes to refresh simulated Mica
         if (!WallpaperMicaService.IsWindows11OrLater)
@@ -145,6 +151,11 @@ public partial class MainWindow : FluentWindow
 
     public bool NavigateToShellPage(Type pageType, object? parameter = null)
     {
+        if (!CanNavigateToPage(pageType))
+        {
+            return false;
+        }
+
         if (_isShowingDetailPage && IsShellPageType(pageType))
         {
             return ReplaceShellContent(pageType);
@@ -165,11 +176,21 @@ public partial class MainWindow : FluentWindow
 
     public bool NavigateToDashboard()
     {
+        if (!CanNavigateToPage(typeof(DashboardPage)))
+        {
+            return false;
+        }
+
         return ReplaceShellContent(typeof(DashboardPage));
     }
 
     public bool NavigateToDetailPage(Page page, string breadcrumbLabel)
     {
+        if (!CanNavigateToPage(page.GetType()))
+        {
+            return false;
+        }
+
         bool replaced = RootNavigation.ReplaceContent(page, null);
         if (replaced)
         {
@@ -184,6 +205,11 @@ public partial class MainWindow : FluentWindow
 
     public bool NavigateBackFromDetail()
     {
+        if (_isNavigationLockedToRootSetup)
+        {
+            return false;
+        }
+
         if (RootNavigation.CanGoBack && RootNavigation.GoBack())
         {
             return true;
@@ -194,6 +220,11 @@ public partial class MainWindow : FluentWindow
 
     private bool ReplaceShellContent(Type pageType)
     {
+        if (!CanNavigateToPage(pageType))
+        {
+            return false;
+        }
+
         bool replaced = RootNavigation.ReplaceContent(pageType);
         if (replaced)
         {
@@ -206,6 +237,25 @@ public partial class MainWindow : FluentWindow
         }
 
         return replaced;
+    }
+
+    private void OnNavigating(NavigationView sender, NavigatingCancelEventArgs args)
+    {
+        if (!_isNavigationLockedToRootSetup)
+        {
+            return;
+        }
+
+        Type? pageType = GetRequestedPageType(args.Page);
+        if (pageType == typeof(RootDirectorySetupPage))
+        {
+            return;
+        }
+
+        args.Cancel = true;
+        _logger.LogDebug(
+            "Blocked navigation to {PageType} until the PocketMC root directory has been selected.",
+            pageType?.Name ?? "<unknown>");
     }
 
     private void SyncNavigationSelection(Type? pageType)
@@ -235,6 +285,24 @@ public partial class MainWindow : FluentWindow
         SetNavigationItemActiveState(NavTunnel, ReferenceEquals(targetItem, NavTunnel));
         SetNavigationItemActiveState(NavJavaSetup, ReferenceEquals(targetItem, NavJavaSetup));
         SetNavigationItemActiveState(NavAbout, ReferenceEquals(targetItem, NavAbout));
+    }
+
+    private void ClearNavigationSelection()
+    {
+        try
+        {
+            PropertyInfo? selectedItemProperty = RootNavigation.GetType().GetProperty("SelectedItem");
+            selectedItemProperty?.SetValue(RootNavigation, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to clear the NavigationView selected item.");
+        }
+
+        SetNavigationItemActiveState(NavDashboard, false);
+        SetNavigationItemActiveState(NavTunnel, false);
+        SetNavigationItemActiveState(NavJavaSetup, false);
+        SetNavigationItemActiveState(NavAbout, false);
     }
 
     private NavigationViewItem? GetShellNavigationItem(Type? pageType)
@@ -440,6 +508,65 @@ public partial class MainWindow : FluentWindow
         TitleBarContextBorder.Visibility = Visibility.Collapsed;
     }
 
+    private bool CanNavigateToPage(Type? pageType)
+    {
+        if (!_isNavigationLockedToRootSetup)
+        {
+            return true;
+        }
+
+        return pageType == typeof(RootDirectorySetupPage);
+    }
+
+    private static Type? GetRequestedPageType(object? page)
+    {
+        if (page is Type pageType)
+        {
+            return pageType;
+        }
+
+        if (page is Page pageInstance)
+        {
+            return pageInstance.GetType();
+        }
+
+        return page?.GetType();
+    }
+
+    private void LockNavigationToRootSetup()
+    {
+        _isNavigationLockedToRootSetup = true;
+        _isShowingDetailPage = false;
+        DetachTitleBarContextSource();
+        RootNavigation.IsPaneVisible = false;
+        RootNavigation.IsPaneToggleVisible = false;
+        SetNavigationPaneOpen(false);
+        SetShellNavigationEnabled(false);
+        ClearNavigationSelection();
+        BreadcrumbHost.Visibility = Visibility.Collapsed;
+        GlobalHealthBorder.Visibility = Visibility.Collapsed;
+        UpdateBreadcrumbLabel(null);
+    }
+
+    private void UnlockNavigationAfterRootSetup()
+    {
+        _isNavigationLockedToRootSetup = false;
+        RootNavigation.IsPaneVisible = true;
+        RootNavigation.IsPaneToggleVisible = true;
+        SetShellNavigationEnabled(true);
+        BreadcrumbHost.Visibility = Visibility.Visible;
+        GlobalHealthBorder.Visibility = Visibility.Visible;
+        UpdateBreadcrumbLabel(null);
+    }
+
+    private void SetShellNavigationEnabled(bool isEnabled)
+    {
+        NavDashboard.IsEnabled = isEnabled;
+        NavTunnel.IsEnabled = isEnabled;
+        NavJavaSetup.IsEnabled = isEnabled;
+        NavAbout.IsEnabled = isEnabled;
+    }
+
     // ──────────────────────────────────────────────
     //  Win10 Fallback Mica
     // ──────────────────────────────────────────────
@@ -530,6 +657,8 @@ public partial class MainWindow : FluentWindow
             SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
 
         _playitAgentService.OnClaimUrlReceived -= OnPlayitClaimUrlReceived;
+        _playitAgentService.OnTunnelRunning -= OnPlayitTunnelRunning;
+        RootNavigation.Navigating -= OnNavigating;
         RootNavigation.PaneOpened -= RootNavigation_PaneOpened;
         RootNavigation.PaneClosed -= RootNavigation_PaneClosed;
         DetachTitleBarContextSource();
@@ -542,66 +671,101 @@ public partial class MainWindow : FluentWindow
     {
         ApplyWin10MicaFallback();
 
-        var settings = _settingsManager.Load();
-
-        if (string.IsNullOrEmpty(settings.AppRootPath))
-        {
-            var dialog = new OpenFolderDialog
-            {
-                Title = "Select First-Run Root Folder for PocketMC",
-                Multiselect = false
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                settings.AppRootPath = dialog.FolderName;
-                _settingsManager.Save(settings);
-            }
-            else
-            {
-                Application.Current.Shutdown();
-                return;
-            }
-        }
-
-        _applicationState.ApplySettings(settings);
-        _backupScheduler.Start();
-        _javaProvisioningService.StartBackgroundProvisioning();
-
         try
         {
-            if (!settings.HasCompletedFirstLaunch)
+            AppSettings settings = _settingsManager.Load();
+            if (string.IsNullOrWhiteSpace(settings.AppRootPath))
             {
-                settings.HasCompletedFirstLaunch = true;
-                _settingsManager.Save(settings);
-
-                // If no playit config exists, route to Tunnel Page for first-time setup
-                string configPath = _settingsManager.GetPlayitTomlPath(settings);
-                if (!System.IO.File.Exists(configPath))
-                {
-                    ReplaceShellContent(typeof(PocketMC.Desktop.Views.TunnelPage));
-                }
-                else
-                {
-                    NavigateToDashboard();
-                }
-            }
-            else
-            {
-                NavigateToDashboard();
+                ShowRootDirectorySetupPage();
+                return;
             }
 
-            TryStartPlayitAgentOnLaunch();
+            ContinueStartupFlow(settings);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to navigate to the Dashboard page.");
+            HandleStartupFailure(ex);
+        }
+    }
+
+    private void ShowRootDirectorySetupPage()
+    {
+        LockNavigationToRootSetup();
+
+        var setupPage = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<RootDirectorySetupPage>(_serviceProvider);
+        setupPage.DirectorySelected += OnRootDirectorySelected;
+        setupPage.Unloaded += RootDirectorySetupPage_Unloaded;
+
+        if (!RootNavigation.ReplaceContent(setupPage, null))
+        {
+            throw new InvalidOperationException("PocketMC could not open the root directory setup page.");
+        }
+    }
+
+    private void RootDirectorySetupPage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RootDirectorySetupPage setupPage)
+        {
+            return;
+        }
+
+        setupPage.DirectorySelected -= OnRootDirectorySelected;
+        setupPage.Unloaded -= RootDirectorySetupPage_Unloaded;
+    }
+
+    private void OnRootDirectorySelected(object? sender, string rootPath)
+    {
+        if (sender is RootDirectorySetupPage setupPage)
+        {
+            setupPage.DirectorySelected -= OnRootDirectorySelected;
+            setupPage.Unloaded -= RootDirectorySetupPage_Unloaded;
+        }
+
+        try
+        {
+            var settings = _settingsManager.Load();
+            settings.AppRootPath = rootPath;
+
+            Directory.CreateDirectory(rootPath);
+            _settingsManager.Save(settings);
+            ContinueStartupFlow(settings);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist the PocketMC root directory selection.");
             System.Windows.MessageBox.Show(
-                "PocketMC could not initialize the main workflow. Check the debug log for details.",
-                "Initialization Error",
+                $"PocketMC could not save the selected root folder.\n\n{ex.Message}",
+                "Root Folder Error",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
-            Application.Current.Shutdown();
+        }
+    }
+
+    private void ContinueStartupFlow(AppSettings settings)
+    {
+        UnlockNavigationAfterRootSetup();
+        _applicationState.ApplySettings(settings);
+
+        if (!_startupServicesStarted)
+        {
+            _backupScheduler.Start();
+            _javaProvisioningService.StartBackgroundProvisioning();
+            _startupServicesStarted = true;
+        }
+
+        if (!settings.HasCompletedFirstLaunch)
+        {
+            NavigateToShellPage(typeof(TunnelPage));
+        }
+        else
+        {
+            NavigateToDashboard();
+        }
+
+        if (!_playitStartupAttempted)
+        {
+            _playitStartupAttempted = true;
+            TryStartPlayitAgentOnLaunch();
         }
     }
 
@@ -627,9 +791,38 @@ public partial class MainWindow : FluentWindow
     {
         Dispatcher.Invoke(() =>
         {
-            var guidePage = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<PocketMC.Desktop.Views.PlayitGuidePage>(_serviceProvider, claimUrl);
+            bool navigateToDashboardOnCompletion = !_settingsManager.Load().HasCompletedFirstLaunch;
+            var guidePage = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<PocketMC.Desktop.Views.PlayitGuidePage>(_serviceProvider, claimUrl, navigateToDashboardOnCompletion);
             NavigateToDetailPage(guidePage, "Playit.gg Setup");
         });
+    }
+
+    private void OnPlayitTunnelRunning(object? sender, EventArgs e)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            AppSettings settings = _settingsManager.Load();
+            if (settings.HasCompletedFirstLaunch)
+            {
+                return;
+            }
+
+            settings.HasCompletedFirstLaunch = true;
+            _settingsManager.Save(settings);
+            _applicationState.ApplySettings(settings);
+            NavigateToDashboard();
+        });
+    }
+
+    private void HandleStartupFailure(Exception ex)
+    {
+        _logger.LogError(ex, "Failed to initialize the PocketMC startup flow.");
+        System.Windows.MessageBox.Show(
+            "PocketMC could not initialize the main workflow. Check the debug log for details.",
+            "Initialization Error",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Error);
+        Application.Current.Shutdown();
     }
 
 }
