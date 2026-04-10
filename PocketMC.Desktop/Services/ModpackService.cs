@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -33,17 +32,23 @@ namespace PocketMC.Desktop.Services
         private readonly HttpClient _httpClient;
         private readonly DownloaderService _downloader;
         private readonly FabricProvider _fabricProvider;
+        private readonly ForgeProvider _forgeProvider;
+        private readonly InstanceManager _instanceManager;
         private readonly ILogger<ModpackService> _logger;
 
         public ModpackService(
             HttpClient httpClient,
             DownloaderService downloader,
             FabricProvider fabricProvider,
+            ForgeProvider forgeProvider,
+            InstanceManager instanceManager,
             ILogger<ModpackService> logger)
         {
             _httpClient = httpClient;
             _downloader = downloader;
             _fabricProvider = fabricProvider;
+            _forgeProvider = forgeProvider;
+            _instanceManager = instanceManager;
             _logger = logger;
         }
 
@@ -80,20 +85,38 @@ namespace PocketMC.Desktop.Services
             };
 
             // Loader Info
-            if (index?["dependencies"]?["fabric"] != null)
+            if (index?["dependencies"]?["fabric-loader"] != null)
             {
                 result.Loader = "Fabric";
-                result.LoaderVersion = index?["dependencies"]?["fabric"]?.ToString() ?? "";
+                result.LoaderVersion = index["dependencies"]["fabric-loader"]?.ToString() ?? "";
             }
-            // Add Forge/Quilt checks later
+            else if (index?["dependencies"]?["forge"] != null)
+            {
+                result.Loader = "Forge";
+                result.LoaderVersion = index["dependencies"]["forge"]?.ToString() ?? "";
+            }
+            else if (index?["dependencies"]?["quilt-loader"] != null)
+            {
+                result.Loader = "Quilt";
+                result.LoaderVersion = index["dependencies"]["quilt-loader"]?.ToString() ?? "";
+            }
 
-            // Files
+            // Files & Environment Filtering
             var files = index?["files"]?.AsArray();
             if (files != null)
             {
                 foreach (var f in files)
                 {
                     if (f == null) continue;
+
+                    // Server Environment Filtering
+                    var env = f["env"];
+                    if (env != null && env["server"]?.ToString() == "unsupported")
+                    {
+                        // Skip client-only mods to prevent server crash
+                        continue;
+                    }
+
                     var downloadUrl = f["downloads"]?.AsArray()?.FirstOrDefault()?.ToString();
                     var destPath = f["path"]?.ToString();
                     
@@ -146,25 +169,40 @@ namespace PocketMC.Desktop.Services
             return result;
         }
 
-        public async Task ImportAsync(ModpackImportResult pack, string instanceName, string appRootPath, InstanceManager instanceManager, string zipPath)
+        public async Task ImportToExistingInstanceAsync(ModpackImportResult pack, InstanceMetadata metadata, string instancePath, string zipPath)
         {
-            // 1. Create Instance
-            var meta = instanceManager.CreateInstance(instanceName, $"Imported {pack.Name}", pack.Loader, pack.MinecraftVersion);
-            string? instancePath = instanceManager.GetInstancePath(meta.Id);
-            if (instancePath == null) throw new Exception("Could not create instance folder.");
+            // 1. Update Instance Metadata
+            metadata.MinecraftVersion = pack.MinecraftVersion;
+            if (!string.IsNullOrEmpty(pack.Loader))
+            {
+                metadata.ServerType = pack.Loader;
+                // Currently, custom loader versions might not be natively supported in metadata unless using 'Custom' or 'Fabric'.
+                // We'll trust the underlying providers to resolve it if left blank, or handle it here if required.
+                // Assuming ForgeProvider and FabricProvider handle this.
+            }
+            _instanceManager.SaveMetadata(metadata, instancePath);
 
             // 2. Download Loader JAR
             string jarPath = Path.Combine(instancePath, "server.jar");
-            if (pack.Loader == "Fabric")
+            if (pack.Loader.Equals("Fabric", StringComparison.OrdinalIgnoreCase))
             {
                 await _fabricProvider.DownloadFabricJarAsync(pack.MinecraftVersion, pack.LoaderVersion, jarPath);
             }
-            // Add Forge support later
+            else if (pack.Loader.Equals("Forge", StringComparison.OrdinalIgnoreCase))
+            {
+                // ForgeProvider in this codebase just takes mcVersion.
+                await _forgeProvider.DownloadJarAsync(pack.MinecraftVersion, jarPath);
+            }
+            else if (string.IsNullOrEmpty(pack.Loader) || pack.Loader.Equals("Vanilla", StringComparison.OrdinalIgnoreCase))
+            {
+                // Fallback to Vanilla if no loader specified
+            }
 
             // 3. Download Mods
             foreach (var mod in pack.Mods)
             {
                 string dest = Path.Combine(instancePath, mod.DestinationPath);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
                 await _downloader.DownloadFileAsync(mod.DownloadUrl, dest);
             }
 

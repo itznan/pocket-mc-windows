@@ -32,9 +32,6 @@ public partial class MainWindow : FluentWindow
     private bool _paneWasOpenBeforeManagedDetail;
     private bool _managedDetailPaneModified;
     private bool _isApplyingPaneStateProgrammatically;
-    private PlayitGuideWindow? _playitGuideWindow;
-    private string? _playitGuideWindowClaimUrl;
-
     public MainWindow(
         IServiceProvider serviceProvider,
         SettingsManager settingsManager,
@@ -528,7 +525,6 @@ public partial class MainWindow : FluentWindow
         RootNavigation.PaneOpened -= RootNavigation_PaneOpened;
         RootNavigation.PaneClosed -= RootNavigation_PaneClosed;
         DetachTitleBarContextSource();
-        ClosePlayitGuideWindow();
         _backupScheduler.Stop();
         _globalMonitor.OnGlobalMetricsUpdated -= UpdateGlobalHealth;
         _serverProcessManager.KillAll();
@@ -566,8 +562,27 @@ public partial class MainWindow : FluentWindow
 
         try
         {
-            // Navigate to Dashboard — Java Setup is now a management page
-            NavigateToDashboard();
+            if (!settings.HasCompletedFirstLaunch)
+            {
+                settings.HasCompletedFirstLaunch = true;
+                _settingsManager.Save(settings);
+
+                // If no playit config exists, route to Tunnel Page for first-time setup
+                string configPath = _settingsManager.GetPlayitTomlPath(settings);
+                if (!System.IO.File.Exists(configPath))
+                {
+                    ReplaceShellContent(typeof(PocketMC.Desktop.Views.TunnelPage));
+                }
+                else
+                {
+                    NavigateToDashboard();
+                }
+            }
+            else
+            {
+                NavigateToDashboard();
+            }
+
             TryStartPlayitAgentOnLaunch();
         }
         catch (Exception ex)
@@ -604,51 +619,9 @@ public partial class MainWindow : FluentWindow
     {
         Dispatcher.Invoke(() =>
         {
-            if (_playitGuideWindow != null)
-            {
-                if (string.Equals(_playitGuideWindowClaimUrl, claimUrl, StringComparison.OrdinalIgnoreCase))
-                {
-                    _playitGuideWindow.Activate();
-                    return;
-                }
-
-                _playitGuideWindow.Closed -= OnPlayitGuideWindowClosed;
-                _playitGuideWindow.Close();
-                _playitGuideWindow = null;
-            }
-
-            var guideWindow = ActivatorUtilities.CreateInstance<PlayitGuideWindow>(_serviceProvider, claimUrl);
-            guideWindow.Owner = this;
-            guideWindow.Closed += OnPlayitGuideWindowClosed;
-            _playitGuideWindow = guideWindow;
-            _playitGuideWindowClaimUrl = claimUrl;
-            guideWindow.Show();
-            guideWindow.Activate();
+            var guidePage = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<PocketMC.Desktop.Views.PlayitGuidePage>(_serviceProvider, claimUrl);
+            NavigateToDetailPage(guidePage, "Playit.gg Setup");
         });
     }
 
-    private void OnPlayitGuideWindowClosed(object? sender, EventArgs e)
-    {
-        if (_playitGuideWindow != null)
-        {
-            _playitGuideWindow.Closed -= OnPlayitGuideWindowClosed;
-        }
-
-        _playitGuideWindow = null;
-        _playitGuideWindowClaimUrl = null;
-    }
-
-    private void ClosePlayitGuideWindow()
-    {
-        if (_playitGuideWindow == null)
-        {
-            _playitGuideWindowClaimUrl = null;
-            return;
-        }
-
-        _playitGuideWindow.Closed -= OnPlayitGuideWindowClosed;
-        _playitGuideWindow.Close();
-        _playitGuideWindow = null;
-        _playitGuideWindowClaimUrl = null;
-    }
 }

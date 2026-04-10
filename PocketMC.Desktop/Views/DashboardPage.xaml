@@ -9,7 +9,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Page.Resources>
     
-    <Grid Margin="24" AllowDrop="True" Drop="Page_Drop" DragOver="Page_DragOver">
+    <Grid Margin="24" AllowDrop="True" Drop="Page_Drop" >
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -18,10 +18,7 @@
         <StackPanel Grid.Row="0">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
                 <ui:TextBlock FontTypography="Title" Text="Instances" Foreground="White" Margin="0,0,16,0" VerticalAlignment="Center"/>
-                <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnNewInstance_Click" Cursor="Hand" Margin="0,0,8,0"/>
-                <ui:Button Content="Import Modpack" Icon="{ui:SymbolIcon FolderZip24}" Appearance="Secondary" Click="BtnImportModpack_Click" Cursor="Hand" Margin="0,0,8,0"/>
-                <ui:Button Content="Browse Modpacks" Icon="{ui:SymbolIcon Globe24}" Appearance="Secondary" Click="BtnBrowseModpacks_Click" Cursor="Hand"/>
-            </StackPanel>
+                <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Command="{Binding DataContext.NewInstanceCommand, RelativeSource={RelativeSource AncestorType=Page}}" Cursor="Hand" Margin="0,0,8,0"/>            </StackPanel>
         </StackPanel>
         
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -80,12 +77,12 @@
                                                Click="BtnMoreOptions_Click" Cursor="Hand" Padding="6,4" Margin="0,-6,-6,0" VerticalAlignment="Top">
                                         <ui:Button.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="Rename Instance" Click="RenameInstance_Click" />
+                                                <MenuItem Header="Rename Instance" Command="{Binding DataContext.RenameInstanceCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
                                                 <Separator/>
-                                                <MenuItem Header="Copy Crash Report" Click="CopyCrashReport_Click" />
-                                                <MenuItem Header="Open Instance Folder" Click="BtnOpenFolder_Click" />
+                                                <MenuItem Header="Copy Crash Report" Command="{Binding DataContext.CopyCrashReportCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
+                                                <MenuItem Header="Open Instance Folder" Command="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
                                                 <Separator/>
-                                                <MenuItem Header="Delete Instance" Click="DeleteInstance_Click" />
+                                                <MenuItem Header="Delete Instance" Command="{Binding DataContext.DeleteInstanceCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" />
                                             </ContextMenu>
                                         </ui:Button.ContextMenu>
                                     </ui:Button>
@@ -144,22 +141,22 @@
                                     <!-- STOPPED state -->
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Visibility="{Binding StoppedControlsVisibility}">
                                         <ui:Button Content="Start" Appearance="Primary" Margin="0,0,4,0"
-                                                   Icon="{ui:SymbolIcon Play24}" Click="BtnStart_Click" Cursor="Hand"/>
+                                                   Icon="{ui:SymbolIcon Play24}" Command="{Binding DataContext.StartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                         <ui:Button Content="Logs" Appearance="Secondary" Margin="0,0,4,0"
-                                                   Icon="{ui:SymbolIcon WindowConsole20}" Click="BtnConsole_Click" Cursor="Hand"/>
+                                                   Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                         <ui:Button Content="Settings" Appearance="Secondary" Margin="0,0,4,0"
-                                                   Icon="{ui:SymbolIcon Settings24}" Click="BtnManage_Click" Cursor="Hand"/>
-                                        <ui:Button Icon="{ui:SymbolIcon Folder24}" Click="BtnOpenFolder_Click" Cursor="Hand"/>
+                                                   Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
+                                        <ui:Button Icon="{ui:SymbolIcon Folder24}" Command="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                     </StackPanel>
                                     
                                     <!-- RUNNING state -->
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Visibility="{Binding RunningControlsVisibility}">
                                         <ui:Button Content="{Binding StopButtonText}" Appearance="Danger" Margin="0,0,4,0"
-                                                   Icon="{ui:SymbolIcon Stop24}" Click="BtnStop_Click" Cursor="Hand"/>
+                                                   Icon="{ui:SymbolIcon Stop24}" Command="{Binding DataContext.StopServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                         <ui:Button Content="Console" Appearance="Primary" Margin="0,0,4,0"
-                                                   Icon="{ui:SymbolIcon WindowConsole20}" Click="BtnConsole_Click" Cursor="Hand"/>
+                                                   Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                         <ui:Button Content="Settings" Appearance="Secondary" Margin="0,0,4,0"
-                                                   Icon="{ui:SymbolIcon Settings24}" Click="BtnManage_Click" Cursor="Hand"/>
+                                                   Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                     </StackPanel>
                                 </Grid>
                             </Grid>

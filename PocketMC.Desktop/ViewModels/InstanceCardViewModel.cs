@@ -189,6 +189,23 @@ namespace PocketMC.Desktop.ViewModels
             OnPropertyChanged(nameof(StatusText));
         }
 
+                public void UpdateFromMetadata(InstanceMetadata newMetadata)
+        {
+            _metadata.Name = newMetadata.Name;
+            _metadata.Description = newMetadata.Description;
+            _metadata.MinecraftVersion = newMetadata.MinecraftVersion;
+            _metadata.ServerType = newMetadata.ServerType;
+            _metadata.MinRamMb = newMetadata.MinRamMb;
+            _metadata.MaxRamMb = newMetadata.MaxRamMb;
+            RefreshNameDescription();
+        }
+
+        public ServerState State
+        {
+            get => _state;
+            set => UpdateState(value);
+        }
+
         public void RefreshNameDescription()
         {
             OnPropertyChanged(nameof(Name));

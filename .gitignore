@@ -1,6 +1,7 @@
 .planning/
 Installer/
 bin/
+obj/
 ReleaseBuild/
 Debug/
 ReleaseBuild/

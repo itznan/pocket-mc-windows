@@ -1,22 +1,18 @@
 using System;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Navigation;
 
 namespace PocketMC.Desktop.Views
 {
-    /// <summary>
-    /// Code-behind for PlayitGuideWindow.
-    /// Handles browser opening, auto-close on agent connection,
-    /// and manual close fallback.
-    /// </summary>
-    public partial class PlayitGuideWindow : Wpf.Ui.Controls.FluentWindow
+    public partial class PlayitGuidePage : Page
     {
         private readonly Services.PlayitAgentService _agentService;
 
-        public PlayitGuideWindow(Services.PlayitAgentService agentService, string claimUrl)
+        public PlayitGuidePage(Services.PlayitAgentService agentService, string claimUrl)
         {
             InitializeComponent();
-
             _agentService = agentService;
 
             // Open the claim URL in the user's default browser (NET-03)
@@ -35,6 +31,8 @@ namespace PocketMC.Desktop.Views
 
             // Subscribe to the tunnel-running event to auto-close (NET-04)
             _agentService.OnTunnelRunning += OnTunnelRunning;
+
+            Unloaded += PlayitGuidePage_Unloaded;
         }
 
         private void OnTunnelRunning(object? sender, EventArgs e)
@@ -44,20 +42,24 @@ namespace PocketMC.Desktop.Views
             {
                 StatusText.Text = "✓ Agent connected!";
                 _agentService.OnTunnelRunning -= OnTunnelRunning;
-                Close();
+
+                var mainWindow = Window.GetWindow(this) as MainWindow;
+                if (mainWindow?.NavigateBackFromDetail() == true) return;
+                if (NavigationService?.CanGoBack == true) NavigationService.GoBack();
             });
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             _agentService.OnTunnelRunning -= OnTunnelRunning;
-            Close();
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            if (mainWindow?.NavigateBackFromDetail() == true) return;
+            if (NavigationService?.CanGoBack == true) NavigationService.GoBack();
         }
 
-        protected override void OnClosed(EventArgs e)
+        private void PlayitGuidePage_Unloaded(object sender, RoutedEventArgs e)
         {
             _agentService.OnTunnelRunning -= OnTunnelRunning;
-            base.OnClosed(e);
         }
     }
 }

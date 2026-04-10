@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Navigation;
 using PocketMC.Desktop.Services;
 using Wpf.Ui.Controls;
 using System.Collections.ObjectModel;
@@ -14,32 +15,42 @@ using MessageBoxImage = System.Windows.MessageBoxImage;
 
 namespace PocketMC.Desktop.Views
 {
-    public partial class PluginBrowserWindow : FluentWindow
+    public partial class PluginBrowserPage : Page
     {
         private readonly ModrinthService _modrinth = new();
         private readonly string? _serverDir;
         private readonly string _mcVersion;
         private readonly string _projectType;
         private readonly bool _isModpackMode;
+        private readonly Action? _onCompleted;
         private readonly ObservableCollection<ModrinthHit> _results = new();
         private int _currentOffset = 0;
         private bool _isChanging = false;
+        private System.Threading.CancellationTokenSource? _searchCts;
 
         public event Action<string>? OnModpackDownloaded;
 
-        public PluginBrowserWindow(string? serverDir, string mcVersion, string projectType)
+        public PluginBrowserPage(string? serverDir, string mcVersion, string projectType, Action? onCompleted = null)
         {
             InitializeComponent();
             _serverDir = serverDir;
             _mcVersion = mcVersion;
             _projectType = projectType;
             _isModpackMode = projectType.Contains("modpack");
+            _onCompleted = onCompleted;
 
             ListResults.ItemsSource = _results;
             TxtTitle.Text = _isModpackMode ? "Modpack Marketplace" : (projectType.Contains("plugin") ? "Plugin Marketplace" : "Mod Marketplace");
             TxtMcVersion.Text = _mcVersion == "*" ? "All Versions" : $"Minecraft {_mcVersion}";
             
             Loaded += async (s, e) => await RefreshResultsAsync();
+        }
+
+        private void BtnBack_Click(object sender, RoutedEventArgs e)
+        {
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            if (mainWindow?.NavigateBackFromDetail() == true) return;
+            if (NavigationService?.CanGoBack == true) NavigationService.GoBack();
         }
 
         private async Task RefreshResultsAsync(bool append = false)
@@ -73,8 +84,6 @@ namespace PocketMC.Desktop.Views
         {
             if (IsLoaded) await RefreshResultsAsync();
         }
-
-        private System.Threading.CancellationTokenSource? _searchCts;
 
         private async void TxtSearch_TextChanged(Wpf.Ui.Controls.AutoSuggestBox sender, Wpf.Ui.Controls.AutoSuggestBoxTextChangedEventArgs e)
         {
@@ -113,6 +122,8 @@ namespace PocketMC.Desktop.Views
                 if (version == null || version.Files.Count == 0)
                 {
                     System.Windows.MessageBox.Show("No compatible version found.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    btn.IsEnabled = true;
+                    btn.Content = "Install";
                     return;
                 }
 
@@ -127,7 +138,11 @@ namespace PocketMC.Desktop.Views
                     await File.WriteAllBytesAsync(tempFile, data);
 
                     OnModpackDownloaded?.Invoke(tempFile);
-                    Close();
+
+                    if (NavigationService.CanGoBack)
+                    {
+                        NavigationService.GoBack();
+                    }
                     return;
                 }
 
@@ -140,8 +155,8 @@ namespace PocketMC.Desktop.Views
 
                 await File.WriteAllBytesAsync(destFile, data);
 
-                TxtStatus.Text = $"Successfully installed {file.FileName}";
                 btn.Content = "Installed";
+                _onCompleted?.Invoke();
             }
             catch (Exception ex)
             {
@@ -149,10 +164,6 @@ namespace PocketMC.Desktop.Views
                 btn.IsEnabled = true;
                 btn.Content = "Install";
             }
-        }
-        private void BtnClose_Click(object sender, RoutedEventArgs e)
-        {
-            Close();
         }
     }
 }
