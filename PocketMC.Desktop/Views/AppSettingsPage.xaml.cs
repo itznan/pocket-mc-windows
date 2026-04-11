@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Core.Interfaces;
 
 namespace PocketMC.Desktop.Views
 {
@@ -10,13 +11,15 @@ namespace PocketMC.Desktop.Views
     {
         private readonly ApplicationState _applicationState;
         private readonly SettingsManager _settingsManager;
+        private readonly IDialogService _dialogService;
         private bool _isInitializing = true;
 
-        public AppSettingsPage(ApplicationState applicationState, SettingsManager settingsManager)
+        public AppSettingsPage(ApplicationState applicationState, SettingsManager settingsManager, IDialogService dialogService)
         {
             InitializeComponent();
             _applicationState = applicationState;
             _settingsManager = settingsManager;
+            _dialogService = dialogService;
 
             Loaded += AppSettingsPage_Loaded;
         }
@@ -25,6 +28,7 @@ namespace PocketMC.Desktop.Views
         {
             _isInitializing = true;
             ToggleMica.IsChecked = _applicationState.Settings.EnableMicaEffect;
+            CurseForgeKeyInput.Text = _applicationState.Settings.CurseForgeApiKey ?? "";
             _isInitializing = false;
         }
 
@@ -51,6 +55,13 @@ namespace PocketMC.Desktop.Views
             {
                 mainWin.RequestMicaUpdate();
             }
+        }
+
+        private void SaveApiKey_Click(object sender, RoutedEventArgs e)
+        {
+            _applicationState.Settings.CurseForgeApiKey = CurseForgeKeyInput.Text.Trim();
+            _settingsManager.Save(_applicationState.Settings);
+            _dialogService.ShowMessage("Saved", "API Configuration saved successfully.");
         }
     }
 }

@@ -10,21 +10,53 @@ namespace PocketMC.Desktop.Services
     public class CurseForgeService
     {
         private readonly HttpClient _httpClient;
-        private const string ProxyBase = "https://api.curse.tools/v1/cf";
+        private readonly ApplicationState _appState;
+        private const string ApiBase = "https://api.curseforge.com/v1";
 
-        public CurseForgeService()
+        public CurseForgeService(ApplicationState appState)
         {
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+            _appState = appState;
+            var handler = new HttpClientHandler
+            {
+                // Cloudflare sometimes chokes on missing decompression headers
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+            };
+            
+            _httpClient = new HttpClient(handler);
+            
+            // Standardize headers to bypass basic proxy bot-checks
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json, text/plain, */*");
+            _httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
+        }
+
+        private string? GetActiveApiKey()
+        {
+            return !string.IsNullOrWhiteSpace(_appState.Settings.CurseForgeApiKey) 
+                ? _appState.Settings.CurseForgeApiKey 
+                : null;
         }
 
         public async Task<List<ModrinthHit>> SearchAsync(string type, string mcVersion, string query = "", int offset = 0)
         {
             try
             {
-                // Map Modrinth project types to CurseForge class IDs
-                // 432 is Minecraft
-                // Mods: 6, Modpacks: 4471, Bukkit Plugins: 5
+                string? apiKey = GetActiveApiKey();
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    return new List<ModrinthHit>
+                    {
+                        new ModrinthHit
+                        {
+                            Title = "CurseForge Key Required",
+                            Description = "Please provide your CurseForge API key in the App Settings page to use this source.",
+                            IconUrl = "",
+                            Slug = "",
+                            Downloads = 0
+                        }
+                    };
+                }
+
                 string classId = type switch
                 {
                     "project_type:mod" => "6",
@@ -33,24 +65,40 @@ namespace PocketMC.Desktop.Services
                     _ => "6"
                 };
 
-                // Correct base URL might need to be carefully checked. 
-                // index parameter must be exactly what the v1 API expects.
-                string url = $"{ProxyBase}/mods/search?gameId=432&classId={classId}&sortField=2&sortOrder=desc&pageSize=20&index={offset}";
+                string url = $"{ApiBase}/mods/search?gameId=432&classId={classId}&sortField=2&sortOrder=desc&pageSize=20&index={offset}";
                 
                 if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
-                    url += $"&gameVersion={mcVersion}";
+                    url += $"&gameVersion={Uri.EscapeDataString(mcVersion)}";
                 
                 if (!string.IsNullOrEmpty(query))
                     url += $"&searchFilter={Uri.EscapeDataString(query)}";
 
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Add("Accept", "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("x-api-key", apiKey);
                 
                 var httpResponse = await _httpClient.SendAsync(request);
-                if (!httpResponse.IsSuccessStatusCode) return new List<ModrinthHit>();
+                
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    // Surface the HTTP error directly into the UI so you aren't flying blind
+                    string errorText = await httpResponse.Content.ReadAsStringAsync();
+                    return new List<ModrinthHit>
+                    {
+                        new ModrinthHit
+                        {
+                            Title = $"API Error: {(int)httpResponse.StatusCode} {httpResponse.StatusCode}",
+                            Description = errorText.Length > 150 ? errorText.Substring(0, 150) + "..." : errorText,
+                            IconUrl = "",
+                            Slug = "",
+                            Downloads = 0
+                        }
+                    };
+                }
 
-                var response = await httpResponse.Content.ReadFromJsonAsync<JsonObject>();
-                var data = response?["data"]?.AsArray();
+                var rootNode = await httpResponse.Content.ReadFromJsonAsync<JsonNode>();
+                if (rootNode == null) return new List<ModrinthHit>();
+
+                var data = rootNode["data"]?.AsArray();
                 var results = new List<ModrinthHit>();
 
                 if (data != null)
@@ -59,9 +107,21 @@ namespace PocketMC.Desktop.Services
                     {
                         if (item == null) continue;
                         
-                        // CurseForge logo can be null or have different fields
-                        string? icon = item["logo"]?["thumbnailUrl"]?.ToString();
-                        if (string.IsNullOrEmpty(icon)) icon = item["logo"]?["url"]?.ToString();
+                        string icon = "";
+                        var logoNode = item["logo"];
+                        if (logoNode is JsonObject logoObj)
+                        {
+                            icon = logoObj["thumbnailUrl"]?.ToString() ?? logoObj["url"]?.ToString() ?? "";
+                        }
+
+                        // Safely parse download count via TryParse to prevent InvalidOperationExceptions 
+                        // if the API returns a float instead of a strict integer.
+                        int safeDownloads = 0;
+                        var dlNode = item["downloadCount"];
+                        if (dlNode != null && double.TryParse(dlNode.ToString(), out double parsedDl))
+                        {
+                            safeDownloads = parsedDl > int.MaxValue ? int.MaxValue : (int)parsedDl;
+                        }
 
                         results.Add(new ModrinthHit
                         {
@@ -69,15 +129,37 @@ namespace PocketMC.Desktop.Services
                             Description = item["summary"]?.ToString() ?? "",
                             IconUrl = icon,
                             Slug = item["id"]?.ToString() ?? "", 
-                            Downloads = item["downloadCount"] != null ? (int)item["downloadCount"]! : 0
+                            Downloads = safeDownloads
                         });
                     }
                 }
+                
+                if (results.Count == 0)
+                {
+                    results.Add(new ModrinthHit
+                    {
+                        Title = "No Results",
+                        Description = "The API returned 0 mods for this query/version.",
+                        IconUrl = "",
+                        Slug = ""
+                    });
+                }
+                
                 return results;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return new List<ModrinthHit>();
+                // Surface code/parsing exceptions in the UI
+                return new List<ModrinthHit>
+                {
+                    new ModrinthHit
+                    {
+                        Title = "Code Exception",
+                        Description = ex.Message,
+                        IconUrl = "",
+                        Slug = ""
+                    }
+                };
             }
         }
 
@@ -85,30 +167,57 @@ namespace PocketMC.Desktop.Services
         {
             try
             {
-                // Get all files for the project
-                string url = $"{ProxyBase}/mods/{projectId}/files";
-                if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
-                    url += $"?gameVersion={mcVersion}";
+                if (string.IsNullOrEmpty(projectId)) return null;
 
-                var response = await _httpClient.GetFromJsonAsync<JsonObject>(url);
-                var files = response?["data"]?.AsArray();
+                string? apiKey = GetActiveApiKey();
+                if (string.IsNullOrEmpty(apiKey)) return null;
+
+                string url = $"{ApiBase}/mods/{projectId}/files";
+                if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
+                    url += $"?gameVersion={Uri.EscapeDataString(mcVersion)}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("x-api-key", apiKey);
+                
+                var httpResponse = await _httpClient.SendAsync(request);
+                
+                if (!httpResponse.IsSuccessStatusCode) return null;
+
+                var rootNode = await httpResponse.Content.ReadFromJsonAsync<JsonNode>();
+                var files = rootNode?["data"]?.AsArray();
                 
                 if (files == null || files.Count == 0) return null;
 
-                // Sort by date or just take the first one (usually latest)
                 var latestFile = files[0];
                 if (latestFile == null) return null;
 
+                long fileId = 0;
+                if (long.TryParse(latestFile["id"]?.ToString(), out long parsedId))
+                {
+                    fileId = parsedId;
+                }
+
+                string fileName = latestFile["fileName"]?.ToString() ?? "mod.jar";
+                string downloadUrl = latestFile["downloadUrl"]?.ToString() ?? "";
+
+                // Critical Workaround: Reconstruct the Edge CDN URL if the API hides the direct link
+                if (string.IsNullOrEmpty(downloadUrl) && fileId > 0)
+                {
+                    string part1 = (fileId / 1000).ToString();
+                    string part2 = (fileId % 1000).ToString("D3");
+                    downloadUrl = $"https://edge.forgecdn.net/files/{part1}/{part2}/{Uri.EscapeDataString(fileName)}";
+                }
+
                 return new ModrinthVersion
                 {
-                    Id = latestFile["id"]?.ToString() ?? "",
+                    Id = fileId.ToString(),
                     Name = latestFile["displayName"]?.ToString() ?? "Latest",
                     Files = new List<ModrinthFile>
                     {
                         new ModrinthFile
                         {
-                            Url = latestFile["downloadUrl"]?.ToString() ?? "",
-                            FileName = latestFile["fileName"]?.ToString() ?? "mod.jar",
+                            Url = downloadUrl,
+                            FileName = fileName,
                             IsPrimary = true
                         }
                     }

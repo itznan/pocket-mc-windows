@@ -8,5 +8,6 @@ namespace PocketMC.Desktop.Models
         public string? PlayitConfigDirectory { get; set; }
         public bool HasCompletedFirstLaunch { get; set; }
         public bool EnableMicaEffect { get; set; } = true;
+        public string? CurseForgeApiKey { get; set; }
     }
 }

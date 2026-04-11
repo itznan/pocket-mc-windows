@@ -59,7 +59,36 @@
                         </Grid>
                     </StackPanel>
                 </ui:CardExpander>
-                
+
+                <!-- API Configuration -->
+                <ui:CardExpander IsExpanded="True" Icon="{ui:SymbolIcon Key24}" Margin="0,12,0,0">
+                    <ui:CardExpander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="API Configuration" FontSize="16" FontWeight="SemiBold"/>
+                                <TextBlock Text="Configure third-party API keys for services like CurseForge." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </ui:CardExpander.Header>
+
+                    <StackPanel Margin="16,8,16,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="CurseForge API Key" FontSize="14" FontWeight="Medium"/>
+                                <TextBlock Text="Obtain a key from CurseForge console if you hit rate limits." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                <ui:TextBox x:Name="CurseForgeKeyInput" Margin="0,8,0,0" PlaceholderText="$2a$10$..."/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="1" Content="Save Key" Appearance="Primary" VerticalAlignment="Bottom" Click="SaveApiKey_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </ui:CardExpander>
             </StackPanel>
         </ScrollViewer>
     </Grid>

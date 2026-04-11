@@ -19,7 +19,7 @@ namespace PocketMC.Desktop.Views
     {
         private readonly IAppNavigationService _navigationService;
         private readonly ModrinthService _modrinth = new();
-        private readonly CurseForgeService _curseForge = new();
+        private readonly CurseForgeService _curseForge;
         private readonly string? _serverDir;
         private readonly string _mcVersion;
         private readonly string _projectType;
@@ -33,6 +33,7 @@ namespace PocketMC.Desktop.Views
 
         public PluginBrowserPage(
             IAppNavigationService navigationService,
+            CurseForgeService curseForge,
             string? serverDir,
             string mcVersion,
             string projectType,
@@ -40,6 +41,7 @@ namespace PocketMC.Desktop.Views
         {
             InitializeComponent();
             _navigationService = navigationService;
+            _curseForge = curseForge;
             _serverDir = serverDir;
             _mcVersion = mcVersion;
             _projectType = projectType;

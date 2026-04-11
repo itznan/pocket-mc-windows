@@ -59,6 +59,7 @@ public partial class App : Application
                 services.AddHttpClient<FabricProvider>(client => client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop"));
                 services.AddHttpClient<ForgeProvider>(client => client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop"));
                 services.AddSingleton<ModpackService>();
+                services.AddSingleton<CurseForgeService>();
                 services.AddHttpClient<PaperProvider>(client =>
                 {
                     client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop");
