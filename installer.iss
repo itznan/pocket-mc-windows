@@ -47,64 +47,28 @@ begin
   Result := RequiresAspNetCore;
 end;
 
-function IsDotNet8DesktopInstalled(): Boolean;
+function IsDotNetInstalled(Path: String): Boolean;
 var
-  ValueNames: TArrayOfString;
-  I: Integer;
+  FindRec: TFindRec;
 begin
   Result := False;
-  if RegGetValueNames(HKLM, 'SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', ValueNames) then
+  if FindFirst(Path + '\8.0.*', FindRec) then
   begin
-    for I := 0 to GetArrayLength(ValueNames) - 1 do
-    begin
-      if Pos('8.0.', ValueNames[I]) = 1 then
-      begin
-        Result := True;
-        Exit;
-      end;
-    end;
-  end;
-  if RegGetValueNames(HKLM, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', ValueNames) then
-  begin
-    for I := 0 to GetArrayLength(ValueNames) - 1 do
-    begin
-      if Pos('8.0.', ValueNames[I]) = 1 then
-      begin
-        Result := True;
-        Exit;
-      end;
-    end;
+    Result := True;
+    FindClose(FindRec);
   end;
 end;
 
-function IsAspNetCore8Installed(): Boolean;
-var
-  ValueNames: TArrayOfString;
-  I: Integer;
+function IsDotNet8DesktopInstalled(): Boolean;
 begin
-  Result := False;
-  if RegGetValueNames(HKLM, 'SOFTWARE\WOW6432Node\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.AspNetCore.App', ValueNames) then
-  begin
-    for I := 0 to GetArrayLength(ValueNames) - 1 do
-    begin
-      if Pos('8.0.', ValueNames[I]) = 1 then
-      begin
-        Result := True;
-        Exit;
-      end;
-    end;
-  end;
-  if RegGetValueNames(HKLM, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.AspNetCore.App', ValueNames) then
-  begin
-    for I := 0 to GetArrayLength(ValueNames) - 1 do
-    begin
-      if Pos('8.0.', ValueNames[I]) = 1 then
-      begin
-        Result := True;
-        Exit;
-      end;
-    end;
-  end;
+  Result := IsDotNetInstalled(ExpandConstant('{pf64}\dotnet\shared\Microsoft.WindowsDesktop.App')) or
+            IsDotNetInstalled(ExpandConstant('{pf32}\dotnet\shared\Microsoft.WindowsDesktop.App'));
+end;
+
+function IsAspNetCore8Installed(): Boolean;
+begin
+  Result := IsDotNetInstalled(ExpandConstant('{pf64}\dotnet\shared\Microsoft.AspNetCore.App')) or
+            IsDotNetInstalled(ExpandConstant('{pf32}\dotnet\shared\Microsoft.AspNetCore.App'));
 end;
 
 procedure InitializeWizard;
