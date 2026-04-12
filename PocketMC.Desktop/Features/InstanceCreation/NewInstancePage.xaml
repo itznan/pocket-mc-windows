@@ -4,15 +4,10 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       Title="New Instance">
 
-    <Grid Margin="28,20,28,24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Grid Margin="28,20,28,24" VerticalAlignment="Stretch">
+        <DockPanel LastChildFill="True">
 
-        <Grid Grid.Row="0"
+        <Grid DockPanel.Dock="Top"
               Width="{Binding ElementName=ContentLayoutRoot, Path=ActualWidth}"
               MaxWidth="980"
               HorizontalAlignment="Left"
@@ -34,21 +29,66 @@
 
         </Grid>
 
-        <Grid Grid.Row="1"
-              x:Name="ContentLayoutRoot"
-              MaxWidth="980"
-              HorizontalAlignment="Left">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- Footer Action Bar -->
+        <Border DockPanel.Dock="Bottom"
+                Margin="0,16,0,0"
+                Padding="20,16"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+            <Grid HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                    x:Name="ErrorCallout"
+                    HorizontalAlignment="Left"
+                    Visibility="Collapsed"
+                    Background="#26F44336"
+                    BorderBrush="#66F44336"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="12"
+                    Margin="0,0,16,0">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="8"
+                            Height="8"
+                            Background="#FFB4AB"
+                            CornerRadius="4"
+                            Margin="0,5,10,0"
+                            VerticalAlignment="Top"/>
+                    <TextBlock x:Name="TxtError"
+                               Foreground="#FFE8E6"
+                               TextWrapping="Wrap"
+                           VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <ui:Button x:Name="BtnCancel"
+                           Content="Cancel"
+                           Appearance="Secondary"
+                           Margin="0,0,8,0"
+                           Click="BtnBack_Click"/>
+                <ui:Button x:Name="BtnCreate"
+                           Content="Create and Download"
+                           Appearance="Primary"
+                           Icon="{ui:SymbolIcon ArrowDownload24}"
+                           Click="BtnCreate_Click"/>
+            </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,-28,0" Padding="0,0,28,0">
+                <StackPanel x:Name="ContentLayoutRoot" MaxWidth="980" HorizontalAlignment="Left">
 
             <ui:Card x:Name="FormCard"
-                     Grid.Row="0"
-                     Grid.Column="0"
                      Padding="22"
                      Margin="0">
                 <StackPanel x:Name="InputsPanel">
@@ -152,20 +192,18 @@
                     </TextBlock>
                 </StackPanel>
             </ui:Card>
-        </Grid>
 
-        <Border Grid.Row="2"
-                x:Name="ProgressOverlay"
-                Visibility="Collapsed"
-                Width="{Binding ElementName=ContentLayoutRoot, Path=ActualWidth}"
-                Background="#10FFFFFF"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="14"
-                Padding="14"
-                HorizontalAlignment="Left"
-                Margin="0,16,0,14">
-            <StackPanel>
+            <Border x:Name="ProgressOverlay"
+                    Visibility="Collapsed"
+                    Width="{Binding ElementName=FormCard, Path=ActualWidth}"
+                    Background="#10FFFFFF"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="14"
+                    HorizontalAlignment="Left"
+                    Margin="0,16,0,14">
+                <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <ui:ProgressRing Width="18"
                                      Height="18"
@@ -185,54 +223,11 @@
                            Text="Waiting for download..."
                            FontSize="12"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-            </StackPanel>
-        </Border>
-
-        <Grid Grid.Row="3"
-              Width="{Binding ElementName=ContentLayoutRoot, Path=ActualWidth}"
-              HorizontalAlignment="Left">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <Border Grid.Column="0"
-                    x:Name="ErrorCallout"
-                    Visibility="Collapsed"
-                    Background="#26F44336"
-                    BorderBrush="#66F44336"
-                    BorderThickness="1"
-                    CornerRadius="14"
-                    Padding="12"
-                    Margin="0,0,16,0">
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="8"
-                            Height="8"
-                            Background="#FFB4AB"
-                            CornerRadius="4"
-                            Margin="0,5,10,0"
-                            VerticalAlignment="Top"/>
-                    <TextBlock x:Name="TxtError"
-                               Foreground="#FFE8E6"
-                               TextWrapping="Wrap"
-                           VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
-
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right">
-                <ui:Button x:Name="BtnCancel"
-                           Content="Cancel"
-                           Appearance="Secondary"
-                           Margin="0,0,8,0"
-                           Click="BtnBack_Click"/>
-                <ui:Button x:Name="BtnCreate"
-                           Content="Create and Download"
-                           Appearance="Primary"
-                           Icon="{ui:SymbolIcon ArrowDownload24}"
-                           Click="BtnCreate_Click"/>
-            </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
+        </DockPanel>
     </Grid>
 </Page>

@@ -9,7 +9,7 @@
         xmlns:setup="clr-namespace:PocketMC.Desktop.Features.Setup"
         xmlns:shell="clr-namespace:PocketMC.Desktop.Features.Shell"
         mc:Ignorable="d"
-        Title="PocketMC Desktop" Height="650" Width="1050"
+        Title="PocketMC Desktop" Height="975" Width="1575"
         WindowBackdropType="Mica"
         ExtendsContentIntoTitleBar="True"
         WindowCornerPreference="Round"
