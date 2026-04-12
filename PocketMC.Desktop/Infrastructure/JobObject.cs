@@ -1,12 +1,11 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace PocketMC.Desktop.Services
+namespace PocketMC.Desktop.Infrastructure
 {
     /// <summary>
     /// Wraps a Windows Job Object to ensure child processes (Java servers)
     /// are killed automatically when PocketMC exits or crashes.
-    /// Uses JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE (0x2000).
     /// </summary>
     public sealed class JobObject : IDisposable
     {
@@ -61,10 +60,7 @@ namespace PocketMC.Desktop.Services
             }
         }
 
-        // --- Constants ---
         private const uint JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
-
-        // --- P/Invoke ---
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string? lpName);
@@ -78,8 +74,6 @@ namespace PocketMC.Desktop.Services
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool CloseHandle(IntPtr hObject);
-
-        // --- Structs ---
 
         private enum JobObjectInfoType
         {

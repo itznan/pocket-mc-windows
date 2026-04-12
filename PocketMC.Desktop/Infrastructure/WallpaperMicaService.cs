@@ -6,12 +6,11 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 
-namespace PocketMC.Desktop.Services;
+namespace PocketMC.Desktop.Infrastructure;
 
 /// <summary>
 /// Simulates a Mica-like background for Windows 10 where the native
-/// Mica backdrop is unavailable. Captures the desktop wallpaper, applies
-/// heavy Gaussian blur and a dark tint — visually identical to Win11 Mica.
+/// Mica backdrop is unavailable.
 /// </summary>
 public static class WallpaperMicaService
 {
@@ -31,10 +30,6 @@ public static class WallpaperMicaService
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Creates a blurred + tinted bitmap that imitates Mica.
-    /// Returns null on any failure so callers can fall back to a solid color.
-    /// </summary>
     public static BitmapSource? CreateMicaBackground(
         int targetWidth,
         int targetHeight,
@@ -50,7 +45,6 @@ public static class WallpaperMicaService
             if (string.IsNullOrEmpty(wallpaperPath) || !File.Exists(wallpaperPath))
                 return null;
 
-            // Load wallpaper at reduced resolution for speed
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.UriSource = new Uri(wallpaperPath);
@@ -59,7 +53,6 @@ public static class WallpaperMicaService
             bitmap.EndInit();
             bitmap.Freeze();
 
-            // Draw wallpaper + dark tint overlay
             var visual = new DrawingVisual();
             using (var ctx = visual.RenderOpen())
             {
@@ -72,7 +65,6 @@ public static class WallpaperMicaService
                     null, rect);
             }
 
-            // Apply Gaussian blur
             visual.Effect = new BlurEffect
             {
                 Radius = blurRadius,

@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Utils;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Infrastructure;
+using PocketMC.Desktop.Features.Settings;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {

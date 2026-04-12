@@ -4,13 +4,14 @@ using System.Linq;
 using PocketMC.Desktop.Core.Mvvm;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Features.Instances;
 using PocketMC.Desktop.Core.Interfaces;
 
 namespace PocketMC.Desktop.Features.Dashboard
 {
     public class DashboardInstanceListVM : ViewModelBase
     {
-        private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly ServerProcessManager _serverProcessManager;
         private readonly IServerLifecycleService _lifecycleService;
         private readonly ApplicationState _applicationState;
@@ -18,12 +19,12 @@ namespace PocketMC.Desktop.Features.Dashboard
         public ObservableCollection<InstanceCardViewModel> Instances { get; } = new();
 
         public DashboardInstanceListVM(
-            InstanceManager instanceManager, 
+            InstanceRegistry registry, 
             ServerProcessManager serverProcessManager,
             IServerLifecycleService lifecycleService,
             ApplicationState applicationState)
         {
-            _instanceManager = instanceManager;
+            _registry = registry;
             _serverProcessManager = serverProcessManager;
             _lifecycleService = lifecycleService;
             _applicationState = applicationState;
@@ -35,7 +36,7 @@ namespace PocketMC.Desktop.Features.Dashboard
 
             var existingVms = Instances.ToList();
             Instances.Clear();
-            var metas = _instanceManager.GetAllInstances();
+            var metas = _registry.GetAll();
             foreach (var meta in metas)
             {
                 var existing = existingVms.FirstOrDefault(v => v.Id == meta.Id);

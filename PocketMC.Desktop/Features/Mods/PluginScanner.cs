@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 
-namespace PocketMC.Desktop.Services
+namespace PocketMC.Desktop.Features.Mods
 {
     /// <summary>
     /// Reads plugin.yml from inside a plugin JAR (which is a ZIP) to extract
@@ -78,16 +78,12 @@ namespace PocketMC.Desktop.Services
 
         /// <summary>
         /// Determines if a plugin's api-version is incompatible with the server's Minecraft version.
-        /// 
-        /// Spigot/Paper maintains BACKWARD COMPATIBILITY: a plugin built for api-version 1.14
-        /// works on 1.20.4. A mismatch only occurs when the plugin requires a NEWER api-version
-        /// than the server provides (e.g., plugin needs 1.21 but server is 1.20.4).
         /// </summary>
         /// <returns>true if incompatible (plugin too new for server), false if compatible or unknown</returns>
         public static bool IsIncompatible(string? pluginApiVersion, string? serverMinecraftVersion)
         {
             if (string.IsNullOrEmpty(pluginApiVersion) || string.IsNullOrEmpty(serverMinecraftVersion))
-                return false; // Can't determine — assume compatible
+                return false; 
 
             try
             {
@@ -97,28 +93,17 @@ namespace PocketMC.Desktop.Services
                 if (pluginVer == null || serverVer == null)
                     return false;
 
-                // Plugin requires a NEWER API than the server provides
-                // e.g. plugin api-version 1.21 > server 1.20 → incompatible
-                // e.g. plugin api-version 1.14 <= server 1.20 → compatible (backward compat)
                 return pluginVer.Value.major > serverVer.Value.major ||
                        (pluginVer.Value.major == serverVer.Value.major && pluginVer.Value.minor > serverVer.Value.minor);
             }
-            catch (FormatException)
-            {
-                return false;
-            }
-            catch (OverflowException)
+            catch (Exception)
             {
                 return false;
             }
         }
 
-        /// <summary>
-        /// Parses "1.20.4" or "1.20" into (major=1, minor=20).
-        /// </summary>
         private static (int major, int minor)? ParseMajorMinor(string version)
         {
-            // Strip quotes, whitespace
             version = version.Trim().Trim('\'', '"');
             
             var parts = version.Split('.');
@@ -134,10 +119,7 @@ namespace PocketMC.Desktop.Services
         {
             using var archive = ZipFile.OpenRead(jarPath);
             var entry = archive.GetEntry("plugin.yml");
-            if (entry == null)
-            {
-                return null;
-            }
+            if (entry == null) return null;
 
             using var reader = new StreamReader(entry.Open());
             return reader.ReadToEnd();

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Toolkit.Uwp.Notifications;
 using PocketMC.Desktop.Core.Interfaces;
 
-namespace PocketMC.Desktop.Services;
+namespace PocketMC.Desktop.Infrastructure;
 
 public sealed class WindowsToastNotificationService : INotificationService
 {
@@ -19,10 +19,7 @@ public sealed class WindowsToastNotificationService : INotificationService
 
     public static void RegisterApplication()
     {
-        if (_isRegistered)
-        {
-            return;
-        }
+        if (_isRegistered) return;
 
         SetCurrentProcessExplicitAppUserModelID(AppUserModelId);
         ToastNotificationManagerCompat.OnActivated += _ => { };

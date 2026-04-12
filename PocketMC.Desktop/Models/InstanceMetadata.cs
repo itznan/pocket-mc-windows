@@ -10,6 +10,8 @@ namespace PocketMC.Desktop.Models
         public string ServerType { get; set; } = "Vanilla";
         public string MinecraftVersion { get; set; } = "1.20.4";
         public string LoaderVersion { get; set; } = string.Empty;
+        public string Motd { get; set; } = "A Minecraft Server";
+        public int MaxPlayers { get; set; } = 20;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int MinRamMb { get; set; } = 1024;
         public int MaxRamMb { get; set; } = 4096;

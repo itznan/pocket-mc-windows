@@ -15,6 +15,7 @@ using PocketMC.Desktop.Features.Marketplace;
 using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Mods;
+using PocketMC.Desktop.Features.Instances;
 using PocketMC.Desktop.Features.Java;
 
 using System.Net.Http;
@@ -33,7 +34,7 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        WindowsToastNotificationService.RegisterApplication();
+        PocketMC.Desktop.Infrastructure.WindowsToastNotificationService.RegisterApplication();
 
         _host = Host.CreateDefaultBuilder()
             .ConfigureLogging(logging =>
@@ -52,15 +53,15 @@ public partial class App : Application
                 services.AddSingleton<IAppDispatcher, WpfAppDispatcher>();
                 services.AddSingleton<IFileSystem, PhysicalFileSystem>();
                 services.AddSingleton<IAppNavigationService, AppNavigationService>();
-                services.AddSingleton<SettingsManager>();
+                services.AddSingleton<PocketMC.Desktop.Features.Settings.SettingsManager>();
                 services.AddSingleton<ApplicationState>();
-                services.AddSingleton<JobObject>();
+                services.AddSingleton<PocketMC.Desktop.Infrastructure.JobObject>();
                 services.AddSingleton<DownloaderService>();
                 services.AddSingleton<JavaAdoptiumClient>();
                 services.AddSingleton<JavaRuntimeValidator>();
                 services.AddSingleton<JavaProvisioningService>();
-                services.AddSingleton<WindowsToastNotificationService>();
-                services.AddSingleton<INotificationService>(provider => provider.GetRequiredService<WindowsToastNotificationService>());
+                services.AddSingleton<PocketMC.Desktop.Infrastructure.WindowsToastNotificationService>();
+                services.AddSingleton<INotificationService>(provider => provider.GetRequiredService<PocketMC.Desktop.Infrastructure.WindowsToastNotificationService>());
                 services.AddSingleton<ServerProcessManager>();
                 services.AddSingleton<IServerLifecycleService, ServerLifecycleService>();
                 services.AddSingleton<ServerLaunchConfigurator>();
@@ -77,17 +78,19 @@ public partial class App : Application
                 services.AddSingleton<PlayitApiClient>();
                 services.AddSingleton<PlayitAgentService>();
                 services.AddSingleton<InstanceTunnelOrchestrator>();
-                services.AddSingleton<InstanceManager>();
+                services.AddSingleton<PocketMC.Desktop.Features.Instances.InstancePathService>();
+                services.AddSingleton<PocketMC.Desktop.Features.Instances.InstanceRegistry>();
+                services.AddSingleton<PocketMC.Desktop.Features.Instances.InstanceManager>();
                 services.AddSingleton<ServerConfigurationService>();
                 services.AddSingleton<WorldManager>();
                 services.AddHttpClient<VanillaProvider>(client => client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop"));
                 services.AddHttpClient<FabricProvider>(client => client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop"));
                 services.AddHttpClient<ForgeProvider>(client => client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop"));
-                services.AddHttpClient<ModrinthService>(client =>
+                services.AddHttpClient<PocketMC.Desktop.Features.Marketplace.ModrinthService>(client =>
                 {
                     client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop");
                 });
-                services.AddHttpClient<CurseForgeService>(client =>
+                services.AddHttpClient<PocketMC.Desktop.Features.Marketplace.CurseForgeService>(client =>
                 {
                     client.DefaultRequestHeaders.Add(
                         "User-Agent",
@@ -108,7 +111,7 @@ public partial class App : Application
                 {
                     client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop");
                 });
-                services.AddTransient<TunnelService>();
+                services.AddTransient<PocketMC.Desktop.Features.Tunnel.TunnelService>();
                 services.AddTransient<MainWindow>();
                 services.AddTransient<JavaSetupPage>();
                 services.AddTransient<TunnelPage>();

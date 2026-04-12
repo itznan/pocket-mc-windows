@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Features.Tunnel;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {
@@ -22,6 +24,7 @@ namespace PocketMC.Desktop.Features.Tunnel
         private readonly ApplicationState _applicationState;
         private readonly ServerConfigurationService _serverConfigurationService;
         private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly IDialogService _dialogService;
         private readonly IAppNavigationService _navigationService;
         private readonly IAppDispatcher _dispatcher;
@@ -37,6 +40,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             ApplicationState applicationState,
             ServerConfigurationService serverConfigurationService,
             InstanceManager instanceManager,
+            InstanceRegistry registry,
             IDialogService dialogService,
             IAppNavigationService navigationService,
             IAppDispatcher dispatcher,
@@ -48,6 +52,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             _applicationState = applicationState;
             _serverConfigurationService = serverConfigurationService;
             _instanceManager = instanceManager;
+            _registry = registry;
             _dialogService = dialogService;
             _navigationService = navigationService;
             _dispatcher = dispatcher;
@@ -201,7 +206,7 @@ namespace PocketMC.Desktop.Features.Tunnel
         private bool TryGetServerPort(Guid instanceId, out int serverPort)
         {
             serverPort = 25565; // Default Minecraft port
-            string? instancePath = _instanceManager.GetInstancePath(instanceId);
+            string? instancePath = _registry.GetPath(instanceId);
             if (string.IsNullOrWhiteSpace(instancePath)) return false;
 
             if (_serverConfigurationService.TryGetProperty(instancePath, "server-port", out string? portString) &&

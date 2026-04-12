@@ -11,6 +11,7 @@ using PocketMC.Desktop.Utils;
 using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Features.Console;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Features.Dashboard
 {
@@ -18,6 +19,7 @@ namespace PocketMC.Desktop.Features.Dashboard
     {
         private readonly ApplicationState _applicationState;
         private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly IServerLifecycleService _lifecycleService;
         private readonly ServerProcessManager _serverProcessManager; // Still needed for port checking or active processes
         private readonly ServerConfigurationService _serverConfigurationService;
@@ -30,6 +32,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         public DashboardActionsVM(
             ApplicationState applicationState,
             InstanceManager instanceManager,
+            InstanceRegistry registry,
             IServerLifecycleService lifecycleService,
             ServerProcessManager serverProcessManager,
             ServerConfigurationService serverConfigurationService,
@@ -41,6 +44,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             _applicationState = applicationState;
             _instanceManager = instanceManager;
+            _registry = registry;
             _lifecycleService = lifecycleService;
             _serverProcessManager = serverProcessManager;
             _serverConfigurationService = serverConfigurationService;
@@ -55,7 +59,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             try
             {
-                string? instancePath = _instanceManager.GetInstancePath(vm.Id);
+                string? instancePath = _registry.GetPath(vm.Id);
                 if (instancePath == null) return;
 
                 var availableMb = MemoryHelper.GetAvailablePhysicalMemoryMb();
@@ -71,7 +75,7 @@ namespace PocketMC.Desktop.Features.Dashboard
                 int targetPort = _serverConfigurationService.GetActivePortForInstance(vm.Id);
                 var otherRunningPorts = _serverProcessManager.ActiveProcesses
                     .Where(kvp => kvp.Key != vm.Id)
-                    .Select(kvp => _instanceManager.GetInstancePath(kvp.Key))
+                    .Select(kvp => _registry.GetPath(kvp.Key))
                     .Where(p => p != null)
                     .Select(p => {
                         _serverConfigurationService.TryGetProperty(p!, "server-port", out string? portStr);
@@ -162,7 +166,7 @@ namespace PocketMC.Desktop.Features.Dashboard
 
         public void OpenFolder(InstanceCardViewModel vm)
         {
-            string? path = _instanceManager.GetInstancePath(vm.Id);
+            string? path = _registry.GetPath(vm.Id);
             if (path != null && Directory.Exists(path))
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = path, UseShellExecute = true });
@@ -171,7 +175,7 @@ namespace PocketMC.Desktop.Features.Dashboard
 
         public void CopyCrashReport(InstanceCardViewModel vm)
         {
-            string? path = _instanceManager.GetInstancePath(vm.Id);
+            string? path = _registry.GetPath(vm.Id);
             if (path == null) return;
             var crashReportsDir = Path.Combine(path, "crash-reports");
             if (Directory.Exists(crashReportsDir))

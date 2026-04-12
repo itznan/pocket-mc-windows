@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace PocketMC.Desktop.Services
+namespace PocketMC.Desktop.Features.Marketplace
 {
     public class ModrinthSearchResult
     {

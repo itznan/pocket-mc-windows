@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Models;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Services
 {
     public class ServerLifecycleService : IServerLifecycleService
     {
         private readonly ServerProcessManager _processManager;
-        private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly INotificationService _notificationService;
         private readonly ILogger<ServerLifecycleService> _logger;
         private readonly string _appRootPath;
@@ -26,12 +27,12 @@ namespace PocketMC.Desktop.Services
 
         public ServerLifecycleService(
             ServerProcessManager processManager,
-            InstanceManager instanceManager,
+            InstanceRegistry registry,
             INotificationService notificationService,
             ILogger<ServerLifecycleService> logger)
         {
             _processManager = processManager;
-            _instanceManager = instanceManager;
+            _registry = registry;
             _notificationService = notificationService;
             _logger = logger;
             _appRootPath = AppDomain.CurrentDomain.BaseDirectory;
@@ -83,7 +84,7 @@ namespace PocketMC.Desktop.Services
 
         public async Task RestartAsync(Guid instanceId)
         {
-            var meta = _instanceManager.GetInstanceMetadata(instanceId);
+            var meta = _registry.GetById(instanceId);
             if (meta == null) return;
             
             await StopAsync(instanceId);
@@ -94,7 +95,7 @@ namespace PocketMC.Desktop.Services
 
         private async Task HandleServerCrashAsync(Guid instanceId)
         {
-            var meta = _instanceManager.GetInstanceMetadata(instanceId);
+            var meta = _registry.GetById(instanceId);
             if (meta == null || !meta.EnableAutoRestart) return;
 
             int attempts = _consecutiveRestarts.GetOrAdd(instanceId, 0);

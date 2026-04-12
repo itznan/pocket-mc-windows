@@ -11,12 +11,14 @@ using PocketMC.Desktop.Services;
 using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Features.Mods;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Features.Settings
 {
     public class ServerSettingsViewModel : ViewModelBase, IDisposable
     {
         private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly ServerConfigurationService _serverConfigurationService;
         private readonly IServerLifecycleService _lifecycleService;
         private readonly IDialogService _dialogService;
@@ -59,6 +61,7 @@ namespace PocketMC.Desktop.Features.Settings
         public ServerSettingsViewModel(
             InstanceMetadata metadata,
             InstanceManager instanceManager,
+            InstanceRegistry registry,
             ServerConfigurationService serverConfigurationService,
             IServerLifecycleService lifecycleService,
             WorldManager worldManager,
@@ -73,11 +76,12 @@ namespace PocketMC.Desktop.Features.Settings
         {
             Metadata = metadata;
             _instanceManager = instanceManager;
+            _registry = registry;
             _serverConfigurationService = serverConfigurationService;
             _lifecycleService = lifecycleService;
             _dialogService = dialogService;
             _navigationService = navigationService;
-            ServerDir = _instanceManager.GetInstancePath(metadata.Id) ?? throw new InvalidOperationException();
+            ServerDir = _registry.GetPath(metadata.Id) ?? throw new InvalidOperationException();
 
             _instanceStateChangedHandler = (id, state) => { if (id == Metadata.Id) dispatcher.Invoke(UpdateRunningState); };
             _lifecycleService.OnInstanceStateChanged += _instanceStateChangedHandler;
@@ -85,7 +89,7 @@ namespace PocketMC.Desktop.Features.Settings
             General = new SettingsGeneralVM(ServerDir, dialogService, MarkChanged);
             World = new SettingsWorldVM(ServerDir, worldManager, dialogService, dispatcher, () => IsRunning, MarkChanged);
             Performance = new SettingsPerformanceVM(dialogService, MarkChanged);
-            Backups = new SettingsBackupsVM(metadata, ServerDir, backupService, instanceManager, dialogService, dispatcher, () => IsRunning, MarkChanged);
+            Backups = new SettingsBackupsVM(metadata, ServerDir, backupService, dialogService, dispatcher, () => IsRunning, MarkChanged);
             Addons = new SettingsAddonsVM(metadata, ServerDir, modpackService, dialogService, navigationService, serviceProvider, () => IsRunning, MarkChanged);
             Advanced = new SettingsAdvancedVM(ServerDir, serverConfigurationService, MarkChanged);
 

@@ -16,7 +16,6 @@ namespace PocketMC.Desktop.Features.Settings
         private readonly InstanceMetadata _metadata;
         private readonly string _serverDir;
         private readonly BackupService _backupService;
-        private readonly InstanceManager _instanceManager;
         private readonly IDialogService _dialogService;
         private readonly IAppDispatcher _dispatcher;
         private readonly Func<bool> _isRunningCheck;
@@ -41,7 +40,6 @@ namespace PocketMC.Desktop.Features.Settings
             InstanceMetadata metadata,
             string serverDir,
             BackupService backupService,
-            InstanceManager instanceManager,
             IDialogService dialogService,
             IAppDispatcher dispatcher,
             Func<bool> isRunningCheck,
@@ -50,7 +48,6 @@ namespace PocketMC.Desktop.Features.Settings
             _metadata = metadata;
             _serverDir = serverDir;
             _backupService = backupService;
-            _instanceManager = instanceManager;
             _dialogService = dialogService;
             _dispatcher = dispatcher;
             _isRunningCheck = isRunningCheck;

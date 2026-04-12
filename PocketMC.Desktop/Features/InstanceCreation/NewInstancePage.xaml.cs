@@ -11,6 +11,11 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Marketplace;
+using PocketMC.Desktop.Features.Mods;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 
 namespace PocketMC.Desktop.Features.InstanceCreation
 {
@@ -18,32 +23,42 @@ namespace PocketMC.Desktop.Features.InstanceCreation
     {
         private readonly IAppNavigationService _navigationService;
         private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly VanillaProvider _vanillaProvider;
         private readonly PaperProvider _paperProvider;
         private readonly FabricProvider _fabricProvider;
         private readonly ForgeProvider _forgeProvider;
+        private readonly ModpackService _modpackService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<NewInstancePage> _logger;
         private bool _isCreating;
         private bool _isLoadingVersions;
         private bool _hasLoadedInitialVersions;
         private int _versionLoadRequestId;
+        private string? _pendingModpackPath;
 
         public NewInstancePage(
             IAppNavigationService navigationService,
             InstanceManager instanceManager,
+            InstanceRegistry registry,
             VanillaProvider vanillaProvider,
             PaperProvider paperProvider,
             FabricProvider fabricProvider,
             ForgeProvider forgeProvider,
+            ModpackService modpackService,
+            IServiceProvider serviceProvider,
             ILogger<NewInstancePage> logger)
         {
             InitializeComponent();
             _navigationService = navigationService;
             _instanceManager = instanceManager;
+            _registry = registry;
             _vanillaProvider = vanillaProvider;
             _paperProvider = paperProvider;
             _fabricProvider = fabricProvider;
             _forgeProvider = forgeProvider;
+            _modpackService = modpackService;
+            _serviceProvider = serviceProvider;
             _logger = logger;
 
             Loaded += OnLoaded;
@@ -199,6 +214,58 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             }
         }
 
+        private void BtnBrowseModpacks_Click(object sender, RoutedEventArgs e)
+        {
+            var page = ActivatorUtilities.CreateInstance<PluginBrowserPage>(_serviceProvider, null as string, "*", "modpack");
+            page.OnModpackDownloaded += path =>
+            {
+                Dispatcher.Invoke(async () => await HandleModpackSelectedAsync(path));
+            };
+
+            _navigationService.NavigateToDetailPage(page, "Browse Modpacks", DetailRouteKind.PluginBrowser, DetailBackNavigation.Dashboard, true);
+        }
+
+        private async void BtnImportZip_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Modpack ZIP (*.zip)|*.zip",
+                Title = "Select Modpack File"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                await HandleModpackSelectedAsync(dialog.FileName);
+            }
+        }
+
+        private async Task HandleModpackSelectedAsync(string path)
+        {
+            try
+            {
+                var result = await _modpackService.ParseModpackZipAsync(path);
+                TxtName.Text = result.Name;
+                TxtDescription.Text = $"Imported from modpack: {result.Name}";
+                
+                // Select Server Type
+                foreach (ComboBoxItem item in CmbServerType.Items)
+                {
+                    if (item.Content.ToString().Equals(result.Loader, StringComparison.OrdinalIgnoreCase))
+                    {
+                        CmbServerType.SelectedItem = item;
+                        break;
+                    }
+                }
+
+                _pendingModpackPath = path;
+                ShowError("Modpack selected. Details populated automatically.");
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Failed to parse modpack: {ex.Message}");
+            }
+        }
+
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
             if (_isCreating)
@@ -239,7 +306,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                     serverType,
                     selectedVersion.Id);
 
-                createdInstancePath = _instanceManager.GetInstancePath(metadata.Id);
+                createdInstancePath = _registry.GetPath(metadata.Id);
                 if (createdInstancePath == null)
                 {
                     throw new InvalidOperationException("Instance directory could not be resolved after creation.");
@@ -278,6 +345,16 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                 else
                 {
                     await provider.DownloadJarAsync(selectedVersion.Id, jarPath, progress);
+                }
+
+                if (!string.IsNullOrEmpty(_pendingModpackPath))
+                {
+                    TxtProgress.Text = "Importing modpack files...";
+                    await _modpackService.ImportToExistingInstanceAsync(
+                        await _modpackService.ParseModpackZipAsync(_pendingModpackPath),
+                        metadata,
+                        createdInstancePath,
+                        _pendingModpackPath);
                 }
 
                 if (ChkAcceptEula.IsChecked == true && createdFolderName != null)

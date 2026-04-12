@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Features.Tunnel;
+using PocketMC.Desktop.Infrastructure;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {

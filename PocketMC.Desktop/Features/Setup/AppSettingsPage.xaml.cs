@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Features.Shell;
 

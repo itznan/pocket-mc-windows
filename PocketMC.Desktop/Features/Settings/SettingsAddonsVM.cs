@@ -7,10 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Core.Mvvm;
 using PocketMC.Desktop.Models;
-using PocketMC.Desktop.Services;
 using PocketMC.Desktop.Utils;
-using PocketMC.Desktop.Features.Marketplace;
 using PocketMC.Desktop.Features.Mods;
+using PocketMC.Desktop.Features.Marketplace;
 
 namespace PocketMC.Desktop.Features.Settings
 {

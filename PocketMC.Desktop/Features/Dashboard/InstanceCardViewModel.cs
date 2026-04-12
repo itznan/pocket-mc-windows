@@ -21,7 +21,6 @@ namespace PocketMC.Desktop.Features.Dashboard
         private string _playerStatus = "· · ·";
         private string? _tunnelAddress;
         private string _ipDisplayText = "Will Appear Here!";
-        private int _maxPlayers = 20;
 
         public InstanceCardViewModel(InstanceMetadata metadata, ServerProcessManager serverProcessManager, IServerLifecycleService lifecycleService)
         {
@@ -117,10 +116,10 @@ namespace PocketMC.Desktop.Features.Dashboard
 
         public int MaxPlayers
         {
-            get => _maxPlayers;
+            get => _metadata.MaxPlayers;
             set
             {
-                _maxPlayers = value;
+                _metadata.MaxPlayers = value;
                 OnPropertyChanged(nameof(MaxPlayers));
             }
         }
@@ -238,7 +237,10 @@ namespace PocketMC.Desktop.Features.Dashboard
             _metadata.ServerType = newMetadata.ServerType;
             _metadata.MinRamMb = newMetadata.MinRamMb;
             _metadata.MaxRamMb = newMetadata.MaxRamMb;
+            _metadata.MaxPlayers = newMetadata.MaxPlayers;
+            _metadata.Motd = newMetadata.Motd;
             RefreshNameDescription();
+            OnPropertyChanged(nameof(MaxPlayers));
         }
 
         public ServerState State

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Utils;
 
-namespace PocketMC.Desktop.Services
+namespace PocketMC.Desktop.Features.Settings
 {
     public class SettingsManager
     {

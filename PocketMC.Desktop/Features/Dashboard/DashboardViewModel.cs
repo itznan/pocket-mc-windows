@@ -10,6 +10,7 @@ using PocketMC.Desktop.Services;
 using PocketMC.Desktop.Features.InstanceCreation;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Features.Dashboard
 {
@@ -19,7 +20,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         private readonly DashboardMetricsVM _metricsVm;
         private readonly DashboardActionsVM _actionsVm;
         
-        private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly IServerLifecycleService _lifecycleService;
         private readonly ResourceMonitorService _resourceMonitorService;
         private readonly IAppNavigationService _navigationService;
@@ -45,7 +46,7 @@ namespace PocketMC.Desktop.Features.Dashboard
             DashboardInstanceListVM listVm,
             DashboardMetricsVM metricsVm,
             DashboardActionsVM actionsVm,
-            InstanceManager instanceManager,
+            InstanceRegistry registry,
             IServerLifecycleService lifecycleService,
             ResourceMonitorService resourceMonitorService,
             IAppNavigationService navigationService,
@@ -55,7 +56,7 @@ namespace PocketMC.Desktop.Features.Dashboard
             _listVm = listVm;
             _metricsVm = metricsVm;
             _actionsVm = actionsVm;
-            _instanceManager = instanceManager;
+            _registry = registry;
             _lifecycleService = lifecycleService;
             _resourceMonitorService = resourceMonitorService;
             _navigationService = navigationService;
@@ -78,7 +79,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             if (_isActive) { _listVm.LoadInstances(); return; }
 
-            _instanceManager.InstancesChanged += OnInstancesChanged;
+            _registry.InstancesChanged += OnInstancesChanged;
             _lifecycleService.OnInstanceStateChanged += OnInstanceStateChanged;
             _lifecycleService.OnRestartCountdownTick += OnRestartCountdownTick;
             _isActive = true;
@@ -89,7 +90,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         public void Deactivate()
         {
             if (!_isActive) return;
-            _instanceManager.InstancesChanged -= OnInstancesChanged;
+            _registry.InstancesChanged -= OnInstancesChanged;
             _lifecycleService.OnInstanceStateChanged -= OnInstanceStateChanged;
             _lifecycleService.OnRestartCountdownTick -= OnRestartCountdownTick;
             _isActive = false;

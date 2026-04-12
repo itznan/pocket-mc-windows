@@ -3,6 +3,7 @@ using System.Threading;
 using System.Timers;
 using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Models;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Services
 {
@@ -15,19 +16,19 @@ namespace PocketMC.Desktop.Services
         private readonly System.Timers.Timer _timer;
         private readonly ApplicationState _applicationState;
         private readonly BackupService _backupService;
-        private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
         private readonly ILogger<BackupSchedulerService> _logger;
         private int _isProcessing;
 
         public BackupSchedulerService(
             ApplicationState applicationState,
             BackupService backupService,
-            InstanceManager instanceManager,
+            InstanceRegistry registry,
             ILogger<BackupSchedulerService> logger)
         {
             _applicationState = applicationState;
             _backupService = backupService;
-            _instanceManager = instanceManager;
+            _registry = registry;
             _logger = logger;
             _timer = new System.Timers.Timer(60_000); // Check every 60 seconds
             _timer.Elapsed += OnTimerTick;
@@ -52,9 +53,9 @@ namespace PocketMC.Desktop.Services
                     return;
                 }
 
-                foreach (var meta in _instanceManager.GetAllInstances())
+                foreach (var meta in _registry.GetAll())
                 {
-                    var instancePath = _instanceManager.GetInstancePath(meta.Id);
+                    var instancePath = _registry.GetPath(meta.Id);
                     if (string.IsNullOrEmpty(instancePath))
                     {
                         continue;

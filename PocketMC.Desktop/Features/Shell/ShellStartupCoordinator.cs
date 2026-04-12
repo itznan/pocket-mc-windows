@@ -4,8 +4,9 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
-using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Features.Java;
+using PocketMC.Desktop.Features.Tunnel;
+using PocketMC.Desktop.Features.Settings;
 
 namespace PocketMC.Desktop.Features.Shell
 {

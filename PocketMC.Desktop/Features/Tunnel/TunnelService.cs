@@ -4,9 +4,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using PocketMC.Desktop.Features.Tunnel;
 
-namespace PocketMC.Desktop.Services
+namespace PocketMC.Desktop.Features.Tunnel
 {
     /// <summary>
     /// Result of attempting to resolve a tunnel for a server instance on start.
@@ -37,7 +36,6 @@ namespace PocketMC.Desktop.Services
 
     /// <summary>
     /// Orchestrates tunnel resolution on every server start.
-    /// Implements NET-06, NET-07, NET-08, NET-09, NET-10, NET-17.
     /// </summary>
     public class TunnelService
     {
@@ -54,11 +52,10 @@ namespace PocketMC.Desktop.Services
 
         /// <summary>
         /// Resolves the tunnel address for a server instance's port.
-        /// Called before every server start (NET-09: always fresh, never cached).
+        /// Called before every server start.
         /// </summary>
         public async Task<TunnelResolutionResult> ResolveTunnelAsync(int serverPort)
         {
-            // Check if agent is online or actively starting up
             if (_agentService.State != PlayitAgentState.Connected && 
                 _agentService.State != PlayitAgentState.Starting)
             {
@@ -71,7 +68,6 @@ namespace PocketMC.Desktop.Services
 
             var result = await _apiClient.GetTunnelsAsync();
 
-            // API failure — non-blocking warning (NET-17)
             if (!result.Success)
             {
                 return new TunnelResolutionResult
@@ -83,7 +79,6 @@ namespace PocketMC.Desktop.Services
                 };
             }
 
-            // Path A — Tunnel already exists (NET-06)
             var matching = PlayitApiClient.FindTunnelForPort(result.Tunnels, serverPort);
             if (matching != null)
             {
@@ -94,7 +89,6 @@ namespace PocketMC.Desktop.Services
                 };
             }
 
-            // Path C — Tunnel limit reached (NET-10)
             if (result.Tunnels.Count >= 4)
             {
                 return new TunnelResolutionResult
@@ -104,8 +98,6 @@ namespace PocketMC.Desktop.Services
                 };
             }
 
-            // Path B — No tunnel, capacity exists (NET-07)
-            // Open the tunnel creation dashboard
             try
             {
                 Process.Start(new ProcessStartInfo
@@ -126,7 +118,7 @@ namespace PocketMC.Desktop.Services
         }
 
         /// <summary>
-        /// Polls the API every 5 seconds until a tunnel for the given port appears (NET-08).
+        /// Polls the API every 5 seconds until a tunnel for the given port appears.
         /// Returns the public address when found, or null on timeout/cancellation.
         /// </summary>
         public async Task<string?> PollForNewTunnelAsync(int serverPort, CancellationToken cancellationToken, TimeSpan? timeout = null)

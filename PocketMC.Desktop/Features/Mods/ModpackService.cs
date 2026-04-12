@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Utils;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Features.Mods
 {

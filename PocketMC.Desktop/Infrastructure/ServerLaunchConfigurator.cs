@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Services;
 using PocketMC.Desktop.Features.Java;
+using PocketMC.Desktop.Infrastructure;
 using PocketMC.Desktop.Utils;
 
 namespace PocketMC.Desktop.Infrastructure

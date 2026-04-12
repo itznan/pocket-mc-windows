@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Utils;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Services
 {
@@ -32,15 +33,22 @@ namespace PocketMC.Desktop.Services
         };
 
         private readonly InstanceManager _instanceManager;
+        private readonly InstanceRegistry _registry;
 
-        public ServerConfigurationService(InstanceManager instanceManager)
+        public ServerConfigurationService(InstanceManager instanceManager, InstanceRegistry registry)
         {
             _instanceManager = instanceManager;
+            _registry = registry;
         }
 
         public ServerConfiguration Load(InstanceMetadata metadata, string serverDir)
         {
             var props = ServerPropertiesParser.Read(GetPropertiesPath(serverDir));
+
+            // Sync metadata if needed (NET-15)
+            if (props.TryGetValue("motd", out var pMotd)) metadata.Motd = pMotd;
+            if (props.TryGetValue("max-players", out var pMax) && int.TryParse(pMax, out int max)) metadata.MaxPlayers = max;
+
             var configuration = new ServerConfiguration
             {
                 MinRamMb = metadata.MinRamMb > 0 ? metadata.MinRamMb : 1024,
@@ -93,6 +101,8 @@ namespace PocketMC.Desktop.Services
             metadata.MaxBackupsToKeep = configuration.MaxBackupsToKeep;
             metadata.CustomJavaPath = string.IsNullOrWhiteSpace(configuration.CustomJavaPath) ? null : configuration.CustomJavaPath;
             metadata.AdvancedJvmArgs = string.IsNullOrWhiteSpace(configuration.AdvancedJvmArgs) ? null : configuration.AdvancedJvmArgs.Trim();
+            metadata.Motd = configuration.Motd;
+            if (int.TryParse(configuration.MaxPlayers, out int mp)) metadata.MaxPlayers = mp;
 
             _instanceManager.SaveMetadata(metadata, serverDir);
 
@@ -146,7 +156,7 @@ namespace PocketMC.Desktop.Services
 
         public int GetActivePortForInstance(Guid instanceId)
         {
-            var path = _instanceManager.GetInstancePath(instanceId);
+            var path = _registry.GetPath(instanceId);
             if (path == null) return 25565;
             
             if (TryGetProperty(path, "server-port", out var portStr) && int.TryParse(portStr, out int port))

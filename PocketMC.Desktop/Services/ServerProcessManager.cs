@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Infrastructure;
+using PocketMC.Desktop.Features.Instances;
 
 namespace PocketMC.Desktop.Services;
 
@@ -21,6 +22,7 @@ public class ServerProcessManager
 
     private readonly JobObject _jobObject;
     private readonly InstanceManager _instanceManager;
+    private readonly InstanceRegistry _registry;
     private readonly ServerLaunchConfigurator _launchConfigurator;
     private readonly ILogger<ServerProcessManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
@@ -30,12 +32,14 @@ public class ServerProcessManager
     public ServerProcessManager(
         JobObject jobObject,
         InstanceManager instanceManager,
+        InstanceRegistry registry,
         ServerLaunchConfigurator launchConfigurator,
         ILogger<ServerProcessManager> logger,
         ILoggerFactory loggerFactory)
     {
         _jobObject = jobObject;
         _instanceManager = instanceManager;
+        _registry = registry;
         _launchConfigurator = launchConfigurator;
         _logger = logger;
         _loggerFactory = loggerFactory;
@@ -51,7 +55,7 @@ public class ServerProcessManager
         if (_activeProcesses.ContainsKey(meta.Id))
             throw new InvalidOperationException($"Server '{meta.Name}' is already running.");
 
-        var instancePath = _instanceManager.GetInstancePath(meta.Id) 
+        var instancePath = _registry.GetPath(meta.Id) 
             ?? throw new DirectoryNotFoundException($"Could not locate directory for instance {meta.Name}.");
 
         var serverProcess = new ServerProcess(

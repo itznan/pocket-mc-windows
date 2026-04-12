@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Services;
+using PocketMC.Desktop.Features.Marketplace;
 using Wpf.Ui.Controls;
 using System.Collections.ObjectModel;
 using MessageBoxButton = System.Windows.MessageBoxButton;
