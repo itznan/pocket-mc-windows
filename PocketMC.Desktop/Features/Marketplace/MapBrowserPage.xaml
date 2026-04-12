@@ -1,0 +1,106 @@
+<Page x:Class="PocketMC.Desktop.Features.Marketplace.MapBrowserPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      Title="Map Browser">
+
+    <Grid Margin="28,20,28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <ui:Button Content="Back"
+                           Appearance="Secondary"
+                           Icon="{ui:SymbolIcon ArrowLeft24}"
+                           MinWidth="88"
+                           Margin="0,0,14,0"
+                           Click="BtnBack_Click"/>
+
+                <ui:TextBlock x:Name="TxtTitle"
+                              FontTypography="Title"
+                              Text="World Maps Browser"
+                              Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                              VerticalAlignment="Center"/>
+            </StackPanel>
+            
+            <ui:Button Content="Browse More on Web" 
+                       Appearance="Secondary" 
+                       Icon="{ui:SymbolIcon Globe24}" 
+                       HorizontalAlignment="Right" 
+                       Click="BtnWebBrowse_Click"
+                       ToolTip="Open minecraftmaps.com"/>
+        </Grid>
+
+        <!-- Search and Filters -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <ui:Card Padding="16">
+                <StackPanel Orientation="Horizontal">
+                    <ui:AutoSuggestBox x:Name="TxtSearch" PlaceholderText="Search maps..." Width="260" Margin="0,0,16,0"
+                                       Icon="{ui:SymbolIcon Search24}" TextChanged="TxtSearch_TextChanged"/>
+
+                    <TextBlock Text="Source:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <ComboBox x:Name="CmbSource" Width="130" Margin="0,0,16,0" IsEnabled="False">
+                        <ComboBoxItem Content="CurseForge" IsSelected="True"/>
+                    </ComboBox>
+
+                    <TextBlock Text="Sort By:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <ComboBox x:Name="CmbSort" Width="130" Margin="0,0,16,0" SelectionChanged="RefreshList_SelectionChanged" Visibility="Hidden">
+                        <ComboBoxItem Content="Trending" Tag="relevance" IsSelected="True"/>
+                    </ComboBox>
+
+                    <ui:SymbolIcon Symbol="Info24" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock x:Name="TxtMcVersion" Text="Minecraft 1.20.1" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
+            </ui:Card>
+        </Grid>
+
+        <!-- Content Area -->
+        <Grid Grid.Row="2">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Background="Transparent" Padding="0,0,16,0">
+                <StackPanel Background="Transparent">
+                    <ItemsControl x:Name="ListResults">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ui:Card Margin="0,0,0,12" Padding="12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="64"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0" Width="64" Height="64" CornerRadius="8" ClipToBounds="True" VerticalAlignment="Top">
+                                            <Image Source="{Binding IconUrl}" Stretch="UniformToFill"/>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" Margin="16,0">
+                                            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4"/>
+                                            <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" MaxHeight="40" Margin="0,0,0,8"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <ui:SymbolIcon Symbol="ArrowDownload24" Margin="0,0,6,0" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                <TextBlock Text="{Binding Downloads, StringFormat={}{0:N0}}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                            <ui:Button x:Name="BtnAction" Width="90" Height="36"
+                                                       Click="BtnInstall_Click" Tag="{Binding Slug}" Appearance="Primary" Content="Import"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </ui:Card>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ui:Button x:Name="BtnLoadMore" Content="Load More" Appearance="Secondary" HorizontalAlignment="Center" Margin="0,8,0,16" Click="BtnLoadMore_Click" Visibility="Collapsed"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ui:ProgressRing x:Name="ProgressSearching" IsIndeterminate="True" Width="40" Height="40" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+    </Grid>
+</Page>

@@ -88,7 +88,7 @@ namespace PocketMC.Desktop.Features.Settings
             _lifecycleService.OnInstanceStateChanged += _instanceStateChangedHandler;
 
             General = new SettingsGeneralVM(ServerDir, dialogService, MarkChanged);
-            World = new SettingsWorldVM(ServerDir, worldManager, dialogService, dispatcher, () => IsRunning, MarkChanged);
+            World = new SettingsWorldVM(ServerDir, worldManager, dialogService, dispatcher, navigationService, serviceProvider, metadata.MinecraftVersion, () => IsRunning, MarkChanged);
             Performance = new SettingsPerformanceVM(dialogService, MarkChanged);
             Backups = new SettingsBackupsVM(metadata, ServerDir, backupService, dialogService, dispatcher, () => IsRunning, MarkChanged);
             Addons = new SettingsAddonsVM(metadata, ServerDir, modpackService, dialogService, navigationService, serviceProvider, () => IsRunning, MarkChanged);

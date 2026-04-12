@@ -52,6 +52,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                     "project_type:mod" => "6",
                     "project_type:modpack" => "4471",
                     "project_type:plugin" => "5",
+                    "project_type:world" => "17",
                     _ => "6"
                 };
 

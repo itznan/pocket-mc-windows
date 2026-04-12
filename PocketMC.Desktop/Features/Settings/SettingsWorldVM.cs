@@ -3,9 +3,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.Extensions.DependencyInjection;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Core.Mvvm;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Marketplace;
 
 namespace PocketMC.Desktop.Features.Settings
 {
@@ -69,11 +71,18 @@ namespace PocketMC.Desktop.Features.Settings
         public ICommand DeleteWorldCommand { get; }
         public ICommand BrowseMapsCommand { get; }
 
+        private readonly IAppNavigationService _navigationService;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly string _mcVersion;
+
         public SettingsWorldVM(
             string serverDir,
             WorldManager worldManager,
             IDialogService dialogService,
             IAppDispatcher dispatcher,
+            IAppNavigationService navigationService,
+            IServiceProvider serviceProvider,
+            string mcVersion,
             Func<bool> isRunningCheck,
             Action markDirty)
         {
@@ -81,12 +90,15 @@ namespace PocketMC.Desktop.Features.Settings
             _worldManager = worldManager;
             _dialogService = dialogService;
             _dispatcher = dispatcher;
+            _navigationService = navigationService;
+            _serviceProvider = serviceProvider;
+            _mcVersion = mcVersion;
             _isRunningCheck = isRunningCheck;
             _markDirty = markDirty;
 
             UploadWorldCommand = new RelayCommand(async _ => await UploadWorldAsync(), _ => !_isRunningCheck());
             DeleteWorldCommand = new RelayCommand(async _ => await DeleteWorldAsync(), _ => !_isRunningCheck());
-            BrowseMapsCommand = new RelayCommand(_ => OpenMapsWebsite());
+            BrowseMapsCommand = new RelayCommand(_ => BrowseMaps());
         }
 
         public void LoadWorldState()
@@ -129,17 +141,23 @@ namespace PocketMC.Desktop.Features.Settings
             }
         }
 
-        private void OpenMapsWebsite()
+        private void BrowseMaps()
         {
-            try
+            var browserPage = ActivatorUtilities.CreateInstance<MapBrowserPage>(_serviceProvider, _mcVersion);
+            browserPage.OnMapDownloaded += async (tempZip) => 
             {
-                Process.Start(new ProcessStartInfo
+                try 
                 {
-                    FileName = "https://www.minecraftmaps.com/search",
-                    UseShellExecute = true
-                });
-            }
-            catch { /* Browser launch failed silently */ }
+                    await _worldManager.ImportWorldZipAsync(tempZip, Path.Combine(_serverDir, "world"), p => {});
+                    LoadWorldState();
+                    File.Delete(tempZip);
+                }
+                catch (Exception ex)
+                {
+                    _dialogService.ShowMessage("Import Failed", ex.Message, DialogType.Error);
+                }
+            };
+            _navigationService.NavigateToDetailPage(browserPage, "Maps", DetailRouteKind.PluginBrowser, DetailBackNavigation.PreviousDetail);
         }
     }
 }
