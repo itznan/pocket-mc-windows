@@ -1,7 +1,7 @@
 [Setup]
 AppName=PocketMC
 #ifndef AppVersion
-  #define AppVersion "1.1.0"
+  #define AppVersion "1.0.0"
 #endif
 AppVersion={#AppVersion}
 DefaultDirName={autopf}\PocketMC Desktop
