@@ -9,6 +9,10 @@ using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Console;
 using PocketMC.Desktop.Infrastructure.Process;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Infrastructure.FileSystem;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Presentation;
@@ -39,7 +43,12 @@ namespace PocketMC.Desktop.Features.Settings
             try
             {
                 var content = File.ReadAllText(_settingsFilePath);
-                return Normalize(JsonSerializer.Deserialize<AppSettings>(content));
+                var settings = JsonSerializer.Deserialize<AppSettings>(content);
+                if (settings != null && !string.IsNullOrEmpty(settings.CurseForgeApiKey))
+                {
+                    settings.CurseForgeApiKey = DataProtector.Unprotect(settings.CurseForgeApiKey);
+                }
+                return Normalize(settings);
             }
             catch (Exception ex)
             {
@@ -57,8 +66,20 @@ namespace PocketMC.Desktop.Features.Settings
                 Directory.CreateDirectory(directory);
             }
 
-            var content = JsonSerializer.Serialize(normalizedSettings, new JsonSerializerOptions { WriteIndented = true });
-            FileUtils.AtomicWriteAllText(_settingsFilePath, content);
+            var originalKey = normalizedSettings.CurseForgeApiKey;
+            try
+            {
+                if (!string.IsNullOrEmpty(normalizedSettings.CurseForgeApiKey))
+                {
+                    normalizedSettings.CurseForgeApiKey = DataProtector.Protect(normalizedSettings.CurseForgeApiKey);
+                }
+                var content = JsonSerializer.Serialize(normalizedSettings, new JsonSerializerOptions { WriteIndented = true });
+                FileUtils.AtomicWriteAllText(_settingsFilePath, content);
+            }
+            finally
+            {
+                normalizedSettings.CurseForgeApiKey = originalKey;
+            }
         }
 
         public string GetPlayitTomlPath(AppSettings? settings = null)

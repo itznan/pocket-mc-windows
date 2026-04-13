@@ -1,3 +1,4 @@
+using PocketMC.Desktop.Features.Instances.Models;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -8,16 +9,22 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Infrastructure.Security;
 using PocketMC.Desktop.Features.Instances.Backups;
 using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Console;
-using PocketMC.Desktop.Infrastructure.Process;using PocketMC.Desktop.Infrastructure.FileSystem;
+using PocketMC.Desktop.Infrastructure.Process;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Infrastructure.FileSystem;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Presentation;
 
-namespace PocketMC.Desktop.Features.Instances
+namespace PocketMC.Desktop.Features.Instances.Services
 {
     /// <summary>
     /// Orchestrates the lifecycle of Minecraft server instances, including
@@ -60,7 +67,7 @@ namespace PocketMC.Desktop.Features.Instances
 
             string newInstancePath = _pathService.GetInstancePath(slug);
             Directory.CreateDirectory(newInstancePath);
-
+            
             // Apply default server icon
             ApplyDefaultServerIcon(newInstancePath);
 
@@ -108,7 +115,7 @@ namespace PocketMC.Desktop.Features.Instances
             string baseSlug = SlugHelper.GenerateSlug(newName);
             string newSlug = baseSlug;
             int counter = 2;
-
+            
             while (Directory.Exists(_pathService.GetInstancePath(newSlug)) && newSlug != folderName)
             {
                 newSlug = $"{baseSlug}-{counter}";
@@ -190,7 +197,7 @@ namespace PocketMC.Desktop.Features.Instances
             string folderPath = _pathService.GetInstancePath(folderName);
             if (Directory.Exists(folderPath))
             {
-                FileUtils.AtomicWriteAllText(_pathService.GetEulaPath(folderPath),
+                FileUtils.AtomicWriteAllText(_pathService.GetEulaPath(folderPath), 
                     "# By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).\n" +
                     "eula=true\n");
             }

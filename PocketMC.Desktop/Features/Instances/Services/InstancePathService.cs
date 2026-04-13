@@ -1,10 +1,13 @@
+using PocketMC.Desktop.Features.Instances.Models;
 using System;
 using System.IO;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
 
-namespace PocketMC.Desktop.Features.Instances
+namespace PocketMC.Desktop.Features.Instances.Services
 {
     /// <summary>
     /// Provides path resolution for instance-related files and directories.

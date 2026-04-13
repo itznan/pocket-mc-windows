@@ -11,7 +11,17 @@ using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+
 namespace PocketMC.Desktop.Features.Java
 {
     /// <summary>
@@ -26,7 +36,7 @@ namespace PocketMC.Desktop.Features.Java
         private readonly JavaAdoptiumClient _adoptiumClient;
         private readonly JavaRuntimeValidator _validator;
         private readonly ILogger<JavaProvisioningService> _logger;
-
+        
         private readonly ConcurrentDictionary<int, Task> _inflightProvisioning = new();
         private readonly ConcurrentDictionary<int, JavaProvisioningStatus> _statuses = new();
         private readonly ConcurrentDictionary<int, DateTimeOffset> _automaticRetryBlockedUntil = new();
@@ -153,16 +163,16 @@ namespace PocketMC.Desktop.Features.Java
                 {
                     CleanupProvisioningPaths(tempZipPath, extractPath, finalPath, keepFinalIfValid: false);
                     PublishStatus(version, JavaProvisioningStage.ResolvingPackage, "Resolving package metadata...", 0);
-
+                    
                     string packageUrl = await _adoptiumClient.ResolveRuntimePackageUrlAsync(version, cancellationToken);
 
-                    var downloadProgress = new Progress<DownloadProgress>(p =>
+                    var downloadProgress = new Progress<DownloadProgress>(p => 
                         PublishStatus(version, JavaProvisioningStage.Downloading, $"Downloading... {FormatSize(p.BytesRead)} / {FormatSize(p.TotalBytes)}", p.Percentage));
 
                     await _downloader.DownloadFileAsync(packageUrl, tempZipPath, downloadProgress, cancellationToken);
 
                     PublishStatus(version, JavaProvisioningStage.Extracting, "Extracting runtime archive...", 0);
-                    await _downloader.ExtractZipAsync(tempZipPath, extractPath, new Progress<DownloadProgress>(p =>
+                    await _downloader.ExtractZipAsync(tempZipPath, extractPath, new Progress<DownloadProgress>(p => 
                         PublishStatus(version, JavaProvisioningStage.Extracting, "Extracting...", p.Percentage)));
 
                     string extractedRoot = ResolveExtractedRuntimeRoot(version, extractPath);

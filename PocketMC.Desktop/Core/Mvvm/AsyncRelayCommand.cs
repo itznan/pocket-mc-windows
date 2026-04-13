@@ -8,12 +8,14 @@ namespace PocketMC.Desktop.Core.Mvvm
     {
         private readonly Func<object?, Task> _execute;
         private readonly Predicate<object?>? _canExecute;
+        private readonly Action<Exception>? _errorHandler;
         private bool _isExecuting;
 
-        public AsyncRelayCommand(Func<object?, Task> execute, Predicate<object?>? canExecute = null)
+        public AsyncRelayCommand(Func<object?, Task> execute, Predicate<object?>? canExecute = null, Action<Exception>? errorHandler = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
+            _errorHandler = errorHandler;
         }
 
         public event EventHandler? CanExecuteChanged
@@ -40,9 +42,9 @@ namespace PocketMC.Desktop.Core.Mvvm
                 {
                     await _execute(parameter);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Swallow exception to prevent app crash
+                    _errorHandler?.Invoke(ex);
                 }
             }
             finally

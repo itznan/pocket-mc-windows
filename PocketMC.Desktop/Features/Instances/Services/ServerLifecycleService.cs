@@ -1,3 +1,4 @@
+using PocketMC.Desktop.Features.Instances.Models;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -8,7 +9,7 @@ using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Features.Shell.Interfaces;
 using PocketMC.Desktop.Models;
 
-namespace PocketMC.Desktop.Features.Instances;
+namespace PocketMC.Desktop.Features.Instances.Services;
 
 public class ServerLifecycleService : IServerLifecycleService
 {

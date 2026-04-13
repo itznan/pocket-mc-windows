@@ -1,3 +1,4 @@
+using PocketMC.Desktop.Features.Instances.Models;
 using System.IO;
 using System.Net.Http;
 using System.Net;
@@ -9,11 +10,13 @@ using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Console;
 using PocketMC.Desktop.Infrastructure.Process;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Infrastructure.FileSystem;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Presentation;
 
-namespace PocketMC.Desktop.Features.Instances
+namespace PocketMC.Desktop.Features.Instances.Services
 {
     public class DownloaderService
     {

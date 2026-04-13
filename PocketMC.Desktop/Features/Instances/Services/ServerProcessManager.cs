@@ -1,3 +1,4 @@
+using PocketMC.Desktop.Features.Instances.Models;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -8,7 +9,7 @@ using PocketMC.Desktop.Features.Shell.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Infrastructure;
 
-namespace PocketMC.Desktop.Features.Instances;
+namespace PocketMC.Desktop.Features.Instances.Services;
 
 /// <summary>
 /// Low-level process tracker that manages concrete OS process interactions.

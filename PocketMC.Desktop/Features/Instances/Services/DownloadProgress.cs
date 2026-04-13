@@ -1,4 +1,5 @@
-namespace PocketMC.Desktop.Features.Instances
+using PocketMC.Desktop.Features.Instances.Models;
+namespace PocketMC.Desktop.Features.Instances.Services
 {
     public struct DownloadProgress
     {

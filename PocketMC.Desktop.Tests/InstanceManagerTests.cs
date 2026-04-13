@@ -2,7 +2,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 
 namespace PocketMC.Desktop.Tests;
 
@@ -31,10 +36,10 @@ public sealed class InstanceManagerTests : IDisposable
     {
         var state = new ApplicationState();
         state.ApplySettings(new AppSettings { AppRootPath = _tempDirectory });
-
+        
         pathService = new InstancePathService(state);
         registry = new InstanceRegistry(pathService, NullLogger<InstanceRegistry>.Instance);
-
+        
         return new InstanceManager(registry, pathService, state, NullLogger<InstanceManager>.Instance);
     }
 

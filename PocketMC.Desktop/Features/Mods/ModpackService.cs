@@ -15,11 +15,25 @@ using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Console;
 using PocketMC.Desktop.Infrastructure.Process;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Infrastructure.FileSystem;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Presentation;
 using PocketMC.Desktop.Features.Shell;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Instances.Providers;
 
 namespace PocketMC.Desktop.Features.Mods
@@ -100,7 +114,7 @@ namespace PocketMC.Desktop.Features.Mods
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-
+                
                 try
                 {
                     await _downloader.DownloadFileAsync(mod.DownloadUrl, dest);
@@ -117,7 +131,7 @@ namespace PocketMC.Desktop.Features.Mods
             {
                 string targetPath = "";
                 if (entry.FullName.StartsWith("overrides/")) targetPath = entry.FullName.Substring(10);
-                else if (entry.FullName.StartsWith("client_overrides/")) continue;
+                else if (entry.FullName.StartsWith("client_overrides/")) continue; 
 
                 if (string.IsNullOrEmpty(targetPath)) continue;
 
@@ -128,7 +142,7 @@ namespace PocketMC.Desktop.Features.Mods
                     continue;
                 }
 
-                if (string.IsNullOrEmpty(entry.Name))
+                if (string.IsNullOrEmpty(entry.Name)) 
                 {
                     Directory.CreateDirectory(destinationPath);
                 }

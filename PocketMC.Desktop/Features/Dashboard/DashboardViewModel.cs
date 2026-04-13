@@ -9,8 +9,16 @@ using PocketMC.Desktop.Core.Mvvm;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Features.InstanceCreation;
+using PocketMC.Desktop.Features.Shell;
+using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Backups;
 
 namespace PocketMC.Desktop.Features.Dashboard
 {
@@ -19,14 +27,14 @@ namespace PocketMC.Desktop.Features.Dashboard
         private readonly DashboardInstanceListVM _listVm;
         private readonly DashboardMetricsVM _metricsVm;
         private readonly DashboardActionsVM _actionsVm;
-
+        
         private readonly InstanceRegistry _registry;
         private readonly IServerLifecycleService _lifecycleService;
         private readonly ResourceMonitorService _resourceMonitorService;
         private readonly IAppNavigationService _navigationService;
         private readonly IAppDispatcher _dispatcher;
         private readonly IServiceProvider _serviceProvider;
-
+        
         private readonly System.Windows.Threading.DispatcherTimer _timer;
         private bool _isActive;
 

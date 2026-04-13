@@ -13,7 +13,17 @@ using PocketMC.Desktop.Features.Shell.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
-using PocketMC.Desktop.Features.Dashboard;using PocketMC.Desktop.Features.Instances.Providers;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Providers;
 using PocketMC.Desktop.Features.Marketplace;
 using PocketMC.Desktop.Features.Mods;
 using Microsoft.Extensions.DependencyInjection;
@@ -269,7 +279,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                 });
 
                 TxtProgress.Text = "Downloading server jar...";
-
+                
                 string loaderVersion = (CmbLoaderVersion.SelectedItem as ModLoaderVersion)?.Version ?? "";
 
                 if (serverType == "Fabric" && !string.IsNullOrEmpty(loaderVersion))
