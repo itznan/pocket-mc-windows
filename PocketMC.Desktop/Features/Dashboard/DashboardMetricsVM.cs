@@ -2,6 +2,10 @@ using System;
 using PocketMC.Desktop.Core.Mvvm;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
 
 namespace PocketMC.Desktop.Features.Dashboard
