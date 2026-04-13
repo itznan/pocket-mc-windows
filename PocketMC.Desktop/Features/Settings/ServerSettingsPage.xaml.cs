@@ -226,6 +226,7 @@ namespace PocketMC.Desktop.Features.Settings
                 4 => BackupsScrollViewer,
                 5 => RestartScrollViewer,
                 6 => AdvancedScrollViewer,
+                7 => SummariesScrollViewer,
                 _ => null
             };
         }

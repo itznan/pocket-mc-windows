@@ -25,5 +25,6 @@ namespace PocketMC.Desktop.Core.Interfaces
         Task RestartAsync(Guid instanceId);
 
         ServerProcess? GetProcess(Guid instanceId);
+        DateTime? GetSessionStartTime(Guid instanceId);
     }
 }

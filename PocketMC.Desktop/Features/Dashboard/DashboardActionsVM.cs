@@ -8,34 +8,20 @@ using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Features.Shell.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
+using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Features.Instances;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Infrastructure.Security;
 using PocketMC.Desktop.Features.Instances.Backups;
 using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Console;
 using PocketMC.Desktop.Infrastructure.Process;
-using PocketMC.Desktop.Features.Instances;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Infrastructure.FileSystem;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Presentation;
 using PocketMC.Desktop.Features.Tunnel;
-using PocketMC.Desktop.Features.Settings;
-using PocketMC.Desktop.Features.Console;
-using PocketMC.Desktop.Features.Instances;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Instances.Backups;
+using PocketMC.Desktop.Features.Intelligence;
 
 namespace PocketMC.Desktop.Features.Dashboard
 {
@@ -144,8 +130,14 @@ namespace PocketMC.Desktop.Features.Dashboard
 
                 if (_lifecycleService.GetProcess(vm.Id) == null) return;
 
+                // Capture session start time before stopping
+                var sessionStart = _lifecycleService.GetSessionStartTime(vm.Id) ?? DateTime.UtcNow;
+
                 vm.UpdateState(ServerState.Stopping);
                 await _lifecycleService.StopAsync(vm.Id);
+
+                // Trigger AI summarization flow after stop completes
+                _ = TriggerAiSummarizationAsync(vm, sessionStart);
             }
             catch (Exception ex)
             {
@@ -153,6 +145,58 @@ namespace PocketMC.Desktop.Features.Dashboard
                 vm.UpdateState(currentState);
                 onStopped(vm);
                 _logger.LogError(ex, "Failed to stop server {ServerName}.", vm.Name);
+            }
+        }
+
+        private async Task TriggerAiSummarizationAsync(InstanceCardViewModel vm, DateTime sessionStart)
+        {
+            try
+            {
+                var settings = _applicationState.Settings;
+
+                // Check if feature is enabled and configured
+                if (!settings.EnableAiSummarization || string.IsNullOrWhiteSpace(settings.GetCurrentAiKey()))
+                    return;
+
+                string? serverDir = _registry.GetPath(vm.Id);
+                if (serverDir == null) return;
+
+                // Either auto-generate or ask the user
+                if (!settings.AlwaysAutoSummarize)
+                {
+                    var response = await _dialogService.ShowDialogAsync(
+                        "AI Session Summary",
+                        $"Generate an AI summary for this '{vm.Name}' session?\n\nThis will send the session logs to {settings.AiProvider} for analysis.",
+                        DialogType.Question, true);
+
+                    if (response != DialogResult.Yes)
+                        return;
+                }
+
+                // Run summarization asynchronously
+                var summarizationService = (SessionSummarizationService)_serviceProvider.GetService(typeof(SessionSummarizationService))!;
+                var provider = AiApiClient.ParseProvider(settings.AiProvider);
+                var sessionEnd = DateTime.UtcNow;
+
+                var notificationService = (INotificationService)_serviceProvider.GetService(typeof(INotificationService))!;
+                notificationService.ShowInformation("AI Summary", $"Generating summary for '{vm.Name}'...");
+
+                var result = await summarizationService.SummarizeAsync(
+                    serverDir, vm.Name, provider, settings.GetCurrentAiKey()!, sessionStart, sessionEnd);
+
+                if (result.Success)
+                {
+                    notificationService.ShowInformation("AI Summary Complete", $"Session summary saved for '{vm.Name}'.");
+                }
+                else
+                {
+                    _dialogService.ShowMessage("AI Summary Failed", $"Could not generate summary:\n{result.Error}", DialogType.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AI summarization failed for {Server}.", vm.Name);
+                // Intentionally swallowed — summarization failure must never affect server operations
             }
         }
 

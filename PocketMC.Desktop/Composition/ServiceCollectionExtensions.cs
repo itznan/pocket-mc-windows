@@ -50,6 +50,14 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<JobObject>();
             services.AddSingleton<WindowsToastNotificationService>();
             services.AddSingleton<INotificationService>(provider => provider.GetRequiredService<WindowsToastNotificationService>());
+            services.AddHttpClient<PocketMC.Desktop.Features.Intelligence.AiApiClient>(client =>
+            {
+                client.Timeout = TimeSpan.FromMinutes(3);
+                SetDefaultUserAgent(client);
+            });
+            services.AddSingleton<PocketMC.Desktop.Features.Intelligence.SummaryStorageService>();
+            services.AddSingleton<PocketMC.Desktop.Features.Intelligence.SessionSummarizationService>();
+            
             return services;
         }
 

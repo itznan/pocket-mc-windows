@@ -12,18 +12,12 @@ using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Features.Mods;
-using PocketMC.Desktop.Features.Instances;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Instances.Backups;
+using PocketMC.Desktop.Features.Intelligence;
 
 namespace PocketMC.Desktop.Features.Settings
 {
@@ -37,6 +31,7 @@ namespace PocketMC.Desktop.Features.Settings
         private readonly IAppNavigationService _navigationService;
         private readonly Action<Guid, ServerState> _instanceStateChangedHandler;
         private readonly string _appRootPath;
+        private readonly ApplicationState _applicationState;
 
         public InstanceMetadata Metadata { get; }
         public string ServerDir { get; }
@@ -48,6 +43,10 @@ namespace PocketMC.Desktop.Features.Settings
         public SettingsBackupsVM Backups { get; }
         public SettingsAddonsVM Addons { get; }
         public SettingsAdvancedVM Advanced { get; }
+        public SettingsSummariesVM Summaries { get; }
+
+        private bool _isAiSummarizationAvailable;
+        public bool IsAiSummarizationAvailable { get => _isAiSummarizationAvailable; set => SetProperty(ref _isAiSummarizationAvailable, value); }
 
         private bool _isLoading;
         public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
@@ -94,7 +93,8 @@ namespace PocketMC.Desktop.Features.Settings
             _lifecycleService = lifecycleService;
             _dialogService = dialogService;
             _navigationService = navigationService;
-            _appRootPath = ((ApplicationState)serviceProvider.GetService(typeof(ApplicationState))!).GetRequiredAppRootPath();
+            _applicationState = (ApplicationState)serviceProvider.GetService(typeof(ApplicationState))!;
+            _appRootPath = _applicationState.GetRequiredAppRootPath();
             ServerDir = _registry.GetPath(metadata.Id) ?? throw new InvalidOperationException();
 
             _instanceStateChangedHandler = (id, state) => { if (id == Metadata.Id) dispatcher.Invoke(UpdateRunningState); };
@@ -106,6 +106,9 @@ namespace PocketMC.Desktop.Features.Settings
             Backups = new SettingsBackupsVM(metadata, ServerDir, backupService, dialogService, dispatcher, () => IsRunning, MarkChanged);
             Addons = new SettingsAddonsVM(metadata, ServerDir, modpackService, dialogService, navigationService, serviceProvider, () => IsRunning, MarkChanged);
             Advanced = new SettingsAdvancedVM(ServerDir, serverConfigurationService, MarkChanged);
+
+            var summaryStorage = (SummaryStorageService)serviceProvider.GetService(typeof(SummaryStorageService))!;
+            Summaries = new SettingsSummariesVM(ServerDir, summaryStorage, dialogService);
 
             SaveCommand = new RelayCommand(_ => SaveConfigurations(), _ => !IsTransientState);
             CancelCommand = new RelayCommand(async _ => await CancelAsync());
@@ -158,6 +161,11 @@ namespace PocketMC.Desktop.Features.Settings
 
             Addons.LoadAddons();
             Backups.LoadBackups();
+
+            // AI Summaries
+            bool hasApiKey = !string.IsNullOrWhiteSpace(_applicationState.Settings.GetCurrentAiKey());
+            IsAiSummarizationAvailable = hasApiKey;
+            Summaries.Load(hasApiKey);
 
             _ = ResolveTunnelAddressAsync(playitApiClient);
 
