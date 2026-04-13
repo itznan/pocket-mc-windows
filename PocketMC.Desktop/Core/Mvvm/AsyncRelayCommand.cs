@@ -36,7 +36,14 @@ namespace PocketMC.Desktop.Core.Mvvm
             {
                 _isExecuting = true;
                 CommandManager.InvalidateRequerySuggested();
-                await _execute(parameter);
+                try
+                {
+                    await _execute(parameter);
+                }
+                catch (Exception ex)
+                {
+                    // Swallow exception to prevent app crash
+                }
             }
             finally
             {

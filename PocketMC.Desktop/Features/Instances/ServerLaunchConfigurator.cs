@@ -12,7 +12,7 @@ using PocketMC.Desktop.Features.Java;
 using PocketMC.Desktop.Infrastructure;
 using PocketMC.Desktop.Utils;
 
-namespace PocketMC.Desktop.Infrastructure
+namespace PocketMC.Desktop.Features.Instances
 {
     /// <summary>
     /// Encapsulates the logic for configuring a Minecraft server process launch.
