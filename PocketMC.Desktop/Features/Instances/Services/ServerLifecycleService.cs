@@ -73,7 +73,7 @@ public class ServerLifecycleService : IServerLifecycleService
 
     public bool IsRunning(Guid instanceId) => _processManager.IsRunning(instanceId);
     public bool IsWaitingToRestart(Guid instanceId) => _restartCancellations.ContainsKey(instanceId);
-    
+
     public void AbortRestartDelay(Guid instanceId)
     {
         if (_restartCancellations.TryRemove(instanceId, out var cts))
@@ -89,7 +89,7 @@ public class ServerLifecycleService : IServerLifecycleService
     {
         var meta = _registry.GetById(instanceId);
         if (meta == null) return;
-        
+
         await StopAsync(instanceId);
         // Wait a small buffer for OS to release locks
         await Task.Delay(800);

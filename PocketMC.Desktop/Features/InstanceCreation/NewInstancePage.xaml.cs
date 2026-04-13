@@ -279,7 +279,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                 });
 
                 TxtProgress.Text = "Downloading server jar...";
-                
+
                 string loaderVersion = (CmbLoaderVersion.SelectedItem as ModLoaderVersion)?.Version ?? "";
 
                 if (serverType == "Fabric" && !string.IsNullOrEmpty(loaderVersion))

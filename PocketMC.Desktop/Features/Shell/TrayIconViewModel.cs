@@ -44,10 +44,10 @@ namespace PocketMC.Desktop.Features.Shell
 
         public void UpdateTooltip()
         {
-            int runningCount = _processManager.ActiveProcesses.Count(p => 
-                p.Value.State == PocketMC.Desktop.Models.ServerState.Online || 
+            int runningCount = _processManager.ActiveProcesses.Count(p =>
+                p.Value.State == PocketMC.Desktop.Models.ServerState.Online ||
                 p.Value.State == PocketMC.Desktop.Models.ServerState.Starting);
-            
+
             if (runningCount > 0)
                 TooltipText = $"PocketMC Desktop - {runningCount} server{(runningCount == 1 ? "" : "s")} running";
             else

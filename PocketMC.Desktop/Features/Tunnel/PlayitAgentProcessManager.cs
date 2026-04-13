@@ -79,7 +79,7 @@ namespace PocketMC.Desktop.Features.Tunnel
 
             _process = new Process { StartInfo = psi, EnableRaisingEvents = true };
             _process.Exited += (s, e) => OnProcessExited?.Invoke(_process?.ExitCode ?? -1);
-            
+
             if (!_process.Start())
             {
                 throw new InvalidOperationException("Failed to start playit.exe process.");

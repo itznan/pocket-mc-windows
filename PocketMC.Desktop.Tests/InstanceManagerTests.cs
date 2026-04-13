@@ -36,10 +36,10 @@ public sealed class InstanceManagerTests : IDisposable
     {
         var state = new ApplicationState();
         state.ApplySettings(new AppSettings { AppRootPath = _tempDirectory });
-        
+
         pathService = new InstancePathService(state);
         registry = new InstanceRegistry(pathService, NullLogger<InstanceRegistry>.Instance);
-        
+
         return new InstanceManager(registry, pathService, state, NullLogger<InstanceManager>.Instance);
     }
 

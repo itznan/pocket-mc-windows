@@ -169,9 +169,10 @@ namespace PocketMC.Desktop.Features.Console
                 var common = new[] { "list", "stop", "help", "save-all", "op", "whitelist" };
                 TxtCommand.ItemsSource = common;
             }
-            
+
             // Try to force dropdown open if any items
-            if (TxtCommand.ItemsSource != null) {
+            if (TxtCommand.ItemsSource != null)
+            {
                 // In WPF-UI 3.x, TxtCommand might have a property to show suggestions manually
                 // or it might just show them automatically if they are present.
             }
@@ -218,7 +219,7 @@ namespace PocketMC.Desktop.Features.Console
 
             int spaceIdx = content.IndexOf(' ');
             string cmd = spaceIdx != -1 ? content.Substring(0, spaceIdx) : content;
-            
+
             // Clean up common help output chars
             cmd = cmd.Trim('<', '>', '[', ']', '(', ')', ' ', ':', '-');
 
@@ -266,7 +267,7 @@ namespace PocketMC.Desktop.Features.Console
         {
             int count = 0;
             bool addedToFiltered = false;
-            
+
             while (_pendingLines.TryDequeue(out var line) && count < 500) // Increased batch size for high-perf
             {
                 Logs.Add(line);
@@ -307,7 +308,7 @@ namespace PocketMC.Desktop.Features.Console
 
             // 2. Apply Severity Filter
             if (CmbLogFilter == null) return true;
-            
+
             bool passesSeverity = CmbLogFilter.SelectedIndex switch
             {
                 1 => line.Level >= LogLevel.Info,
@@ -350,14 +351,14 @@ namespace PocketMC.Desktop.Features.Console
         private void ApplyFilters()
         {
             if (FilteredLogs == null) return;
-            
+
             FilteredLogs.Clear();
             foreach (var line in Logs)
             {
                 if (PassesFilter(line))
                     FilteredLogs.Add(line);
             }
-            
+
             if (FilteredLogs.Count > 0 && (BtnAutoScroll?.IsChecked ?? true))
                 LogView.ScrollIntoView(FilteredLogs[^1]);
         }
@@ -372,7 +373,7 @@ namespace PocketMC.Desktop.Features.Console
                     // Read the session log with shared access to avoid locking errors
                     using var stream = new System.IO.FileStream(logFile, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
                     using var reader = new System.IO.StreamReader(stream);
-                    
+
                     string? line;
                     while ((line = reader.ReadLine()) != null)
                     {
@@ -425,7 +426,8 @@ namespace PocketMC.Desktop.Features.Console
             else if (text.TrimStart().StartsWith("at ") || text.TrimStart().StartsWith("...") || text.Contains("Caused by:"))
             {
                 // Stack trace line sticky severity
-                color = _lastLevel switch {
+                color = _lastLevel switch
+                {
                     LogLevel.Error => Brushes.OrangeRed,
                     LogLevel.Warn => Brushes.Yellow,
                     _ => Brushes.WhiteSmoke
@@ -543,7 +545,7 @@ namespace PocketMC.Desktop.Features.Console
                         .OrderBy(c => c.Length)
                         .ToList();
                 }
-                
+
                 TxtCommand.ItemsSource = filtered;
             }
         }
@@ -597,7 +599,7 @@ namespace PocketMC.Desktop.Features.Console
             // Update history
             if (_commandHistory.Count == 0 || _commandHistory[^1] != command)
                 _commandHistory.Add(command);
-            
+
             _historyIndex = -1;
 
             // Echo the command in the log

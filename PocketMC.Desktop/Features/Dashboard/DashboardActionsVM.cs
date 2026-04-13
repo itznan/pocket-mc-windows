@@ -90,8 +90,8 @@ namespace PocketMC.Desktop.Features.Dashboard
                 var requiredMb = (ulong)vm.Metadata.MaxRamMb;
                 if (availableMb < requiredMb + 512)
                 {
-                    var result = await _dialogService.ShowDialogAsync("Low Memory", 
-                        $"Your system only has {availableMb}MB of available RAM. Starting this server ({requiredMb}MB) might cause significant lag or crashes.\n\nContinue anyway?", 
+                    var result = await _dialogService.ShowDialogAsync("Low Memory",
+                        $"Your system only has {availableMb}MB of available RAM. Starting this server ({requiredMb}MB) might cause significant lag or crashes.\n\nContinue anyway?",
                         DialogType.Warning, true);
                     if (result != DialogResult.Yes) return;
                 }
@@ -101,7 +101,8 @@ namespace PocketMC.Desktop.Features.Dashboard
                     .Where(kvp => kvp.Key != vm.Id)
                     .Select(kvp => _registry.GetPath(kvp.Key))
                     .Where(p => p != null)
-                    .Select(p => {
+                    .Select(p =>
+                    {
                         _serverConfigurationService.TryGetProperty(p!, "server-port", out string? portStr);
                         return int.TryParse(portStr, out int port) ? port : 25565;
                     });

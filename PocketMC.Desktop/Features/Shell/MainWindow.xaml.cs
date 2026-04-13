@@ -27,7 +27,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
     private readonly ShellStartupCoordinator _startupCoordinator;
     private readonly ShellViewModel _viewModel;
     private readonly ILogger<MainWindow> _logger;
-    
+
     private Type _lastShellPageType = typeof(DashboardPage);
     private ITitleBarContextSource? _titleBarContextSource;
     private readonly Dictionary<Type, Page> _shellPageCache = new();
@@ -60,7 +60,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         RootNavigation.SetServiceProvider(_serviceProvider);
         RootNavigation.Navigating += OnNavigating;
         RootNavigation.Navigated += OnNavigated;
-        
+
         Closing += MainWindow_Closing;
         _startupCoordinator.AttachHost(this);
 
@@ -277,7 +277,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         });
     }
 
-    public void ShowError(string title, string message) => 
+    public void ShowError(string title, string message) =>
         System.Windows.MessageBox.Show(message, title, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
 
     public void ShutdownApplication() => Application.Current.Shutdown();

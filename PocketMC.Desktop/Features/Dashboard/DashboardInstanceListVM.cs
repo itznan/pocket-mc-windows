@@ -30,7 +30,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         public ObservableCollection<InstanceCardViewModel> Instances { get; } = new();
 
         public DashboardInstanceListVM(
-            InstanceRegistry registry, 
+            InstanceRegistry registry,
             ServerProcessManager serverProcessManager,
             IServerLifecycleService lifecycleService,
             ApplicationState applicationState)

@@ -47,8 +47,8 @@ namespace PocketMC.Desktop.Features.Shell
 
             if (WallpaperMicaService.IsWindows11OrLater)
             {
-                _boundWindow.WindowBackdropType = enableMica 
-                    ? WindowBackdropType.Mica 
+                _boundWindow.WindowBackdropType = enableMica
+                    ? WindowBackdropType.Mica
                     : WindowBackdropType.None;
             }
             else

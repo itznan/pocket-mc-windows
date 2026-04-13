@@ -67,7 +67,7 @@ namespace PocketMC.Desktop.Features.Instances.Services
 
             string newInstancePath = _pathService.GetInstancePath(slug);
             Directory.CreateDirectory(newInstancePath);
-            
+
             // Apply default server icon
             ApplyDefaultServerIcon(newInstancePath);
 
@@ -115,7 +115,7 @@ namespace PocketMC.Desktop.Features.Instances.Services
             string baseSlug = SlugHelper.GenerateSlug(newName);
             string newSlug = baseSlug;
             int counter = 2;
-            
+
             while (Directory.Exists(_pathService.GetInstancePath(newSlug)) && newSlug != folderName)
             {
                 newSlug = $"{baseSlug}-{counter}";
@@ -197,7 +197,7 @@ namespace PocketMC.Desktop.Features.Instances.Services
             string folderPath = _pathService.GetInstancePath(folderName);
             if (Directory.Exists(folderPath))
             {
-                FileUtils.AtomicWriteAllText(_pathService.GetEulaPath(folderPath), 
+                FileUtils.AtomicWriteAllText(_pathService.GetEulaPath(folderPath),
                     "# By changing the setting below to TRUE you are indicating your agreement to our EULA (https://aka.ms/MinecraftEULA).\n" +
                     "eula=true\n");
             }

@@ -65,11 +65,11 @@ namespace PocketMC.Desktop.Features.Marketplace
             string baseTitle = _isModpackMode ? "Modpack Marketplace" : (_projectType.Contains("plugin") ? "Plugin Marketplace" : "Mod Marketplace");
             TxtTitle.Text = baseTitle;
             TxtMcVersion.Text = _mcVersion == "*" ? "All Versions" : $"Minecraft {_mcVersion}";
-            
+
             if (_isModpackMode) TxtSearch.PlaceholderText = "Search modpacks...";
             else if (_projectType.Contains("plugin")) TxtSearch.PlaceholderText = "Search Spigot/Paper plugins...";
             else TxtSearch.PlaceholderText = "Search Forge/Fabric mods...";
-            
+
             Loaded += async (s, e) => await RefreshResultsAsync();
         }
 
@@ -115,7 +115,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                 {
                     hits = await _modrinth.SearchAsync(_projectType, _mcVersion, sort, query, _currentOffset);
                 }
-                
+
                 foreach (var hit in hits)
                 {
                     if (!_results.Any(r => r.Slug == hit.Slug))
@@ -189,9 +189,9 @@ namespace PocketMC.Desktop.Features.Marketplace
                 }
 
                 var file = version.Files.FirstOrDefault(f => f.IsPrimary) ?? version.Files[0];
-                
+
                 using var httpClient = _httpClientFactory.CreateClient("PocketMC.Downloads");
-                
+
                 using var response = await httpClient.GetAsync(file.Url, HttpCompletionOption.ResponseHeadersRead);
                 response.EnsureSuccessStatusCode();
 

@@ -114,7 +114,7 @@ namespace PocketMC.Desktop.Features.Mods
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-                
+
                 try
                 {
                     await _downloader.DownloadFileAsync(mod.DownloadUrl, dest);
@@ -131,7 +131,7 @@ namespace PocketMC.Desktop.Features.Mods
             {
                 string targetPath = "";
                 if (entry.FullName.StartsWith("overrides/")) targetPath = entry.FullName.Substring(10);
-                else if (entry.FullName.StartsWith("client_overrides/")) continue; 
+                else if (entry.FullName.StartsWith("client_overrides/")) continue;
 
                 if (string.IsNullOrEmpty(targetPath)) continue;
 
@@ -142,7 +142,7 @@ namespace PocketMC.Desktop.Features.Mods
                     continue;
                 }
 
-                if (string.IsNullOrEmpty(entry.Name)) 
+                if (string.IsNullOrEmpty(entry.Name))
                 {
                     Directory.CreateDirectory(destinationPath);
                 }

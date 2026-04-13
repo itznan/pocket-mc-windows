@@ -65,15 +65,15 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<JavaAdoptiumClient>();
             services.AddSingleton<JavaRuntimeValidator>();
             services.AddSingleton<JavaProvisioningService>();
-            
+
             services.AddSingleton<ServerProcessManager>();
             services.AddSingleton<IServerLifecycleService, ServerLifecycleService>();
             services.AddSingleton<ServerLaunchConfigurator>();
-            
+
             services.AddSingleton<ResourceMonitorService>();
             services.AddSingleton<BackupService>();
             services.AddSingleton<BackupSchedulerService>();
-            
+
             services.AddSingleton<InstancePathService>();
             services.AddSingleton<InstanceRegistry>();
             services.AddSingleton<InstanceManager>();
@@ -140,13 +140,13 @@ namespace PocketMC.Desktop.Composition
             services.AddTransient<AboutPage>();
             services.AddTransient<AppSettingsPage>();
             services.AddTransient<RootDirectorySetupPage>();
-            
+
             services.AddTransient<DashboardInstanceListVM>();
             services.AddTransient<DashboardMetricsVM>();
             services.AddTransient<DashboardActionsVM>();
             services.AddTransient<DashboardViewModel>();
             services.AddTransient<ServerSettingsViewModel>();
-            
+
             services.AddTransient<DashboardPage>();
             services.AddTransient<NewInstancePage>();
             services.AddTransient<PluginBrowserPage>();

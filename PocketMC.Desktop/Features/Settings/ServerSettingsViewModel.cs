@@ -120,7 +120,7 @@ namespace PocketMC.Desktop.Features.Settings
             UpdateRunningState();
 
             var cfg = _serverConfigurationService.Load(Metadata, ServerDir);
-            
+
             // General
             General.Motd = cfg.Motd;
             General.ServerPort = cfg.ServerPort;
@@ -176,7 +176,7 @@ namespace PocketMC.Desktop.Features.Settings
         {
             bool running = _lifecycleService.IsRunning(Metadata.Id);
             bool waiting = _lifecycleService.IsWaitingToRestart(Metadata.Id);
-            
+
             IsRunning = running;
             IsTransientState = waiting;
 
@@ -190,28 +190,28 @@ namespace PocketMC.Desktop.Features.Settings
 
         private async Task ResolveTunnelAddressAsync(PlayitApiClient client)
         {
-            if (!int.TryParse(General.ServerPort, out int port)) 
-            { 
-                PlayitAddress = "⚠ Invalid port number."; 
-                return; 
+            if (!int.TryParse(General.ServerPort, out int port))
+            {
+                PlayitAddress = "⚠ Invalid port number.";
+                return;
             }
             PlayitAddress = "⏳ Resolving tunnel...";
             try
             {
                 var result = await client.GetTunnelsAsync();
-                if (!result.Success) 
-                { 
-                    PlayitAddress = "⚠ Failed to reach Playit API."; 
-                    return; 
+                if (!result.Success)
+                {
+                    PlayitAddress = "⚠ Failed to reach Playit API.";
+                    return;
                 }
                 var match = PlayitApiClient.FindTunnelForPort(result.Tunnels, port);
-                PlayitAddress = match != null 
-                    ? match.PublicAddress 
+                PlayitAddress = match != null
+                    ? match.PublicAddress
                     : $"No tunnel found for port {port}. Please create a new tunnel.";
             }
-            catch 
-            { 
-                PlayitAddress = "⚠ Connection failed. Check your internet."; 
+            catch
+            {
+                PlayitAddress = "⚠ Connection failed. Check your internet.";
             }
         }
 
@@ -226,17 +226,30 @@ namespace PocketMC.Desktop.Features.Settings
 
             var cfg = new ServerConfiguration
             {
-                MinRamMb = (int)Performance.MinRam, MaxRamMb = (int)Performance.MaxRam,
-                CustomJavaPath = customJavaPathToSave, AdvancedJvmArgs = Performance.AdvancedJvmArgs,
+                MinRamMb = (int)Performance.MinRam,
+                MaxRamMb = (int)Performance.MaxRam,
+                CustomJavaPath = customJavaPathToSave,
+                AdvancedJvmArgs = Performance.AdvancedJvmArgs,
                 EnableAutoRestart = Advanced.EnableAutoRestart,
                 MaxAutoRestarts = int.TryParse(Advanced.MaxAutoRestarts, out int mr) ? mr : Metadata.MaxAutoRestarts,
                 AutoRestartDelaySeconds = int.TryParse(Advanced.AutoRestartDelay, out int rd) ? rd : Metadata.AutoRestartDelaySeconds,
                 BackupIntervalHours = Backups.BackupIntervalHours,
                 MaxBackupsToKeep = Backups.MaxBackupsToKeep,
-                Motd = General.Motd ?? "", Seed = World.Seed ?? "", SpawnProtection = World.SpawnProtection, MaxPlayers = World.MaxPlayers,
-                ServerPort = General.ServerPort, ServerIp = General.ServerIp ?? "", LevelType = World.LevelType,
-                OnlineMode = World.OnlineMode, Pvp = World.Pvp, WhiteList = World.WhiteList, Gamemode = World.Gamemode, Difficulty = World.Difficulty,
-                AllowCommandBlock = World.AllowCommandBlock, AllowFlight = World.AllowFlight, AllowNether = World.AllowNether
+                Motd = General.Motd ?? "",
+                Seed = World.Seed ?? "",
+                SpawnProtection = World.SpawnProtection,
+                MaxPlayers = World.MaxPlayers,
+                ServerPort = General.ServerPort,
+                ServerIp = General.ServerIp ?? "",
+                LevelType = World.LevelType,
+                OnlineMode = World.OnlineMode,
+                Pvp = World.Pvp,
+                WhiteList = World.WhiteList,
+                Gamemode = World.Gamemode,
+                Difficulty = World.Difficulty,
+                AllowCommandBlock = World.AllowCommandBlock,
+                AllowFlight = World.AllowFlight,
+                AllowNether = World.AllowNether
             };
 
             foreach (var item in Advanced.AdvancedProperties)

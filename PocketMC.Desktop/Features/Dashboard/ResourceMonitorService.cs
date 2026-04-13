@@ -52,7 +52,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         private readonly double _totalPhysicalRamMb;
         private int _tickInProgress;
         private int _listCommandTick = 0;
-        
+
         public ConcurrentDictionary<Guid, InstanceMetrics> Metrics { get; } = new();
         private GlobalResourceSummary _currentSummary;
         public GlobalResourceSummary CurrentSummary => Volatile.Read(ref _currentSummary);
@@ -62,14 +62,14 @@ namespace PocketMC.Desktop.Features.Dashboard
             public TimeSpan LastTotalProcessorTime { get; set; }
             public DateTime LastSampleTime { get; set; }
         }
-        
+
         private readonly ConcurrentDictionary<Guid, ProcessTracker> _trackers = new();
         private readonly IShellUIStateService _uiStateService;
         private readonly IAppDispatcher _dispatcher;
 
         public ResourceMonitorService(
-            ServerProcessManager serverProcessManager, 
-            IShellUIStateService uiStateService, 
+            ServerProcessManager serverProcessManager,
+            IShellUIStateService uiStateService,
             IAppDispatcher dispatcher,
             ILogger<ResourceMonitorService> logger)
         {
@@ -85,8 +85,8 @@ namespace PocketMC.Desktop.Features.Dashboard
             _dispatcher.Invoke(() =>
             {
                 _uiStateService.GlobalHealthStatusText = _currentSummary.DisplayText;
-                _uiStateService.GlobalHealthStatusBrush = _currentSummary.IsHighUsage 
-                    ? System.Windows.Media.Brushes.Red 
+                _uiStateService.GlobalHealthStatusBrush = _currentSummary.IsHighUsage
+                    ? System.Windows.Media.Brushes.Red
                     : System.Windows.Media.Brushes.White;
             });
 
@@ -177,7 +177,7 @@ namespace PocketMC.Desktop.Features.Dashboard
                         _logger.LogDebug(ex, "Skipping metric sample for instance {InstanceId} because the process is no longer valid.", sp.InstanceId);
                     }
                 }
-            
+
                 // Clean up trackers for stopped instances
                 var deadIds = _trackers.Keys.Except(activeProcesses.Select(p => p.InstanceId)).ToList();
                 foreach (var id in deadIds)
@@ -207,8 +207,8 @@ namespace PocketMC.Desktop.Features.Dashboard
             _dispatcher.Invoke(() =>
             {
                 _uiStateService.GlobalHealthStatusText = summary.DisplayText;
-                _uiStateService.GlobalHealthStatusBrush = summary.IsHighUsage 
-                    ? System.Windows.Media.Brushes.Red 
+                _uiStateService.GlobalHealthStatusBrush = summary.IsHighUsage
+                    ? System.Windows.Media.Brushes.Red
                     : System.Windows.Media.Brushes.White;
             });
         }
