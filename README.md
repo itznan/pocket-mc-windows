@@ -6,7 +6,7 @@
 ---
 PocketMC is a modern Windows-native server manager for Vanilla, Paper, Fabric, and Forge servers. It helps you create, launch, monitor, back up, and share servers from your own machine with a polished GUI. Supports automatic Java provisioning, Playit.gg public tunneling, live server metrics, backups, and in-app plugin/mod workflows.
 
-[![Build](https://img.shields.io/github/actions/workflow/status/PocketMC/pocket-mc-windows/build.yml?branch=main&style=flat-square&logo=github)](https://github.com/PocketMC/pocket-mc-windows/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/PocketMC/pocket-mc-windows/production-build.yml?branch=main&style=flat-square&logo=github)](https://github.com/PocketMC/pocket-mc-windows/actions)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![License](https://img.shields.io/badge/license-MIT-22C55E?style=flat-square)](LICENSE)
