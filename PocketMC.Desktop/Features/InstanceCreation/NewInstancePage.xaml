@@ -85,85 +85,107 @@
         </Border>
 
         <Grid>
-            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,-28,0" Padding="0,0,28,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="ContentLayoutRoot" MaxWidth="980" HorizontalAlignment="Left">
 
             <ui:Card x:Name="FormCard"
-                     Padding="22"
+                     Padding="18"
                      Margin="0">
                 <StackPanel x:Name="InputsPanel">
                     <TextBlock Text="Basics"
                                FontSize="12"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Margin="0,0,0,16"/>
+                               Margin="0,0,0,20"/>
 
-                    <TextBlock Text="Server Name"
-                               Margin="0,0,0,6"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                    <ui:TextBox x:Name="TxtName"
-                                PlaceholderText="My Cool Server"
-                                Margin="0,0,0,14"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="24" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                    <TextBlock Text="Description"
-                               Margin="0,0,0,6"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                    <ui:TextBox x:Name="TxtDescription"
-                                PlaceholderText="What this instance is for"
-                                Margin="0,0,0,18"/>
+                        <!-- Left Column: Name and Description -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Server Name"
+                                       Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <ui:TextBox x:Name="TxtName"
+                                        PlaceholderText="My Cool Server"
+                                        Margin="0,0,0,16"/>
 
-                    <TextBlock Text="Server Type"
-                               Margin="0,0,0,6"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                    <ComboBox x:Name="CmbServerType"
-                              Margin="0,0,0,12"
-                              MinHeight="40"
-                              SelectionChanged="CmbServerType_SelectionChanged">
-                        <ComboBoxItem Content="Vanilla" IsSelected="True"/>
-                        <ComboBoxItem Content="Paper"/>
-                        <ComboBoxItem Content="Fabric"/>
-                        <ComboBoxItem Content="Forge"/>
-                    </ComboBox>
+                            <TextBlock Text="Description"
+                                       Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <ui:TextBox x:Name="TxtDescription"
+                                        PlaceholderText="What this instance is for"
+                                        Margin="0,0,0,0"/>
+                        </StackPanel>
 
-                    <TextBlock x:Name="TxtForgeWarning"
-                               Visibility="Collapsed"
-                               Foreground="#F9E2AF"
-                               FontSize="12"
-                               TextWrapping="Wrap"
-                               Margin="0,4,0,0"/>
+                        <!-- Right Column: Types and Versions -->
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Server Type"
+                                       Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <ComboBox x:Name="CmbServerType"
+                                      Margin="0,0,0,16"
+                                      HorizontalAlignment="Stretch"
+                                      MinHeight="40"
+                                      SelectionChanged="CmbServerType_SelectionChanged">
+                                <ComboBoxItem Content="Vanilla" IsSelected="True"/>
+                                <ComboBoxItem Content="Paper"/>
+                                <ComboBoxItem Content="Fabric"/>
+                                <ComboBoxItem Content="Forge"/>
+                            </ComboBox>
 
-                    <CheckBox x:Name="ChkShowSnapshots"
-                              Content="Show snapshots and pre-releases"
-                              Margin="0,0,0,18"
-                              Checked="ChkShowSnapshots_Changed"
-                              Unchecked="ChkShowSnapshots_Changed"/>
+                            <TextBlock Text="Minecraft Version"
+                                       Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <ComboBox x:Name="CmbVersion"
+                                      Margin="0,0,0,8"
+                                      HorizontalAlignment="Stretch"
+                                      MinHeight="40"
+                                      DisplayMemberPath="Id"
+                                      SelectionChanged="CmbVersion_SelectionChanged"/>
+                            
+                            <TextBlock x:Name="TxtVersionState"
+                                       Text="Choose a server type to load available versions."
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,0"/>
+                        </StackPanel>
 
-                    <TextBlock Text="Minecraft Version"
-                               Margin="0,0,0,6"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                    <ComboBox x:Name="CmbVersion"
-                              Margin="0,0,0,12"
-                              MinHeight="40"
-                              DisplayMemberPath="Id"
-                              SelectionChanged="CmbVersion_SelectionChanged"/>
+                        <!-- Second Row for Options/Loaders -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,16,0,0">
+                            <CheckBox x:Name="ChkShowSnapshots"
+                                      Content="Show snapshots and pre-releases"
+                                      Checked="ChkShowSnapshots_Changed"
+                                      Unchecked="ChkShowSnapshots_Changed"/>
+                             <TextBlock x:Name="TxtForgeWarning"
+                                       Visibility="Collapsed"
+                                       Foreground="#F9E2AF"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Margin="0,8,0,0"/>
+                        </StackPanel>
 
-                    <StackPanel x:Name="LoaderVersionPanel" Visibility="Collapsed">
-                        <TextBlock Text="Loader Version"
-                                   Margin="0,0,0,6"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        <ComboBox x:Name="CmbLoaderVersion"
-                                  Margin="0,0,0,12"
-                                  MinHeight="40"
-                                  DisplayMemberPath="Version"/>
-                    </StackPanel>
+                        <StackPanel x:Name="LoaderVersionPanel" Grid.Row="1" Grid.Column="2" Visibility="Collapsed" Margin="0,16,0,0">
+                            <TextBlock Text="Loader Version"
+                                       Margin="0,0,0,6"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                            <ComboBox x:Name="CmbLoaderVersion"
+                                      HorizontalAlignment="Stretch"
+                                      MinHeight="40"
+                                      DisplayMemberPath="Version"/>
+                        </StackPanel>
+                    </Grid>
 
-                    <TextBlock x:Name="TxtVersionState"
-                               Text="Choose a server type to load available versions."
-                               FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               TextWrapping="Wrap"/>
-
-                    <Border Height="1" Background="{DynamicResource CardStrokeColorDefaultBrush}" Margin="0,20,0,20"/>
+                    <Border Height="1" Background="{DynamicResource CardStrokeColorDefaultBrush}" Margin="0,24,0,24"/>
 
                     <TextBlock Text="Compliance"
                                FontSize="12"
@@ -171,25 +193,34 @@
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Margin="0,0,0,16"/>
 
-                    <CheckBox x:Name="ChkAcceptEula"
-                               Margin="0,0,0,12"
-                               Checked="ChkAcceptEula_Changed"
-                               Unchecked="ChkAcceptEula_Changed">
-                        <TextBlock Text="I accept the Minecraft End User License Agreement"
-                                    TextWrapping="Wrap"
-                                    FontSize="13"/>
-                    </CheckBox>
-
-                    <TextBlock FontSize="12"
-                               Opacity="0.88"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               TextWrapping="Wrap"
-                               Margin="24,0,0,0">
-                        <Run Text="PocketMC will write eula.txt automatically. Review "/>
-                        <Hyperlink NavigateUri="https://aka.ms/MinecraftEULA"
-                                   RequestNavigate="MinecraftEulaLink_RequestNavigate">Mojang's EULA</Hyperlink>
-                        <Run Text=" before creating the instance."/>
-                    </TextBlock>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox x:Name="ChkAcceptEula"
+                                  Grid.Column="0"
+                                  VerticalAlignment="Top"
+                                  Margin="0,2,12,0"
+                                  Checked="ChkAcceptEula_Changed"
+                                  Unchecked="ChkAcceptEula_Changed"/>
+                        
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="I accept the Minecraft End User License Agreement"
+                                       FontWeight="Medium"
+                                       FontSize="13"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock FontSize="12"
+                                       Opacity="0.8"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       TextWrapping="Wrap">
+                                <Run Text="PocketMC will write eula.txt automatically. Review "/>
+                                <Hyperlink NavigateUri="https://aka.ms/MinecraftEULA"
+                                           RequestNavigate="MinecraftEulaLink_RequestNavigate">Mojang's EULA</Hyperlink>
+                                <Run Text=" before creating the instance."/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </ui:Card>
 
