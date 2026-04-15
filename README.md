@@ -146,6 +146,8 @@ When the CI runs on the pushed tag it will publish for `win-x64`, run `vpk pack`
 
 If you want the workflow to create the GitHub Release automatically, add a repository secret named `RELEASE_PAT` with release/write access. Secret names cannot start with `GITHUB_`.
 
+Full release history: [CHANGELOG.md](CHANGELOG.md)
+
 ---
 
 ## Getting Started
