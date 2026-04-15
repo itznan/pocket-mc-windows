@@ -46,7 +46,9 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<ApplicationState>();
             services.AddSingleton<JobObject>();
             services.AddSingleton<WindowsToastNotificationService>();
-            services.AddSingleton<INotificationService>(provider => provider.GetRequiredService<WindowsToastNotificationService>());
+            services.AddSingleton<INotificationService>(
+                provider => provider.GetRequiredService<WindowsToastNotificationService>());
+
             services.AddHttpClient<PocketMC.Desktop.Features.Intelligence.AiApiClient>(client =>
             {
                 client.Timeout = TimeSpan.FromMinutes(3);
@@ -54,7 +56,12 @@ namespace PocketMC.Desktop.Composition
             });
             services.AddSingleton<PocketMC.Desktop.Features.Intelligence.SummaryStorageService>();
             services.AddSingleton<PocketMC.Desktop.Features.Intelligence.SessionSummarizationService>();
-            
+
+            // ── Auto-update service ──────────────────────────────────────────────
+            // Singleton so that the same download pipeline is shared across all
+            // callers and cannot be started twice by accident.
+            services.AddSingleton<UpdateService>();
+
             return services;
         }
 
@@ -116,16 +123,13 @@ namespace PocketMC.Desktop.Composition
                     "User-Agent",
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-                client.DefaultRequestHeaders.Add(
-                    "Accept", "application/json, text/plain, */*");
-                client.DefaultRequestHeaders.Add(
-                    "Accept-Language", "en-US,en;q=0.5");
+                client.DefaultRequestHeaders.Add("Accept", "application/json, text/plain, */*");
+                client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
             })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 AutomaticDecompression =
-                    DecompressionMethods.GZip |
-                    DecompressionMethods.Deflate
+                    DecompressionMethods.GZip | DecompressionMethods.Deflate
             });
 
             return services;

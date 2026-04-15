@@ -3,16 +3,15 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Features.Shell.Interfaces;
-using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Infrastructure;
 using Wpf.Ui.Controls;
 
 namespace PocketMC.Desktop.Features.Shell;
@@ -51,9 +50,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         ApplyDynamicWindowSize();
 
         if (visualService is ShellVisualService concreteVisual)
-        {
             concreteVisual.Attach(this, MicaFallbackBackground);
-        }
 
         RootNavigation.SetServiceProvider(_serviceProvider);
         RootNavigation.Navigating += OnNavigating;
@@ -65,24 +62,43 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         AppTrayIcon.DataContext = _serviceProvider.GetRequiredService<TrayIconViewModel>();
     }
 
-    /// <summary>
-    /// Sets the window size to 75% of the user's screen work area,
-    /// respecting DPI scaling so it works correctly on High-DPI displays.
-    /// Enforces a minimum floor (960×640) so the UI stays usable on small screens.
-    /// </summary>
+    private void BtnApplyUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        var processManager = _serviceProvider.GetRequiredService<ServerProcessManager>();
+        if (!processManager.ActiveProcesses.IsEmpty)
+        {
+            System.Windows.MessageBox.Show(
+                "Please stop all running servers before applying the update.",
+                "Servers Running",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        _viewModel.RequestApplyUpdate();
+    }
+
+    private void BtnDismissUpdateBanner_Click(object sender, RoutedEventArgs e)
+    {
+        // Now accessible because of the ShellViewModel change below
+        _viewModel.IsUpdateAvailable = false;
+    }
+
     private void ApplyDynamicWindowSize()
     {
         const double widthRatio = 0.75;
-        const double heightRatio = 0.85; // Slightly increased vertical footprint
+        const double heightRatio = 0.85;
         const double minWidth = 960;
         const double minHeight = 640;
 
-        // SystemParameters.WorkArea returns device-independent pixels (already DPI-aware)
-        double workAreaWidth = SystemParameters.WorkArea.Width;
-        double workAreaHeight = SystemParameters.WorkArea.Height;
+        Width = Math.Max(minWidth, SystemParameters.WorkArea.Width * widthRatio);
+        Height = Math.Max(minHeight, SystemParameters.WorkArea.Height * heightRatio);
+    }
 
-        Width = Math.Max(minWidth, workAreaWidth * widthRatio);
-        Height = Math.Max(minHeight, workAreaHeight * heightRatio);
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        _startupCoordinator.Start();
+        _ = _viewModel.CheckForUpdatesAsync();
     }
 
     private void OnNavigated(NavigationView sender, NavigatedEventArgs args)
@@ -124,9 +140,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
 
         bool replaced = RootNavigation.ReplaceContent(page, null);
         if (replaced)
-        {
             AttachTitleBarContextSource(page as ITitleBarContextSource);
-        }
         return replaced;
     }
 
@@ -152,9 +166,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
 
         args.Cancel = true;
         if (_serviceProvider.GetService<IAppNavigationService>() is { } nav)
-        {
             nav.NavigateToShellPage(pageType!);
-        }
     }
 
     private void SyncNavigationSelection(Type? pageType)
@@ -188,7 +200,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
 
     private Page GetOrCreateShellPage(Type pageType)
     {
-        if (_shellPageCache.TryGetValue(pageType, out Page? cachedPage)) return cachedPage;
+        if (_shellPageCache.TryGetValue(pageType, out Page? cached)) return cached;
         Page shellPage = (Page)_serviceProvider.GetRequiredService(pageType);
         _shellPageCache[pageType] = shellPage;
         return shellPage;
@@ -204,9 +216,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         DetachTitleBarContextSource();
         _titleBarContextSource = source;
         if (_titleBarContextSource != null)
-        {
             _titleBarContextSource.TitleBarContextChanged += OnTitleBarContextChanged;
-        }
         UpdateTitleBarContext();
     }
 
@@ -239,14 +249,16 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
             DetachTitleBarContextSource();
             _viewModel.IsPaneVisible = false;
             _viewModel.IsPaneToggleVisible = false;
-            NavDashboard.IsEnabled = NavTunnel.IsEnabled = NavJavaSetup.IsEnabled = NavAbout.IsEnabled = NavSettings.IsEnabled = false;
+            NavDashboard.IsEnabled = NavTunnel.IsEnabled = NavJavaSetup.IsEnabled =
+                NavAbout.IsEnabled = NavSettings.IsEnabled = false;
             _uiStateService.UpdateBreadcrumb(null);
         }
         else
         {
             _viewModel.IsPaneVisible = true;
             _viewModel.IsPaneToggleVisible = true;
-            NavDashboard.IsEnabled = NavTunnel.IsEnabled = NavJavaSetup.IsEnabled = NavAbout.IsEnabled = NavSettings.IsEnabled = true;
+            NavDashboard.IsEnabled = NavTunnel.IsEnabled = NavJavaSetup.IsEnabled =
+                NavAbout.IsEnabled = NavSettings.IsEnabled = true;
         }
     }
 
@@ -262,14 +274,18 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
 
     public void CompleteRootDirectorySetup() => SetNavigationLocked(false);
 
-    public bool NavigateToDashboard() => _serviceProvider.GetRequiredService<IAppNavigationService>().NavigateToDashboard();
-    public bool NavigateToTunnel() => _serviceProvider.GetRequiredService<IAppNavigationService>().NavigateToTunnel();
+    public bool NavigateToDashboard() =>
+        _serviceProvider.GetRequiredService<IAppNavigationService>().NavigateToDashboard();
+
+    public bool NavigateToTunnel() =>
+        _serviceProvider.GetRequiredService<IAppNavigationService>().NavigateToTunnel();
 
     public bool NavigateToPlayitGuide(string claimUrl, bool navigateToDashboardOnCompletion)
     {
         return Dispatcher.Invoke(() =>
         {
-            var guidePage = ActivatorUtilities.CreateInstance<PlayitGuidePage>(_serviceProvider, claimUrl, navigateToDashboardOnCompletion);
+            var guidePage = ActivatorUtilities.CreateInstance<PlayitGuidePage>(
+                _serviceProvider, claimUrl, navigateToDashboardOnCompletion);
             return _serviceProvider.GetRequiredService<IAppNavigationService>().NavigateToDetailPage(
                 guidePage, "Playit.gg Setup", DetailRouteKind.PlayitGuide, DetailBackNavigation.Tunnel, true);
         });
@@ -287,7 +303,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         if (processManager.ActiveProcesses.Count > 0)
         {
             e.Cancel = true;
-            this.Hide();
+            Hide();
             _serviceProvider.GetRequiredService<TrayIconViewModel>().EnsureVisible();
             return;
         }
@@ -298,29 +314,20 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         _startupCoordinator.Shutdown();
     }
 
-    private void AppTrayIcon_TrayMouseDoubleClick(object sender, RoutedEventArgs e)
-    {
+    private void AppTrayIcon_TrayMouseDoubleClick(object sender, RoutedEventArgs e) =>
         TrayOpen_Click(sender, e);
-    }
 
     private void TrayOpen_Click(object sender, RoutedEventArgs e)
     {
         _serviceProvider.GetRequiredService<TrayIconViewModel>().Hide();
-        this.Show();
-        if (this.WindowState == WindowState.Minimized)
-            this.WindowState = WindowState.Normal;
-        this.Activate();
+        Show();
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Activate();
     }
 
     private void TrayExit_Click(object sender, RoutedEventArgs e)
     {
         _serviceProvider.GetRequiredService<ServerProcessManager>().KillAll();
         Application.Current.Shutdown();
-    }
-
-    private void Window_Loaded(object sender, RoutedEventArgs e)
-    {
-        _startupCoordinator.Start();
-        _ = _viewModel.CheckForUpdatesAsync();
     }
 }
