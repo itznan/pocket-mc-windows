@@ -65,42 +65,25 @@ jobs:
 
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: PocketMC ${{ github.ref_name }}
-        body: Release built by CI for ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-
-    - name: Upload all Releases/ files to GitHub Release
-      if: startsWith(github.ref, 'refs/tags/')
       shell: pwsh
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        UPLOAD_URL: ${{ steps.create_release.outputs.upload_url }}
+        GH_TOKEN: ${{ secrets.RELEASE_PAT }}
       run: |
-        if (-not $env:UPLOAD_URL) { Write-Error "No upload_url from create_release"; exit 1 }
-        $uploadUrl = $env:UPLOAD_URL -replace '\{\?.*',''
-        Write-Host "Uploading assets to $uploadUrl"
-        $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN"; Accept = 'application/vnd.github+json' }
-        $files = Get-ChildItem -Path Releases -File -Recurse | Where-Object { $_.Length -gt 0 }
-        if (-not $files) { Write-Host "No files found in Releases/ to upload."; exit 0 }
-        foreach ($file in $files) {
-          $name = [System.Uri]::EscapeDataString($file.Name)
-          $uri = "$uploadUrl?name=$name"
-          Write-Host "Uploading $($file.FullName) as $name..."
-          try {
-            $resp = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -InFile $file.FullName -ContentType 'application/octet-stream'
-            Write-Host "Uploaded $($file.Name) (id: $($resp.id))"
-          } catch {
-            Write-Error "Failed to upload $($file.Name): $_"
-            exit 1
-          }
+        if (-not $env:GH_TOKEN) {
+          Write-Error "Set a repository secret named RELEASE_PAT with permissions to create releases."
+          exit 1
         }
+
+        $tag = "${{ github.ref_name }}"
+        $releaseVersion = $tag.TrimStart('v')
+        $files = Get-ChildItem -Path Releases -File -Recurse | Where-Object { $_.Length -gt 0 } | ForEach-Object { $_.FullName }
+
+        if (-not $files) {
+          Write-Error "No files found in Releases/ to upload."
+          exit 1
+        }
+
+        gh release create $tag $files --repo $env:GITHUB_REPOSITORY --title "PocketMC $tag" --notes "Release built by CI for $releaseVersion"
 
     - name: Upload Velopack release artifact
       if: startsWith(github.ref, 'refs/tags/')

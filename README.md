@@ -144,6 +144,8 @@ git push origin v1.2.4
 
 When the CI runs on the pushed tag it will publish for `win-x64`, run `vpk pack` with the tag as the version, and attach `Setup.exe` to the GitHub Release automatically.
 
+If you want the workflow to create the GitHub Release automatically, add a repository secret named `RELEASE_PAT` with release/write access. Secret names cannot start with `GITHUB_`.
+
 ---
 
 ## Getting Started
