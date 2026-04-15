@@ -16,13 +16,16 @@ jobs:
     runs-on: windows-latest
 
     steps:
+    # ── Checkout ────────────────────────────────────────────────────────────────
     - uses: actions/checkout@v4
 
+    # ── .NET setup ──────────────────────────────────────────────────────────────
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
 
+    # ── Cache NuGet packages ────────────────────────────────────────────────────
     - name: Cache NuGet packages
       uses: actions/cache@v4
       with:
@@ -31,18 +34,26 @@ jobs:
         restore-keys: |
           nuget-
 
+    # ── Restore ─────────────────────────────────────────────────────────────────
     - name: Restore dependencies
       run: dotnet restore PocketMC.Desktop.sln
 
-    - name: Build Configuration Debug
+    # ── Build (both configurations so we catch config-specific issues) ──────────
+    - name: Build Debug
       run: dotnet build PocketMC.Desktop.sln --configuration Debug --no-restore
 
-    - name: Build Configuration Release
+    - name: Build Release
       run: dotnet build PocketMC.Desktop.sln --configuration Release --no-restore
 
+    # ── Tests ────────────────────────────────────────────────────────────────────
     - name: Run Tests
       run: dotnet test PocketMC.Desktop.sln --configuration Release --no-build
 
+    # ═══════════════════════════════════════════════════════════════════════════
+    # Release steps — only run when a version tag is pushed (v*)
+    # ═══════════════════════════════════════════════════════════════════════════
+
+    # ── Install Velopack CLI ─────────────────────────────────────────────────────
     - name: Install Velopack CLI
       if: startsWith(github.ref, 'refs/tags/')
       run: dotnet tool install -g vpk
@@ -52,17 +63,115 @@ jobs:
       shell: pwsh
       run: echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-    - name: Publish WPF app
-      if: startsWith(github.ref, 'refs/tags/')
-      run: dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj -c Release -r win-x64 -o ./publish
-
-    - name: Pack Velopack release
+    # ── Publish WPF application ──────────────────────────────────────────────────
+    - name: Publish WPF app (win-x64 self-contained)
       if: startsWith(github.ref, 'refs/tags/')
       run: |
-        $releaseVersion = "${{ github.ref_name }}".TrimStart('v')
-        if ([string]::IsNullOrWhiteSpace($releaseVersion)) { Write-Error "Unable to determine release version from tag."; exit 1 }
-        vpk pack -u PocketMC -v $releaseVersion -p ./publish -e PocketMC.Desktop.exe
+        dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
+          -c Release `
+          -r win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=false `
+          -o ./publish
 
+    # ── Download previous release packages for delta generation ─────────────────
+    #
+    #  Velopack generates delta (patch) packages automatically when it finds
+    #  existing full .nupkg files in the --releaseDir before packing.
+    #  We download the most-recent stable release's nupkg files into Releases/
+    #  so that vpk pack can diff against them.
+    #
+    #  If this is the very first release, no previous packages exist —
+    #  the step handles that gracefully (delta generation is simply skipped).
+    # ────────────────────────────────────────────────────────────────────────────
+    - name: Download previous release packages for delta generation
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.RELEASE_PAT }}
+      run: |
+        # Create the Releases directory — vpk will write the new packages here too.
+        New-Item -ItemType Directory -Force -Path Releases | Out-Null
+
+        if (-not $env:GH_TOKEN) {
+          Write-Warning "RELEASE_PAT not set — skipping delta package download. Full package only."
+          exit 0
+        }
+
+        # Find the latest stable (non-draft, non-prerelease) release, excluding
+        # the tag we are currently building (in case of a re-run).
+        $currentTag = "${{ github.ref_name }}"
+        $releasesJson = gh release list `
+          --repo $env:GITHUB_REPOSITORY `
+          --limit 20 `
+          --json tagName,isDraft,isPrerelease 2>$null
+
+        if (-not $releasesJson) {
+          Write-Host "No previous releases found. Building first full package."
+          exit 0
+        }
+
+        $releases = $releasesJson | ConvertFrom-Json
+        $previous = $releases `
+          | Where-Object { -not $_.isDraft -and -not $_.isPrerelease -and $_.tagName -ne $currentTag } `
+          | Select-Object -First 1
+
+        if (-not $previous) {
+          Write-Host "No stable previous release found. Building first full package."
+          exit 0
+        }
+
+        $prevTag = $previous.tagName
+        Write-Host "Previous stable release: $prevTag — downloading .nupkg files for delta generation."
+
+        # Download only .nupkg assets (full packages). Errors here are non-fatal —
+        # if no nupkg is found we just skip delta generation.
+        gh release download $prevTag `
+          --repo $env:GITHUB_REPOSITORY `
+          --dir Releases `
+          --pattern "*.nupkg" `
+          2>$null
+
+        $count = (Get-ChildItem Releases -Filter "*.nupkg" | Measure-Object).Count
+        Write-Host "Downloaded $count previous .nupkg file(s) into Releases/."
+
+    # ── Pack Velopack release ────────────────────────────────────────────────────
+    #
+    #  vpk pack will:
+    #    1. Build a full .nupkg for the new version.
+    #    2. If previous .nupkg files exist in --releaseDir, also build delta
+    #       (BestSpeed) patch packages automatically.
+    #    3. Write Setup.exe (installer), RELEASES feed, and all packages to Releases/.
+    # ────────────────────────────────────────────────────────────────────────────
+    - name: Pack Velopack release
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: pwsh
+      run: |
+        $releaseVersion = "${{ github.ref_name }}".TrimStart('v')
+        if ([string]::IsNullOrWhiteSpace($releaseVersion)) {
+          Write-Error "Cannot determine release version from tag '${{ github.ref_name }}'."
+          exit 1
+        }
+
+        Write-Host "Packing Velopack release v$releaseVersion"
+
+        # --delta BestSpeed  : generate delta patches if previous packages are present.
+        # --releaseDir        : Releases/ already contains previous .nupkg (from step above).
+        vpk pack `
+          --packId PocketMC `
+          --packVersion $releaseVersion `
+          --packDir ./publish `
+          --mainExe PocketMC.Desktop.exe `
+          --releaseDir Releases `
+          --delta BestSpeed
+
+        # Summarise what was produced
+        Write-Host "`nRelease artifacts:"
+        Get-ChildItem -Path Releases -File | ForEach-Object {
+          Write-Host "  $($_.Name)  ($([math]::Round($_.Length / 1MB, 2)) MB)"
+        }
+
+    # ── Create GitHub Release and upload all assets ──────────────────────────────
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
       shell: pwsh
@@ -70,24 +179,50 @@ jobs:
         GH_TOKEN: ${{ secrets.RELEASE_PAT }}
       run: |
         if (-not $env:GH_TOKEN) {
-          Write-Error "Set a repository secret named RELEASE_PAT with permissions to create releases."
+          Write-Error "RELEASE_PAT secret is required to create a GitHub Release."
           exit 1
         }
 
-        $tag = "${{ github.ref_name }}"
+        $tag            = "${{ github.ref_name }}"
         $releaseVersion = $tag.TrimStart('v')
-        $files = Get-ChildItem -Path Releases -File -Recurse | Where-Object { $_.Length -gt 0 } | ForEach-Object { $_.FullName }
+
+        # Collect all non-empty files from Releases/
+        $files = Get-ChildItem -Path Releases -File -Recurse `
+          | Where-Object { $_.Length -gt 0 } `
+          | ForEach-Object { $_.FullName }
 
         if (-not $files) {
-          Write-Error "No files found in Releases/ to upload."
+          Write-Error "No release artifacts found in Releases/."
           exit 1
         }
 
-        gh release create $tag $files --repo $env:GITHUB_REPOSITORY --title "PocketMC $tag" --notes "Release built by CI for $releaseVersion"
+        # Build release notes from CHANGELOG.md if available
+        $notes = "Release built by CI for v$releaseVersion."
+        if (Test-Path "CHANGELOG.md") {
+          # Extract the section for this version (between first two ## headings)
+          $lines    = Get-Content "CHANGELOG.md"
+          $inBlock  = $false
+          $block    = @()
+          foreach ($line in $lines) {
+            if ($line -match "^## v?$([regex]::Escape($releaseVersion))") { $inBlock = $true; continue }
+            if ($inBlock -and $line -match "^## ") { break }
+            if ($inBlock) { $block += $line }
+          }
+          if ($block.Count -gt 0) {
+            $notes = ($block | Where-Object { $_ -ne "" }) -join "`n"
+          }
+        }
 
-    - name: Upload Velopack release artifact
+        gh release create $tag $files `
+          --repo $env:GITHUB_REPOSITORY `
+          --title "PocketMC $tag" `
+          --notes $notes
+
+    # ── Upload artifact for debugging / manual download ───────────────────────────
+    - name: Upload Velopack artifacts
       if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: PocketMC_Velopack
+        name: PocketMC_Velopack_${{ github.ref_name }}
         path: Releases/
+        retention-days: 30
