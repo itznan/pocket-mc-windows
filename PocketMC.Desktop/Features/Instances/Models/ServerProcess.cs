@@ -125,7 +125,12 @@ public class ServerProcess : IDisposable
         if (_process == null || _process.HasExited) return;
         _intentionalStop = true;
         SetState(ServerState.Stopping);
-        await WriteInputAsync("stop");
+        
+        bool rconSuccess = await TryStopViaRconAsync(WorkingDirectory);
+        if (!rconSuccess)
+        {
+            await WriteInputAsync("stop");
+        }
 
         using var cts = new CancellationTokenSource(timeoutMs);
         try { await _process.WaitForExitAsync(cts.Token); }
@@ -135,6 +140,38 @@ public class ServerProcess : IDisposable
             catch (Exception ex) { _logger.LogWarning(ex, "Failed to force-kill after timeout."); }
         }
         SetState(ServerState.Stopped);
+    }
+
+    private async Task<bool> TryStopViaRconAsync(string serverDir)
+    {
+        try
+        {
+            var propsFile = Path.Combine(serverDir, "server.properties");
+            if (!File.Exists(propsFile)) return false;
+
+            var props = PocketMC.Desktop.Features.Instances.ServerPropertiesParser.Read(propsFile);
+            if (!props.TryGetValue("enable-rcon", out var rconEnabled) || rconEnabled != "true")
+                return false;
+                
+            if (!props.TryGetValue("rcon.port", out var portStr))
+                return false;
+                
+            if (!int.TryParse(portStr, out int port))
+                return false;
+
+            if (!props.TryGetValue("rcon.password", out var password) || string.IsNullOrEmpty(password))
+                return false;
+
+            using var rcon = new PocketMC.Desktop.Infrastructure.Process.RconClient("127.0.0.1", port, password);
+            await rcon.ConnectAsync();
+            await rcon.ExecuteCommandAsync("stop");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to send stop via RCON for instance {InstanceId}.", InstanceId);
+            return false;
+        }
     }
 
     public void Kill()

@@ -24,16 +24,14 @@ namespace PocketMC.Desktop.Features.Dashboard
 
         private readonly InstanceRegistry _registry;
         private readonly IServerLifecycleService _lifecycleService;
-        private readonly ResourceMonitorService _resourceMonitorService;
+        private readonly IResourceMonitorService _resourceMonitorService;
         private readonly IAppNavigationService _navigationService;
         private readonly IAppDispatcher _dispatcher;
         private readonly IServiceProvider _serviceProvider;
 
-        private readonly System.Windows.Threading.DispatcherTimer _timer;
         private bool _isActive;
 
         public ObservableCollection<InstanceCardViewModel> Instances => _listVm.Instances;
-
         public ICommand NewInstanceCommand { get; }
         public ICommand RefreshInstancesCommand { get; }
         public ICommand StartServerCommand { get; }
@@ -44,14 +42,13 @@ namespace PocketMC.Desktop.Features.Dashboard
         public ICommand CopyCrashReportCommand { get; }
         public ICommand ServerSettingsCommand { get; }
         public ICommand OpenConsoleCommand { get; }
-
         public DashboardViewModel(
             DashboardInstanceListVM listVm,
             DashboardMetricsVM metricsVm,
             DashboardActionsVM actionsVm,
             InstanceRegistry registry,
             IServerLifecycleService lifecycleService,
-            ResourceMonitorService resourceMonitorService,
+            IResourceMonitorService resourceMonitorService,
             IAppNavigationService navigationService,
             IAppDispatcher dispatcher,
             IServiceProvider serviceProvider)
@@ -76,12 +73,6 @@ namespace PocketMC.Desktop.Features.Dashboard
             CopyCrashReportCommand = new RelayCommand(p => { if (p is InstanceCardViewModel vm) _actionsVm.CopyCrashReport(vm); });
             ServerSettingsCommand = new RelayCommand(p => { if (p is InstanceCardViewModel vm) _actionsVm.OpenSettings(vm); });
             OpenConsoleCommand = new RelayCommand(p => { if (p is InstanceCardViewModel vm) _actionsVm.OpenConsole(vm); });
-
-            _timer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(5)
-            };
-            _timer.Tick += (s, e) => UpdateAllLiveMetrics();
         }
 
         public void Activate()
@@ -91,19 +82,22 @@ namespace PocketMC.Desktop.Features.Dashboard
             _registry.InstancesChanged += OnInstancesChanged;
             _lifecycleService.OnInstanceStateChanged += OnInstanceStateChanged;
             _lifecycleService.OnRestartCountdownTick += OnRestartCountdownTick;
+            _resourceMonitorService.InstanceMetricsUpdated += OnInstanceMetricsUpdated;
+            _resourceMonitorService.GlobalMetricsUpdated += OnGlobalMetricsUpdated;
+
             _isActive = true;
             _listVm.LoadInstances();
             UpdateAllLiveMetrics();
-            _timer.Start();
         }
 
         public void Deactivate()
         {
             if (!_isActive) return;
-            _timer.Stop();
             _registry.InstancesChanged -= OnInstancesChanged;
             _lifecycleService.OnInstanceStateChanged -= OnInstanceStateChanged;
             _lifecycleService.OnRestartCountdownTick -= OnRestartCountdownTick;
+            _resourceMonitorService.InstanceMetricsUpdated -= OnInstanceMetricsUpdated;
+            _resourceMonitorService.GlobalMetricsUpdated -= OnGlobalMetricsUpdated;
             _isActive = false;
         }
 
@@ -118,6 +112,25 @@ namespace PocketMC.Desktop.Features.Dashboard
                 vm.UpdateState(state);
                 _metricsVm.ApplyLiveMetrics(vm);
             });
+        }
+
+        private void OnInstanceMetricsUpdated(object? sender, InstanceMetricsUpdatedEventArgs e)
+        {
+            _dispatcher.InvokeAsync(() =>
+            {
+                var vm = _listVm.GetById(e.InstanceId);
+                if (vm != null)
+                {
+                    _metricsVm.ApplyLiveMetrics(vm);
+                }
+            });
+        }
+
+        private void OnGlobalMetricsUpdated(object? sender, EventArgs e)
+        {
+            // Update global metrics if there are any bound properties. 
+            // For now, we update all instances to be safe, but we could be more granular.
+            _dispatcher.InvokeAsync(UpdateAllLiveMetrics);
         }
 
         private void OnRestartCountdownTick(Guid instanceId, int secondsRemaining)

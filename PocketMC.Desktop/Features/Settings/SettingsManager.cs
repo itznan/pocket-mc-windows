@@ -44,9 +44,23 @@ namespace PocketMC.Desktop.Features.Settings
             {
                 var content = File.ReadAllText(_settingsFilePath);
                 var settings = JsonSerializer.Deserialize<AppSettings>(content);
-                if (settings != null && !string.IsNullOrEmpty(settings.CurseForgeApiKey))
+                if (settings != null)
                 {
-                    settings.CurseForgeApiKey = DataProtector.Unprotect(settings.CurseForgeApiKey);
+                    if (!string.IsNullOrEmpty(settings.CurseForgeApiKey))
+                    {
+                        settings.CurseForgeApiKey = DataProtector.Unprotect(settings.CurseForgeApiKey);
+                    }
+
+                    if (settings.AiApiKeys != null)
+                    {
+                        foreach (var key in new System.Collections.Generic.List<string>(settings.AiApiKeys.Keys))
+                        {
+                            if (!string.IsNullOrEmpty(settings.AiApiKeys[key]))
+                            {
+                                settings.AiApiKeys[key] = DataProtector.Unprotect(settings.AiApiKeys[key]);
+                            }
+                        }
+                    }
                 }
                 return Normalize(settings);
             }
@@ -66,19 +80,36 @@ namespace PocketMC.Desktop.Features.Settings
                 Directory.CreateDirectory(directory);
             }
 
-            var originalKey = normalizedSettings.CurseForgeApiKey;
+            var originalCurseForgeKey = normalizedSettings.CurseForgeApiKey;
+            var originalAiApiKeys = new System.Collections.Generic.Dictionary<string, string>(normalizedSettings.AiApiKeys, StringComparer.OrdinalIgnoreCase);
+
             try
             {
                 if (!string.IsNullOrEmpty(normalizedSettings.CurseForgeApiKey))
                 {
                     normalizedSettings.CurseForgeApiKey = DataProtector.Protect(normalizedSettings.CurseForgeApiKey);
                 }
+
+                foreach (var kvp in originalAiApiKeys)
+                {
+                    if (!string.IsNullOrEmpty(kvp.Value))
+                    {
+                        normalizedSettings.AiApiKeys[kvp.Key] = DataProtector.Protect(kvp.Value);
+                    }
+                }
+
                 var content = JsonSerializer.Serialize(normalizedSettings, new JsonSerializerOptions { WriteIndented = true });
                 FileUtils.AtomicWriteAllText(_settingsFilePath, content);
             }
             finally
             {
-                normalizedSettings.CurseForgeApiKey = originalKey;
+                normalizedSettings.CurseForgeApiKey = originalCurseForgeKey;
+                
+                normalizedSettings.AiApiKeys.Clear();
+                foreach (var kvp in originalAiApiKeys)
+                {
+                    normalizedSettings.AiApiKeys[kvp.Key] = kvp.Value;
+                }
             }
         }
 

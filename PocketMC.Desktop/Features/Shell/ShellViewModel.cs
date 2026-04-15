@@ -58,7 +58,7 @@ namespace PocketMC.Desktop.Features.Shell
         private readonly IShellUIStateService _uiStateService;
         private readonly UpdateService _updateService;
         private readonly IApplicationLifecycleService _applicationLifecycle;
-        private readonly ResourceMonitorService _resourceMonitorService;
+        private readonly IResourceMonitorService _resourceMonitorService;
         private readonly ILogger<ShellViewModel> _logger;
 
         private bool _isNavigationLocked;
@@ -72,7 +72,7 @@ namespace PocketMC.Desktop.Features.Shell
             IShellUIStateService uiStateService,
             UpdateService updateService,
             IApplicationLifecycleService applicationLifecycle,
-            ResourceMonitorService resourceMonitorService,
+            IResourceMonitorService resourceMonitorService,
             ILogger<ShellViewModel> logger)
         {
             _uiStateService = uiStateService;
@@ -98,7 +98,8 @@ namespace PocketMC.Desktop.Features.Shell
                 OnPropertyChanged(nameof(GlobalHealthVisibility));
             };
 
-            _resourceMonitorService.MetricsUpdated += OnMetricsUpdated;
+            _resourceMonitorService.GlobalMetricsUpdated += OnMetricsUpdated;
+            OnMetricsUpdated(null, EventArgs.Empty);
             _updateService.OnStatusChanged += OnUpdateStatusChanged;
             InitializeUpdateCheck();
         }

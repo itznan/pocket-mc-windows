@@ -70,12 +70,13 @@ public class VanillaProvider : IServerJarProvider
         var metaStr = await _httpClient.GetStringAsync(versionMeta.Url);
         var metaRoot = JsonNode.Parse(metaStr);
         var serverDownloadUrl = metaRoot?["downloads"]?["server"]?["url"]?.ToString();
+        var serverSha1 = metaRoot?["downloads"]?["server"]?["sha1"]?.ToString();
 
         if (string.IsNullOrEmpty(serverDownloadUrl))
             throw new Exception($"No server download found for Vanilla {mcVersion}. Use a different provider or version.");
 
         // 3. Download
-        await _downloader.DownloadFileAsync(serverDownloadUrl, destinationPath, progress);
+        await _downloader.DownloadFileAsync(serverDownloadUrl, destinationPath, serverSha1, progress);
     }
 
     private class VersionManifest

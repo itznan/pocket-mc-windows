@@ -11,6 +11,7 @@ using PocketMC.Desktop.Infrastructure.Security;
 using PocketMC.Desktop.Infrastructure.Process;
 using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Console;
+using PocketMC.Desktop.Core.Interfaces;
 
 namespace PocketMC.Desktop.Features.Instances.Services
 {
@@ -28,7 +29,7 @@ namespace PocketMC.Desktop.Features.Instances.Services
         public string DisplayText => $"System RAM: {Math.Round(CommittedRamMb / 1024, 1)} / {Math.Round(TotalPhysicalRamMb / 1024, 1)} GB";
     }
 
-    public class ResourceMonitorService : IDisposable
+    public class ResourceMonitorService : IResourceMonitorService, IDisposable
     {
         private readonly ServerProcessManager _serverProcessManager;
         private readonly ILogger<ResourceMonitorService> _logger;
@@ -38,10 +39,11 @@ namespace PocketMC.Desktop.Features.Instances.Services
         private int _listCommandTick = 0;
 
         public ConcurrentDictionary<Guid, InstanceMetrics> Metrics { get; } = new();
-        private GlobalResourceSummary _currentSummary;
-        public GlobalResourceSummary CurrentSummary => Volatile.Read(ref _currentSummary);
+        private GlobalResourceSummary? _currentSummary;
+        public GlobalResourceSummary? CurrentSummary => Volatile.Read(ref _currentSummary);
 
-        public event EventHandler? MetricsUpdated;
+        public event EventHandler<InstanceMetricsUpdatedEventArgs>? InstanceMetricsUpdated;
+        public event EventHandler? GlobalMetricsUpdated;
 
         private class ProcessTracker
         {
@@ -86,7 +88,8 @@ namespace PocketMC.Desktop.Features.Instances.Services
                     Metrics.Clear();
                     double idleUsedMb = (double)MemoryHelper.GetTotalPhysicalMemoryMb() - (double)MemoryHelper.GetAvailablePhysicalMemoryMb();
                     Volatile.Write(ref _currentSummary, new GlobalResourceSummary(idleUsedMb, _totalPhysicalRamMb));
-                    NotifyMetricsUpdated();
+                    
+                    NotifyGlobalMetricsUpdated();
                     return;
                 }
 
@@ -128,6 +131,9 @@ namespace PocketMC.Desktop.Features.Instances.Services
                         tracker.LastSampleTime = now;
                         metric.PlayerCount = sp.PlayerCount;
 
+                        // Notify individual instance update
+                        InstanceMetricsUpdated?.Invoke(this, new InstanceMetricsUpdatedEventArgs(sp.InstanceId, metric));
+
                         if (sendListCommand && sp.State == ServerState.Online)
                         {
                             Task.Run(() => sp.WriteInputAsync("list"));
@@ -152,7 +158,7 @@ namespace PocketMC.Desktop.Features.Instances.Services
 
                 double systemUsedMb = (double)MemoryHelper.GetTotalPhysicalMemoryMb() - (double)MemoryHelper.GetAvailablePhysicalMemoryMb();
                 Volatile.Write(ref _currentSummary, new GlobalResourceSummary(systemUsedMb, _totalPhysicalRamMb));
-                NotifyMetricsUpdated();
+                NotifyGlobalMetricsUpdated();
             }
             catch (Exception ex)
             {
@@ -165,9 +171,9 @@ namespace PocketMC.Desktop.Features.Instances.Services
             }
         }
 
-        private void NotifyMetricsUpdated()
+        private void NotifyGlobalMetricsUpdated()
         {
-            MetricsUpdated?.Invoke(this, EventArgs.Empty);
+            GlobalMetricsUpdated?.Invoke(this, EventArgs.Empty);
         }
 
         public double GetTotalCommittedRamMb()

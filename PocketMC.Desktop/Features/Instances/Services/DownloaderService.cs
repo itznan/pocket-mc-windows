@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using PocketMC.Desktop.Features.Instances.Models;
 using System.IO;
 using System.Net.Http;
@@ -19,7 +20,12 @@ namespace PocketMC.Desktop.Features.Instances.Services;
             _logger = logger;
         }
 
-        public async Task DownloadFileAsync(string url, string destinationPath, IProgress<DownloadProgress>? progress = null, CancellationToken cancellationToken = default)
+        public async Task DownloadFileAsync(
+            string url, 
+            string destinationPath, 
+            string? expectedHash = null,
+            IProgress<DownloadProgress>? progress = null, 
+            CancellationToken cancellationToken = default)
         {
             string partialPath = destinationPath + ".partial";
             string? directory = Path.GetDirectoryName(destinationPath);
@@ -56,21 +62,36 @@ namespace PocketMC.Desktop.Features.Instances.Services;
                         using HttpResponseMessage restartResponse = await client.SendAsync(restartRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
                         restartResponse.EnsureSuccessStatusCode();
                         await DownloadToPartialAsync(restartResponse, partialPath, existingBytes, progress, cancellationToken);
-                        await PromoteCompletedDownloadAsync(partialPath, destinationPath, cancellationToken);
-                        return;
                     }
-
-                    response.EnsureSuccessStatusCode();
-
-                    bool isResuming = existingBytes > 0 && response.StatusCode == HttpStatusCode.PartialContent;
-                    if (existingBytes > 0 && !isResuming)
+                    else
                     {
-                        _logger.LogInformation("Resume is not supported for {Url}; restarting download from scratch.", url);
-                        TryDeleteFile(partialPath);
-                        existingBytes = 0;
+                        response.EnsureSuccessStatusCode();
+
+                        bool isResuming = existingBytes > 0 && response.StatusCode == HttpStatusCode.PartialContent;
+                        if (existingBytes > 0 && !isResuming)
+                        {
+                            _logger.LogInformation("Resume is not supported for {Url}; restarting download from scratch.", url);
+                            TryDeleteFile(partialPath);
+                            existingBytes = 0;
+                        }
+
+                        await DownloadToPartialAsync(response, partialPath, existingBytes, progress, cancellationToken);
                     }
 
-                    await DownloadToPartialAsync(response, partialPath, existingBytes, progress, cancellationToken);
+                    // Verification
+                    if (!string.IsNullOrEmpty(expectedHash))
+                    {
+                        string hashType = expectedHash.Length == 40 ? "SHA1" : "SHA256";
+                        _logger.LogInformation("Verifying {HashType} hash for {DestinationPath}...", hashType, destinationPath);
+                        bool isValid = await VerifyHashAsync(partialPath, expectedHash, cancellationToken);
+                        if (!isValid)
+                        {
+                            TryDeleteFile(partialPath);
+                            throw new CryptographicException($"{hashType} verification failed for {url}. Expected {expectedHash}, but file content mismatched.");
+                        }
+                        _logger.LogInformation("{HashType} verification passed for {DestinationPath}.", hashType, destinationPath);
+                    }
+
                     await PromoteCompletedDownloadAsync(partialPath, destinationPath, cancellationToken);
                     return;
                 }
@@ -90,12 +111,25 @@ namespace PocketMC.Desktop.Features.Instances.Services;
             throw new InvalidOperationException($"Failed to download '{url}' after {maxAttempts} attempts.", lastException);
         }
 
+        private async Task<bool> VerifyHashAsync(string filePath, string expectedHash, CancellationToken cancellationToken)
+        {
+            using HashAlgorithm hasher = expectedHash.Length == 40 ? SHA1.Create() : SHA256.Create();
+            await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+            
+            byte[] hashBytes = await hasher.ComputeHashAsync(stream, cancellationToken);
+            string actualHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+            return string.Equals(actualHash, expectedHash.ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// Downloads playit.exe into <appRoot>/tunnel/playit.exe if not already present.
-        /// Called during app startup alongside JRE downloads (NET-01).
         /// </summary>
         public async Task EnsurePlayitDownloadedAsync(string appRootPath, IProgress<DownloadProgress>? progress = null, CancellationToken cancellationToken = default)
         {
+            // Note: For 'latest' URL, the hash isn't stable. 
+            // Ideally, we should fetch the hash from a sidecar file or pin the version.
+            // For now, we allow the download but provide the hook for verification.
             const string playitDownloadUrl = "https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-windows-x86_64.exe";
 
             string tunnelDir = Path.Combine(appRootPath, "tunnel");
@@ -107,8 +141,9 @@ namespace PocketMC.Desktop.Features.Instances.Services;
             }
 
             Directory.CreateDirectory(tunnelDir);
-            await DownloadFileAsync(playitDownloadUrl, playitPath, progress, cancellationToken);
+            await DownloadFileAsync(playitDownloadUrl, playitPath, null, progress, cancellationToken);
         }
+// ... rest of file (ExtractZipAsync, etc.)
 
         public Task ExtractZipAsync(string zipPath, string extractPath, IProgress<DownloadProgress>? progress = null)
         {

@@ -105,7 +105,7 @@ public class ForgeProvider : IServerJarProvider
 
         // NOTE: Forge installers need to be RUN to generate the server. 
         // For now, we download the installer. The instance launch logic will need to handle the "installation" step.
-        await _downloader.DownloadFileAsync(url, destinationPath, progress);
+        await _downloader.DownloadFileAsync(url, destinationPath, null, progress);
     }
 
     private async Task<string> GetLatestForgeVersionAsync(string mcVersion)

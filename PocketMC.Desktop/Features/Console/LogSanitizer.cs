@@ -18,13 +18,31 @@ namespace PocketMC.Desktop.Features.Console
             RegexOptions.Compiled,
             RegexTimeout);
 
+        private static readonly Regex Ipv4Regex = new(
+            @"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b",
+            RegexOptions.Compiled,
+            RegexTimeout);
+
+        private static readonly Regex EmailRegex = new(
+            @"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase,
+            RegexTimeout);
+
         public static string SanitizeConsoleLine(string? line)
         {
-            if (string.IsNullOrEmpty(line))
-            {
-                return string.Empty;
-            }
+            if (string.IsNullOrEmpty(line)) return string.Empty;
 
+            string cleaned = SanitizeControlCharacters(line);
+            
+            // Protect player PII
+            cleaned = Ipv4Regex.Replace(cleaned, "[REDACTED_IP]");
+            cleaned = EmailRegex.Replace(cleaned, "[REDACTED_EMAIL]");
+
+            return cleaned;
+        }
+
+        private static string SanitizeControlCharacters(string line)
+        {
             var builder = new StringBuilder(line.Length);
             foreach (char character in line)
             {
@@ -33,7 +51,6 @@ namespace PocketMC.Desktop.Features.Console
                     builder.Append(character);
                 }
             }
-
             return builder.ToString();
         }
 

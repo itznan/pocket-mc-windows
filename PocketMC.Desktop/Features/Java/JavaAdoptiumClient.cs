@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace PocketMC.Desktop.Features.Java
 {
+    public record JavaPackageInfo(string Url, string? Sha256);
+
     /// <summary>
     /// Client for the Adoptium (Eclipse Temurin) API to resolve Minecraft-compatible Java runtimes.
     /// </summary>
@@ -23,9 +25,9 @@ namespace PocketMC.Desktop.Features.Java
         }
 
         /// <summary>
-        /// Resolves the latest JRE download URL for a specific Java version on Windows x64.
+        /// Resolves the latest JRE download URL and SHA256 hash for a specific Java version on Windows x64.
         /// </summary>
-        public async Task<string> ResolveRuntimePackageUrlAsync(int version, CancellationToken cancellationToken)
+        public async Task<JavaPackageInfo> ResolveRuntimePackageAsync(int version, CancellationToken cancellationToken)
         {
             string apiUrl = $"https://api.adoptium.net/v3/assets/latest/{version}/hotspot?os=windows&architecture=x64&image_type=jre";
             const int maxAttempts = 3;
@@ -41,14 +43,18 @@ namespace PocketMC.Desktop.Features.Java
                     string jsonResponse = await client.GetStringAsync(apiUrl, cancellationToken);
 
                     JsonArray? array = JsonNode.Parse(jsonResponse)?.AsArray();
-                    string? link = array?[0]?["binary"]?["package"]?["link"]?.ToString();
+                    var binary = array?[0]?["binary"];
+                    var package = binary?["package"];
+                    
+                    string? link = package?["link"]?.ToString();
+                    string? checksum = package?["checksum"]?.ToString();
 
                     if (string.IsNullOrWhiteSpace(link))
                     {
                         throw new InvalidOperationException($"Could not find a valid download link for Java {version}.");
                     }
 
-                    return link;
+                    return new JavaPackageInfo(link, checksum);
                 }
                 catch (Exception ex) when (attempt < maxAttempts && IsRetryable(ex))
                 {

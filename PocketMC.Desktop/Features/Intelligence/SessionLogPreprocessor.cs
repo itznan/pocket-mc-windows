@@ -55,6 +55,10 @@ public static class SessionLogPreprocessor
     /// </summary>
     public const int MinimumLines = 5;
 
+    private static readonly Regex IpRegex = new(
+        @"\b(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[a-fA-F0-9]{1,4}:){2,7}[a-fA-F0-9]{1,4}\b",
+        RegexOptions.Compiled);
+
     /// <summary>
     /// Process raw log lines into a cleaner, AI-friendly format.
     /// Returns null if the session is too short to summarize.
@@ -70,6 +74,9 @@ public static class SessionLogPreprocessor
         foreach (var raw in lines)
         {
             var line = raw.TrimEnd('\r');
+
+            // Redact IPs early
+            line = IpRegex.Replace(line, "[REDACTED_IP]");
 
             // Skip noise
             if (NoisePatterns.Any(p => p.IsMatch(line)))

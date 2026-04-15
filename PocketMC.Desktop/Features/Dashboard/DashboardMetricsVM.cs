@@ -7,14 +7,15 @@ using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Core.Interfaces;
 
 namespace PocketMC.Desktop.Features.Dashboard
 {
     public class DashboardMetricsVM : ViewModelBase
     {
-        private readonly ResourceMonitorService _resourceMonitorService;
+        private readonly IResourceMonitorService _resourceMonitorService;
 
-        public DashboardMetricsVM(ResourceMonitorService resourceMonitorService)
+        public DashboardMetricsVM(IResourceMonitorService resourceMonitorService)
         {
             _resourceMonitorService = resourceMonitorService;
         }

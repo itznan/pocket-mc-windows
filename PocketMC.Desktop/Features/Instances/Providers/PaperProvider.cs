@@ -71,7 +71,8 @@ public class PaperProvider : IServerJarProvider
 
         string jarName = $"paper-{mcVersion}-{maxBuild}.jar";
         string downloadUrl = $"https://api.papermc.io/v2/projects/paper/versions/{mcVersion}/builds/{maxBuild}/downloads/{jarName}";
+        string? expectedSha256 = root?["downloads"]?["application"]?["sha256"]?.ToString();
 
-        await _downloader.DownloadFileAsync(downloadUrl, destinationPath, progress);
+        await _downloader.DownloadFileAsync(downloadUrl, destinationPath, expectedSha256, progress);
     }
 }

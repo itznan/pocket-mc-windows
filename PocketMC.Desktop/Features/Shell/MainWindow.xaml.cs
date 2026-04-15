@@ -304,9 +304,10 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         Activate();
     }
 
-    private void TrayExit_Click(object sender, RoutedEventArgs e)
+    private async void TrayExit_Click(object sender, RoutedEventArgs e)
     {
-        _serviceProvider.GetRequiredService<ServerProcessManager>().KillAll();
+        var lifecycle = _serviceProvider.GetRequiredService<IApplicationLifecycleService>();
+        await lifecycle.GracefulShutdownAsync();
         Application.Current.Shutdown();
     }
 }

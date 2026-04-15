@@ -156,12 +156,12 @@ namespace PocketMC.Desktop.Features.Java
                     CleanupProvisioningPaths(tempZipPath, extractPath, finalPath, keepFinalIfValid: false);
                     PublishStatus(version, JavaProvisioningStage.ResolvingPackage, "Resolving package metadata...", 0);
 
-                    string packageUrl = await _adoptiumClient.ResolveRuntimePackageUrlAsync(version, cancellationToken);
+                    var package = await _adoptiumClient.ResolveRuntimePackageAsync(version, cancellationToken);
 
                     var downloadProgress = new Progress<DownloadProgress>(p =>
                         PublishStatus(version, JavaProvisioningStage.Downloading, $"Downloading... {FormatSize(p.BytesRead)} / {FormatSize(p.TotalBytes)}", p.Percentage));
 
-                    await _downloader.DownloadFileAsync(packageUrl, tempZipPath, downloadProgress, cancellationToken);
+                    await _downloader.DownloadFileAsync(package.Url, tempZipPath, package.Sha256, downloadProgress, cancellationToken);
 
                     PublishStatus(version, JavaProvisioningStage.Extracting, "Extracting runtime archive...", 0);
                     await _downloader.ExtractZipAsync(tempZipPath, extractPath, new Progress<DownloadProgress>(p =>

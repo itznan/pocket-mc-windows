@@ -81,7 +81,7 @@ public class FabricProvider : IServerJarProvider
     {
         // Official structure: v2/versions/loader/:game_version/:loader_version/:installer_version/server/jar
         string url = $"https://meta.fabricmc.net/v2/versions/loader/{mcVersion}/{loaderVersion}/{installerVersion}/server/jar";
-        await _downloader.DownloadFileAsync(url, destinationPath, progress);
+        await _downloader.DownloadFileAsync(url, destinationPath, null, progress);
     }
 
     private async Task<string> GetLatestLoaderVersionAsync()

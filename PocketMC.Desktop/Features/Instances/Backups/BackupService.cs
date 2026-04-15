@@ -15,7 +15,6 @@ using PocketMC.Desktop.Infrastructure.Process;
 using PocketMC.Desktop.Infrastructure.FileSystem;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Infrastructure.FileSystem;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Presentation;
 
@@ -32,11 +31,16 @@ public class BackupService
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly ServerProcessManager _serverProcessManager;
+    private readonly ServerConfigurationService _configService;
     private readonly ILogger<BackupService> _logger;
 
-    public BackupService(ServerProcessManager serverProcessManager, ILogger<BackupService> logger)
+    public BackupService(
+        ServerProcessManager serverProcessManager, 
+        ServerConfigurationService configService,
+        ILogger<BackupService> logger)
     {
         _serverProcessManager = serverProcessManager;
+        _configService = configService;
         _logger = logger;
     }
 
@@ -72,23 +76,31 @@ public class BackupService
         {
             if (isRunning && process != null)
             {
-                // Safe handshake: disable auto-save, force flush, wait for completion
-                onProgress?.Invoke("Disabling auto-save...");
-                await process.WriteInputAsync("save-off");
-                await Task.Delay(500);
+                // Try RCON first as it's more reliable for state detection
+                bool syncSuccess = await TrySyncSaveViaRconAsync(serverDir, onProgress);
 
-                onProgress?.Invoke("Flushing world to disk...");
-                await process.WriteInputAsync("save-all");
-
-                onProgress?.Invoke("Waiting for save to complete...");
-                bool saved = await process.WaitForConsoleOutputAsync(SaveCompletedRegex, TimeSpan.FromSeconds(15));
-
-                if (!saved)
+                if (!syncSuccess)
                 {
-                    _logger.LogWarning(
-                        "Server {ServerName} did not emit a recognized save confirmation. Proceeding after a short settle delay.",
-                        metadata.Name);
-                    await Task.Delay(TimeSpan.FromSeconds(2));
+                    _logger.LogInformation("RCON sync not available or failed; falling back to console ingestion for server {ServerName}.", metadata.Name);
+                    
+                    // Fallback to console handshake
+                    onProgress?.Invoke("Disabling auto-save (Console)...");
+                    await process.WriteInputAsync("save-off");
+                    await Task.Delay(500);
+
+                    onProgress?.Invoke("Flushing world to disk (Console)...");
+                    await process.WriteInputAsync("save-all");
+
+                    onProgress?.Invoke("Waiting for save to complete...");
+                    bool saved = await process.WaitForConsoleOutputAsync(SaveCompletedRegex, TimeSpan.FromSeconds(15));
+
+                    if (!saved)
+                    {
+                        _logger.LogWarning(
+                            "Server {ServerName} did not emit a recognized save confirmation. Proceeding after a short settle delay.",
+                            metadata.Name);
+                        await Task.Delay(TimeSpan.FromSeconds(2));
+                    }
                 }
             }
 
@@ -142,7 +154,16 @@ public class BackupService
             {
                 try
                 {
-                    await process.WriteInputAsync("save-on");
+                    // Try RCON first
+                    if (!_configService.TryGetProperty(serverDir, "enable-rcon", out var rconEnabled) || rconEnabled != "true")
+                    {
+                        await process.WriteInputAsync("save-on");
+                    }
+                    else
+                    {
+                        // We could use RCON here too, but save-on is safe via console
+                        await process.WriteInputAsync("save-on");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -157,6 +178,43 @@ public class BackupService
 
         // Prune old backups
         PruneOldBackups(backupDir, metadata.MaxBackupsToKeep);
+    }
+
+    private async Task<bool> TrySyncSaveViaRconAsync(string serverDir, Action<string>? onProgress)
+    {
+        try
+        {
+            if (!_configService.TryGetProperty(serverDir, "enable-rcon", out var rconEnabled) || rconEnabled != "true")
+            {
+                return false;
+            }
+
+            _configService.TryGetProperty(serverDir, "rcon.port", out var portStr);
+            _configService.TryGetProperty(serverDir, "rcon.password", out var password);
+
+            if (string.IsNullOrEmpty(password) || !int.TryParse(portStr ?? "25575", out int port))
+            {
+                return false;
+            }
+
+            onProgress?.Invoke("Connecting to RCON...");
+            using var rcon = new RconClient("127.0.0.1", port, password);
+            await rcon.ConnectAsync();
+
+            onProgress?.Invoke("Syncing via RCON: save-off");
+            await rcon.ExecuteCommandAsync("save-off");
+            
+            onProgress?.Invoke("Syncing via RCON: save-all");
+            var response = await rcon.ExecuteCommandAsync("save-all");
+            
+            _logger.LogInformation("RCON save-all response: {Response}", response);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "RCON sync failed.");
+            return false;
+        }
     }
 
     /// <summary>
