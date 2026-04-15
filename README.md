@@ -83,21 +83,23 @@ Optionally generate structured summaries of server sessions using external AI pr
 | OS | Windows 10 1809 (build 17763) or Windows 11 |
 | Architecture | x64 |
 | RAM | 4 GB (8 GB+ recommended for running servers) |
-| .NET Runtime | .NET 8 Desktop Runtime (bundled in installer) |
+| .NET Runtime | .NET 8 Desktop Runtime |
 | Internet | Required for first-run JRE download and Playit.gg tunneling |
 
 > Java does **not** need to be pre-installed. PocketMC manages its own JRE stack.
+> Velopack can prompt for missing desktop runtime prerequisites during install or update.
 
 ---
 
 ## Installation
 
-### Installer (Recommended)
+### Velopack Setup (Recommended)
 
-1. Download `PocketMC_Setup.exe` from the [latest release](https://github.com/PocketMC/pocket-mc-windows/releases/latest).
-2. Run the installer. No admin rights required, installs per-user.
+1. Download `Setup.exe` from the [latest release](https://github.com/PocketMC/pocket-mc-windows/releases/latest).
+2. Run the Velopack installer. No admin rights are required and it installs per-user.
 3. Launch PocketMC Desktop from the Start Menu or desktop shortcut.
 4. On first run, choose a root folder where server instances and runtimes will be stored.
+5. Future updates are handled automatically through Velopack.
 
 ### Build from Source
 
@@ -110,16 +112,15 @@ dotnet build PocketMC.Desktop.sln --configuration Release
 dotnet run --project PocketMC.Desktop/PocketMC.Desktop.csproj
 ```
 
-To build the installer locally, install [Inno Setup 6](https://jrsoftware.org/isinfo.php) and run:
+To build the Velopack release locally, install the Velopack CLI and pack the published output:
 
-```bash
-dotnet publish PocketMC.Desktop\PocketMC.Desktop.csproj -c Release -r win-x64 ^
-  -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained false -o publish_output
-
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+```powershell
+dotnet tool install -g vpk
+dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj -c Release -o ./publish
+vpk pack -u PocketMC -v 1.0.0 -p ./publish -e PocketMC.Desktop.exe
 ```
 
-The installer will be output to `ReleaseOutput\PocketMC_Setup.exe`.
+The installer and release feed files will be written to `Releases/`.
 
 ---
 

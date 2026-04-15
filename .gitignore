@@ -1,5 +1,4 @@
 .planning/
-Installer/
 bin/
 obj/
 ReleaseBuild/
@@ -8,5 +7,5 @@ ReleaseBuild/
 Release/
 PocketMC-Release/
 PortableRelease/
-publish_output/
-ReleaseOutput/
+publish/
+Releases/

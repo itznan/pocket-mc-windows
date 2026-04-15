@@ -3,6 +3,7 @@ name: .NET Core Desktop
 on:
   push:
     branches: [ "main", "master" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main", "master" ]
   workflow_dispatch:
@@ -39,33 +40,26 @@ jobs:
     - name: Run Tests
       run: dotnet test PocketMC.Desktop.sln --configuration Release --no-build
 
-    - name: Publish Portable Executable
-      run: dotnet publish PocketMC.Desktop\PocketMC.Desktop.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:PublishReadyToRun=true --self-contained false -o portable_release
-      
-    - name: Upload Portable EXE Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: PocketMC_Portable
-        path: portable_release\
+    - name: Install Velopack CLI
+      if: startsWith(github.ref, 'refs/tags/')
+      run: dotnet tool install -g vpk
 
-    - name: Publish App (Multi-File for Better Performance)
-      run: dotnet publish PocketMC.Desktop\PocketMC.Desktop.csproj -c Release -r win-x64 -p:PublishSingleFile=false -p:PublishReadyToRun=true --self-contained false -o publish_output
-      
-    - name: Extract version
-      id: version
+    - name: Add dotnet tools to PATH
+      if: startsWith(github.ref, 'refs/tags/')
       shell: pwsh
-      run: |
-        $version = ([xml](Get-Content PocketMC.Desktop/PocketMC.Desktop.csproj)).Project.PropertyGroup.Version
-        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+      run: echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-    - name: Create Installer using Inno Setup
-      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-      with:
-        path: installer.iss
-        arguments: /DAppVersion=${{ steps.version.outputs.VERSION }}
+    - name: Publish WPF app
+      if: startsWith(github.ref, 'refs/tags/')
+      run: dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj -c Release -o ./publish
 
-    - name: Upload Installer Setup Artifact
+    - name: Pack Velopack release
+      if: startsWith(github.ref, 'refs/tags/')
+      run: vpk pack -u PocketMC -v ${{ github.ref_name }} -p ./publish -e PocketMC.Desktop.exe
+
+    - name: Upload Velopack release artifact
+      if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
       with:
-        name: PocketMC_Setup
-        path: ReleaseOutput\PocketMC_Setup.exe
+        name: PocketMC_Velopack
+        path: Releases/

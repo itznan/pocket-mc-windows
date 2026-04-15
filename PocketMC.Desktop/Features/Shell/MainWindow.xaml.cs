@@ -318,5 +318,9 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
         Application.Current.Shutdown();
     }
 
-    private void Window_Loaded(object sender, RoutedEventArgs e) => _startupCoordinator.Start();
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        _startupCoordinator.Start();
+        _ = _viewModel.CheckForUpdatesAsync();
+    }
 }

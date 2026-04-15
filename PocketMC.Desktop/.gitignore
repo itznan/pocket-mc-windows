@@ -1,8 +1,9 @@
 .planning/
-Installer/
 bin/Debug/
 bin/Release/
 ReleaseBuild/
 Debug/
 ReleaseBuild/
 obj/
+publish/
+Releases/
