@@ -3,15 +3,8 @@ name: Production Build
 on:
   push:
     branches:
-      - '**'        # all branches
-    tags:
-      - 'v*'        # version tags
+      - master
 
-  pull_request:
-    branches:
-      - '**'        # all PRs
-
-  workflow_dispatch:
 jobs:
   build:
     runs-on: windows-latest
@@ -20,46 +13,54 @@ jobs:
       DOTNET_VERSION: '8.0.x'
       RUNTIME: win-x64
       APP_ID: PocketMC
-      MAIN_EXE: PocketMC.exe
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    # -------------------------
+    # 1. CHECKOUT
+    # -------------------------
+    - uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+    # -------------------------
+    # 2. SETUP DEPENDENCIES
+    # -------------------------
+    - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    # 🔧 Fix for global tools (IMPORTANT)
+    # -------------------------
+    # 3. ADD TOOL PATH
+    # -------------------------
     - name: Add .NET tools to PATH
       run: echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
 
-    - name: Install Velopack CLI
+    # -------------------------
+    # 4. INSTALL VELOPACK CLI
+    # -------------------------
+    - name: Install Velopack
       run: dotnet tool install -g vpk
 
     # -------------------------
-    # 🔨 DEBUG BUILD
+    # 5. DEBUG BUILD
     # -------------------------
-    - name: Build Debug
+    - name: Debug Build
       run: dotnet build PocketMC.Desktop.sln -c Debug
 
     # -------------------------
-    # 🚀 RELEASE BUILD
+    # 6. RELEASE BUILD
     # -------------------------
-    - name: Build Release
+    - name: Release Build
       run: dotnet build PocketMC.Desktop.sln -c Release
 
     # -------------------------
-    # 🧪 TESTS
+    # 7. TEST
     # -------------------------
     - name: Run Tests
-      run: dotnet test PocketMC.Desktop.sln --no-build --verbosity normal
+      run: dotnet test PocketMC.Desktop.sln --no-build
 
     # -------------------------
-    # 📦 PUBLISH (MULTI-DLL)
+    # 8. PUBLISH MULTI-DLL
     # -------------------------
-    - name: Publish App
+    - name: Publish Multi-DLL
       run: |
         dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
           -c Release `
@@ -67,39 +68,60 @@ jobs:
           --self-contained false `
           -o publish
 
-    - name: List publish output
-      run: dir publish
+    # -------------------------
+    # 9. PUBLISH PORTABLE EXE
+    # -------------------------
+    - name: Publish Portable EXE
+      run: |
+        dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
+          -c Release `
+          -r $env:RUNTIME `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -o portable
 
     # -------------------------
-    # 📥 DOWNLOAD PREVIOUS RELEASE (for delta)
+    # 10. GET PREVIOUS VERSION
+    # -------------------------
+    - name: Get Previous Version
+      id: version
+      run: |
+        $latest = gh release list --limit 1 --json tagName | ConvertFrom-Json
+        if ($latest) {
+          $tag = $latest[0].tagName.Replace("v","")
+        } else {
+          $tag = "1.0.0"
+        }
+
+        $parts = $tag.Split(".")
+        $major = [int]$parts[0]
+        $minor = [int]$parts[1] + 1
+        $patch = 0
+
+        $newVersion = "$major.$minor.$patch"
+        echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+
+    # -------------------------
+    # 11. DOWNLOAD PREVIOUS RELEASE
     # -------------------------
     - name: Download previous release
       uses: robinraju/release-downloader@v1
       with:
         latest: true
-        fileName: '*.nupkg'
         out-file-path: Releases
       continue-on-error: true
 
     # -------------------------
-    # 📦 VELOPACK PACKAGE
+    # 12. VELOPACK PACKAGE
     # -------------------------
     - name: Pack with Velopack
-      run: |
-       vpk pack `
-       --packId ${{ env.APP_ID }} `
-       --packVersion 1.3.1 `
-       --packDir publish `
-       --mainExe PocketMC.Desktop.exe `
-       --framework net8.0 `
-       --runtime ${{ env.RUNTIME }} `
-       --outputDir Releases
+      run: vpk pack --packId ${{ env.APP_ID }} --packVersion ${{ env.VERSION }} --packDir publish --mainExe PocketMC.Desktop.exe --framework net8.0 --runtime ${{ env.RUNTIME }} --outputDir Releases --authors "DS Labs"
 
     # -------------------------
-    # 📤 UPLOAD ARTIFACTS
+    # 13. UPLOAD RELEASE ARTIFACTS
     # -------------------------
-    - name: Upload Installer
+    - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: velopack-installer
+        name: Release ${{ env.VERSION }}
         path: Releases/
