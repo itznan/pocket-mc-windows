@@ -1,84 +1,118 @@
-name: .NET Core Desktop
+name: Production Build
 
 on:
   push:
-    branches: ["main", "master"]
-    tags: ["v*"]
-  workflow_dispatch: # Allows manual testing from the Actions tab
-
-permissions:
-  contents: write
+    branches:
+      - master
+      - New-Ci-Pipeline
 
 jobs:
   build:
     runs-on: windows-latest
+
+    env:
+      DOTNET_VERSION: '8.0.x'
+      RUNTIME: win-x64
+      APP_ID: PocketMC
+
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Required to see previous tags for delta comparison
+    # -------------------------
+    # 1. CHECKOUT
+    # -------------------------
+    - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
+    # -------------------------
+    # 2. SETUP DEPENDENCIES
+    # -------------------------
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore & Build
-        run: |
-          dotnet restore PocketMC.Desktop.sln
-          dotnet build PocketMC.Desktop.sln --configuration Release --no-restore
+    # -------------------------
+    # 3. ADD TOOL PATH
+    # -------------------------
+    - name: Add .NET tools to PATH
+      run: echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
 
-      # ── Release Logic: Enabled for Tags, Main Branch, and Manual Runs ───────────
+    # -------------------------
+    # 4. INSTALL VELOPACK CLI
+    # -------------------------
+    - name: Install Velopack
+      run: dotnet tool install -g vpk
 
-      - name: Install Velopack CLI
-        # Condition expanded to allow testing on main or manual runs
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        run: dotnet tool install -g vpk
+    # -------------------------
+    # 5. DEBUG BUILD
+    # -------------------------
+    - name: Debug Build
+      run: dotnet build PocketMC.Desktop.sln -c Debug
 
-      - name: Add dotnet tools to PATH
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        run: echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    # -------------------------
+    # 6. RELEASE BUILD
+    # -------------------------
+    - name: Release Build
+      run: dotnet build PocketMC.Desktop.sln -c Release
 
-      - name: Publish WPF app
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        run: |
-          dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
-            -c Release -r win-x64 --self-contained true -o ./publish
+    # -------------------------
+    # 7. TEST
+    # -------------------------
+    - name: Run Tests
+      run: dotnet test PocketMC.Desktop.sln --no-build
 
-      - name: Download Previous Release (For Delta Generation)
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          New-Item -ItemType Directory -Force -Path Releases | Out-Null
-          # vpk download syncs the latest releases.win.json and .nupkg to the local dir
-          vpk download github --repoUrl "https://github.com/${{ github.repository }}" --outputDir Releases 2>$null || true
+    # -------------------------
+    # 8. PUBLISH MULTI-DLL
+    # -------------------------
+    - name: Publish Multi-DLL
+      run: |
+        dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
+          -c Release `
+          -r $env:RUNTIME `
+          --self-contained false `
+          -o publish
 
-      - name: Pack Velopack Release
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-        shell: pwsh
-        run: |
-          # Use tag version if available, otherwise use a build-number version
-          $ver = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}".TrimStart('v') } else { "0.0.1-build${{ github.run_number }}" }
+    # -------------------------
+    # 10. GET PREVIOUS VERSION
+    # -------------------------
+    - name: Get Previous Version
+      id: version
+      env:
+       GH_TOKEN: ${{ github.token }}
+      run: |
+        $latest = gh release list --limit 1 --json tagName | ConvertFrom-Json
+        if ($latest) {
+          $tag = $latest[0].tagName.Replace("v","")
+        } else {
+          $tag = "1.0.0"
+        }
 
-          # vpk pack automatically generates deltas if previous .nupkg files exist in Releases/
-          vpk pack --packId PocketMC --packVersion $ver --packDir ./publish --mainExe PocketMC.Desktop.exe --icon PocketMC.Desktop/icon.ico --outputDir Releases --delta BestSize
+        $parts = $tag.Split(".")
+        $major = [int]$parts[0]
+        $minor = [int]$parts[1] + 1
+        $patch = 0
 
-      # ── Final Release: ONLY RUNS ON TAGS ──────────────────────────────────────
+        $newVersion = "$major.$minor.$patch"
+        echo "VERSION=$newVersion" >> $env:GITHUB_ENV
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          $tag = "${{ github.ref_name }}"
-          $files = Get-ChildItem -Path Releases -File | ForEach-Object { $_.FullName }
-          gh release create $tag $files --title "PocketMC $tag" --generate-notes
+    # -------------------------
+    # 11. DOWNLOAD PREVIOUS RELEASE
+    # -------------------------
+    - name: Download previous release
+      uses: robinraju/release-downloader@v1
+      with:
+        latest: true
+        out-file-path: Releases
+      continue-on-error: true
 
-      - name: Upload Artifacts (Always for debugging)
-        uses: actions/upload-artifact@v4
-        with:
-          name: PocketMC_Build_${{ github.run_number }}
-          path: Releases/
+    # -------------------------
+    # 12. VELOPACK PACKAGE
+    # -------------------------
+    - name: Pack with Velopack
+      run: vpk pack --packId ${{ env.APP_ID }} --packVersion ${{ env.VERSION }} --packDir publish --mainExe PocketMC.Desktop.exe --framework net8.0 --runtime ${{ env.RUNTIME }} --outputDir Releases
+
+    # -------------------------
+    # 13. UPLOAD RELEASE ARTIFACTS
+    # -------------------------
+    - name: Upload Release Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Release ${{ env.VERSION }}
+        path: Releases/
