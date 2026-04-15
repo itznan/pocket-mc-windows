@@ -19,6 +19,14 @@ using PocketMC.Desktop.Infrastructure;
 
 namespace PocketMC.Desktop.Features.Setup
 {
+    public class DependencyHealthItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public System.Windows.Media.Brush ColorBrush { get; set; } = System.Windows.Media.Brushes.White;
+        public string Details { get; set; } = string.Empty;
+    }
+
     public partial class AppSettingsPage : Page
     {
         private readonly ApplicationState _applicationState;
@@ -27,6 +35,7 @@ namespace PocketMC.Desktop.Features.Setup
         private readonly AiApiClient _aiApiClient;
         private readonly UpdateService _updateService;
         private readonly PocketMC.Desktop.Features.Diagnostics.DiagnosticReportingService _diagnosticService;
+        private readonly PocketMC.Desktop.Features.Diagnostics.DependencyHealthMonitor _healthMonitor;
         private bool _isInitializing = true;
 
         public AppSettingsPage(
@@ -35,7 +44,8 @@ namespace PocketMC.Desktop.Features.Setup
             IDialogService dialogService, 
             AiApiClient aiApiClient,
             UpdateService updateService,
-            PocketMC.Desktop.Features.Diagnostics.DiagnosticReportingService diagnosticService)
+            PocketMC.Desktop.Features.Diagnostics.DiagnosticReportingService diagnosticService,
+            PocketMC.Desktop.Features.Diagnostics.DependencyHealthMonitor healthMonitor)
         {
             InitializeComponent();
             _applicationState = applicationState;
@@ -44,8 +54,10 @@ namespace PocketMC.Desktop.Features.Setup
             _aiApiClient = aiApiClient;
             _updateService = updateService;
             _diagnosticService = diagnosticService;
+            _healthMonitor = healthMonitor;
 
             Loaded += AppSettingsPage_Loaded;
+            Unloaded += AppSettingsPage_Unloaded;
         }
 
         private void AppSettingsPage_Loaded(object sender, RoutedEventArgs e)
@@ -53,6 +65,9 @@ namespace PocketMC.Desktop.Features.Setup
             _isInitializing = true;
             ToggleMica.IsChecked = _applicationState.Settings.EnableMicaEffect;
             CurseForgeKeyInput.Text = _applicationState.Settings.CurseForgeApiKey ?? "";
+
+            // Set initial state
+            ExternalBackupPathInput.Text = _applicationState.Settings.ExternalBackupDirectory ?? "";
 
             // AI Settings
             AiApiKeyInput.Text = _applicationState.Settings.GetCurrentAiKey() ?? "";
@@ -72,7 +87,48 @@ namespace PocketMC.Desktop.Features.Setup
                 }
             }
 
+            _healthMonitor.HealthChanged += UpdateDependencyHealth;
+            UpdateDependencyHealth();
+
             _isInitializing = false;
+        }
+
+        private void AppSettingsPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            _healthMonitor.HealthChanged -= UpdateDependencyHealth;
+        }
+
+        private void UpdateDependencyHealth()
+        {
+            if (Application.Current?.Dispatcher?.CheckAccess() == false)
+            {
+                Application.Current.Dispatcher.BeginInvoke(() => UpdateDependencyHealth());
+                return;
+            }
+
+            var items = new System.Collections.Generic.List<DependencyHealthItem>();
+            foreach (var health in _healthMonitor.GetAllHealth())
+            {
+                var brush = health.Status switch
+                {
+                    PocketMC.Desktop.Features.Diagnostics.DependencyHealthStatus.Healthy => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xA6, 0xE3, 0xA1)),
+                    PocketMC.Desktop.Features.Diagnostics.DependencyHealthStatus.Degraded => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF9, 0xE2, 0xAF)),
+                    PocketMC.Desktop.Features.Diagnostics.DependencyHealthStatus.Down => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF3, 0x8B, 0xA8)),
+                    _ => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xCD, 0xD6, 0xF4))
+                };
+
+                string details = health.ErrorMessage ?? $"{health.Latency.TotalMilliseconds:F0}ms";
+                if (health.Status == PocketMC.Desktop.Features.Diagnostics.DependencyHealthStatus.Unknown) details = "Pending check...";
+
+                items.Add(new DependencyHealthItem
+                {
+                    Name = health.Name,
+                    Status = health.Status.ToString(),
+                    ColorBrush = brush,
+                    Details = details
+                });
+            }
+            DependencyHealthList.ItemsSource = items;
         }
 
         private void ToggleMica_Checked(object sender, RoutedEventArgs e)
@@ -237,6 +293,36 @@ namespace PocketMC.Desktop.Features.Setup
             {
                 BtnCheckUpdates.IsEnabled = true;
             }
+        }
+
+        private void BrowseExternalBackup_Click(object sender, RoutedEventArgs e)
+        {
+            var folderDialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = "Select External Backup Folder (e.g. Google Drive/Dropbox sync folder)"
+            };
+
+            if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                ExternalBackupPathInput.Text = folderDialog.SelectedPath;
+            }
+        }
+
+        private void SaveExternalBackup_Click(object sender, RoutedEventArgs e)
+        {
+            var path = ExternalBackupPathInput.Text.Trim();
+            
+            if (!string.IsNullOrWhiteSpace(path) && !System.IO.Directory.Exists(path))
+            {
+                _dialogService.ShowMessage("Invalid Path", "The selected directory does not exist or is inaccessible.");
+                return;
+            }
+
+            var settings = _applicationState.Settings;
+            settings.ExternalBackupDirectory = string.IsNullOrWhiteSpace(path) ? null : path;
+            _settingsManager.Save(settings);
+
+            _dialogService.ShowMessage("Saved", "External backup location saved. Next time a server backup runs, it will be automatically replicated here.");
         }
 
         private async void ExportBundle_Click(object sender, RoutedEventArgs e)

@@ -32,15 +32,18 @@ public class BackupService
 
     private readonly ServerProcessManager _serverProcessManager;
     private readonly ServerConfigurationService _configService;
+    private readonly SettingsManager _settingsManager;
     private readonly ILogger<BackupService> _logger;
 
     public BackupService(
         ServerProcessManager serverProcessManager, 
         ServerConfigurationService configService,
+        SettingsManager settingsManager,
         ILogger<BackupService> logger)
     {
         _serverProcessManager = serverProcessManager;
         _configService = configService;
+        _settingsManager = settingsManager;
         _logger = logger;
     }
 
@@ -128,6 +131,27 @@ public class BackupService
                 onProgress?.Invoke($"Backup complete! ({skippedFiles.Count} locked file(s) skipped)");
             else
                 onProgress?.Invoke("Backup complete!");
+
+            // External Disaster Recovery: replicate payload to configured off-site path
+            var appSettings = _settingsManager.Load();
+            if (!string.IsNullOrWhiteSpace(appSettings.ExternalBackupDirectory) && Directory.Exists(appSettings.ExternalBackupDirectory))
+            {
+                onProgress?.Invoke("Replicating to external storage...");
+                try
+                {
+                    string externalTarget = Path.Combine(appSettings.ExternalBackupDirectory, metadata.Name, "backups");
+                    Directory.CreateDirectory(externalTarget);
+                    
+                    string destinationPath = Path.Combine(externalTarget, $"world-{timestamp}.zip");
+                    await Task.Run(() => File.Copy(zipPath, destinationPath, true));
+                    _logger.LogInformation("Successfully replicated backup to external location: {Destination}", destinationPath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to replicate backup to external directory {Dir}", appSettings.ExternalBackupDirectory);
+                    onProgress?.Invoke("Warning: External replication failed (Check logs)");
+                }
+            }
         }
         catch (Exception ex)
         {

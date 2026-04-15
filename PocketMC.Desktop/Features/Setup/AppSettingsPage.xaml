@@ -206,6 +206,45 @@
                     </ui:CardExpander.Header>
 
                     <StackPanel Margin="16,8,16,16">
+                        <!-- Dependency Health -->
+                        <TextBlock Text="External Services Availability" FontSize="14" FontWeight="Medium" Margin="0,0,0,4"/>
+                        <ItemsControl x:Name="DependencyHealthList" Margin="0,0,0,16">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Status}" Foreground="{Binding ColorBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Details}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Separator Margin="0,4,0,12" Opacity="0.15"/>
+
+                        <!-- Disaster Recovery -->
+                        <TextBlock Text="Disaster Recovery (Off-site Prep)" FontSize="14" FontWeight="Medium"/>
+                        <TextBlock Text="Set a secondary external location (like a Google Drive or USB directory) where world backups should be replicated automatically when they run." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,4,0,12" TextWrapping="Wrap"/>
+                        
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <ui:TextBox x:Name="ExternalBackupPathInput" PlaceholderText="Select an external path..." IsReadOnly="True" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ui:Button Grid.Column="1" Content="Browse" Click="BrowseExternalBackup_Click" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ui:Button Grid.Column="2" Content="Save" Appearance="Primary" Click="SaveExternalBackup_Click" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Separator Margin="0,4,0,12" Opacity="0.15"/>
+
                         <TextBlock Text="Export Support Bundle" FontSize="14" FontWeight="Medium"/>
                         <TextBlock Text="Generates a ZIP archive containing redacted App logs, system information, and running server metrics. Attach this to GitHub issues or Discord help requests." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,4,0,12" TextWrapping="Wrap"/>
                         <ui:Button x:Name="BtnExportBundle" Content="Generate Support Bundle" Icon="{ui:SymbolIcon Archive24}" Appearance="Secondary" Click="ExportBundle_Click"/>

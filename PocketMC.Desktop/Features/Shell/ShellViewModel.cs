@@ -110,16 +110,16 @@ namespace PocketMC.Desktop.Features.Shell
             if (Application.Current?.Dispatcher?.CheckAccess() == false)
             {
                 Application.Current.Dispatcher.BeginInvoke(() => {
-                    _uiStateService.GlobalHealthStatusText = summary.DisplayText;
-                    _uiStateService.GlobalHealthStatusBrush = summary.IsHighUsage
+                    _uiStateService.GlobalHealthStatusText = summary?.DisplayText ?? "Idle";
+                    _uiStateService.GlobalHealthStatusBrush = (summary?.IsHighUsage == true)
                         ? System.Windows.Media.Brushes.Red
                         : System.Windows.Media.Brushes.White;
                 });
                 return;
             }
 
-            _uiStateService.GlobalHealthStatusText = summary.DisplayText;
-            _uiStateService.GlobalHealthStatusBrush = summary.IsHighUsage
+            _uiStateService.GlobalHealthStatusText = summary?.DisplayText ?? "Idle";
+            _uiStateService.GlobalHealthStatusBrush = (summary?.IsHighUsage == true)
                 ? System.Windows.Media.Brushes.Red
                 : System.Windows.Media.Brushes.White;
         }

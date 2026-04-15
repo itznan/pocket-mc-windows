@@ -24,6 +24,7 @@ namespace PocketMC.Desktop.Features.Shell
         private readonly JavaProvisioningService _javaProvisioningService;
         private readonly PlayitAgentService _playitAgentService;
         private readonly ResourceMonitorService _resourceMonitorService;
+        private readonly PocketMC.Desktop.Features.Diagnostics.DependencyHealthMonitor _healthMonitor;
         private readonly ILogger<ShellStartupCoordinator> _logger;
         private IStartupShellHost? _host;
         private bool _startupServicesStarted;
@@ -38,6 +39,7 @@ namespace PocketMC.Desktop.Features.Shell
             JavaProvisioningService javaProvisioningService,
             PlayitAgentService playitAgentService,
             ResourceMonitorService resourceMonitorService,
+            PocketMC.Desktop.Features.Diagnostics.DependencyHealthMonitor healthMonitor,
             ILogger<ShellStartupCoordinator> logger)
         {
             _settingsManager = settingsManager;
@@ -47,6 +49,7 @@ namespace PocketMC.Desktop.Features.Shell
             _javaProvisioningService = javaProvisioningService;
             _playitAgentService = playitAgentService;
             _resourceMonitorService = resourceMonitorService;
+            _healthMonitor = healthMonitor;
             _logger = logger;
         }
 
@@ -108,6 +111,7 @@ namespace PocketMC.Desktop.Features.Shell
             _playitAgentService.OnClaimUrlReceived -= OnPlayitClaimUrlReceived;
             _playitAgentService.OnTunnelRunning -= OnPlayitTunnelRunning;
             _backupScheduler.Stop();
+            _healthMonitor.StopMonitoring();
             _serverProcessManager.KillAll();
             _host = null;
             _isDisposed = true;
@@ -127,6 +131,7 @@ namespace PocketMC.Desktop.Features.Shell
             if (!_startupServicesStarted)
             {
                 _backupScheduler.Start();
+                _healthMonitor.StartMonitoring();
                 _javaProvisioningService.StartBackgroundProvisioning();
 
                 if (!settings.HasCompletedFirstLaunch)

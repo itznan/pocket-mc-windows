@@ -19,5 +19,8 @@ namespace PocketMC.Desktop.Models
         public bool AlwaysAutoSummarize { get; set; } = false;
 
         public string? GetCurrentAiKey() => AiApiKeys.TryGetValue(AiProvider, out var key) ? key : null;
+        
+        // Disaster Recovery
+        public string? ExternalBackupDirectory { get; set; }
     }
 }
