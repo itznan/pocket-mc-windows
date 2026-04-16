@@ -72,25 +72,25 @@ jobs:
     # -------------------------
     # 10. GET PREVIOUS VERSION
     # -------------------------
-    - name: Get Previous Version
-      id: version
-      env:
-       GH_TOKEN: ${{ github.token }}
-      run: |
-        $latest = gh release list --limit 1 --json tagName | ConvertFrom-Json
-        if ($latest) {
-          $tag = $latest[0].tagName.Replace("v","")
-        } else {
-          $tag = "1.0.0"
-        }
+    #- name: Get Previous Version
+      #id: version
+      #env:
+       #GH_TOKEN: ${{ github.token }}
+      #run: |
+        #$latest = gh release list --limit 1 --json tagName | ConvertFrom-Json
+        #if ($latest) {
+          #$tag = $latest[0].tagName.Replace("v","")
+        #} else {
+          #$tag = "1.0.0"
+        #}
 
-        $parts = $tag.Split(".")
-        $major = [int]$parts[0]
-        $minor = [int]$parts[1] + 1
-        $patch = 0
+        #$parts = $tag.Split(".")
+        #$major = [int]$parts[0]
+        #$minor = [int]$parts[1] + 1
+        #$patch = 0
 
-        $newVersion = "$major.$minor.$patch"
-        echo "VERSION=$newVersion" >> $env:GITHUB_ENV
+        #$newVersion = "$major.$minor.$patch"
+        #echo "VERSION=$newVersion" >> $env:GITHUB_ENV
 
     # -------------------------
     # 11. DOWNLOAD PREVIOUS RELEASE
@@ -106,7 +106,7 @@ jobs:
     # 12. VELOPACK PACKAGE
     # -------------------------
     - name: Pack with Velopack
-      run: vpk pack --packId ${{ env.APP_ID }} --packVersion ${{ env.VERSION }} --packDir publish --mainExe PocketMC.Desktop.exe --framework net8.0 --runtime ${{ env.RUNTIME }} --outputDir Releases
+      run: vpk pack --packId ${{ env.APP_ID }} --packVersion 1.4.0 --packDir publish --mainExe PocketMC.Desktop.exe --framework net8.0 --runtime ${{ env.RUNTIME }} --outputDir Releases
 
     # -------------------------
     # 13. UPLOAD RELEASE ARTIFACTS
