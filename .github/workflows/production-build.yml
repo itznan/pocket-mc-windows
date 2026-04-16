@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - New-Ci-Pipeline
+  pull_request:
 
 jobs:
   build:

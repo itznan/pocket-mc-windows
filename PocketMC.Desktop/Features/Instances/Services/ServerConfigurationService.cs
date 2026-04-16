@@ -45,7 +45,6 @@ public sealed class ServerConfigurationService
         "server-name",              // PM uses this instead of motd
         "enable-query",
         "auto-save",
-        "view-distance",
         "language",
     };
 
