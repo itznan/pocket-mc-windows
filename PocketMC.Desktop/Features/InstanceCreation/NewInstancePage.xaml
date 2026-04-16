@@ -140,6 +140,8 @@
                                 <ComboBoxItem Content="Paper"/>
                                 <ComboBoxItem Content="Fabric"/>
                                 <ComboBoxItem Content="Forge"/>
+                                <ComboBoxItem Content="Bedrock (BDS)"/>
+                                <ComboBoxItem Content="Pocketmine (PHP)"/>
                             </ComboBox>
 
                             <TextBlock Text="Minecraft Version"
@@ -184,6 +186,34 @@
                                       DisplayMemberPath="Version"/>
                         </StackPanel>
                     </Grid>
+
+                    <!-- Addons / Plugins -->
+                    <StackPanel x:Name="AddonPanel" Margin="0,16,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox x:Name="ChkEnableGeyser"
+                                      Grid.Column="0"
+                                      VerticalAlignment="Top"
+                                      Margin="0,2,12,0"/>
+                            
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Enable Cross-play (Geyser + Floodgate)"
+                                           FontWeight="Medium"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                           Margin="0,0,0,4"/>
+                                <TextBlock FontSize="12"
+                                           Opacity="0.8"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap">
+                                    <Run Text="Allows Minecraft Bedrock players to join this Java server."/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
 
                     <Border Height="1" Background="{DynamicResource CardStrokeColorDefaultBrush}" Margin="0,24,0,24"/>
 

@@ -28,12 +28,14 @@ namespace PocketMC.Desktop.Features.Marketplace
         private readonly IAppNavigationService _navigationService;
         private readonly ModrinthService _modrinth;
         private readonly CurseForgeService _curseForge;
+        private readonly PoggitService _poggit;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly string? _serverDir;
         private readonly string _mcVersion;
         private readonly string _projectType;
         private readonly bool _isModpackMode;
         private readonly Action? _onCompleted;
+        private readonly string _serverType;
         private readonly ObservableCollection<ModrinthHit> _results = new();
         private int _currentOffset = 0;
         private System.Threading.CancellationTokenSource? _searchCts;
@@ -44,29 +46,46 @@ namespace PocketMC.Desktop.Features.Marketplace
             IAppNavigationService navigationService,
             ModrinthService modrinth,
             CurseForgeService curseForge,
+            PoggitService poggit,
             IHttpClientFactory httpClientFactory,
             string? serverDir,
             string mcVersion,
             string projectType,
-            Action? onCompleted = null)
+            Action? onCompleted = null,
+            string serverType = "")
         {
             InitializeComponent();
             _navigationService = navigationService;
             _modrinth = modrinth;
             _curseForge = curseForge;
+            _poggit = poggit;
             _httpClientFactory = httpClientFactory;
             _serverDir = serverDir;
             _mcVersion = mcVersion;
             _projectType = projectType;
             _isModpackMode = projectType.Contains("modpack");
             _onCompleted = onCompleted;
+            _serverType = serverType;
 
             ListResults.ItemsSource = _results;
+            bool isBedrock = _serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase);
+            bool isPocketmine = _serverType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase);
+
             string baseTitle = _isModpackMode ? "Modpack Marketplace" : (_projectType.Contains("plugin") ? "Plugin Marketplace" : "Mod Marketplace");
+            if (isBedrock) baseTitle = "Bedrock Add-Ons Marketplace";
+            if (isPocketmine) 
+            {
+                baseTitle = "Pocketmine Plugins";
+                CmbSource.Items.Clear();
+                CmbSource.Items.Add(new ComboBoxItem { Content = "Poggit" });
+                CmbSource.SelectedIndex = 0;
+            }
             TxtTitle.Text = baseTitle;
             TxtMcVersion.Text = _mcVersion == "*" ? "All Versions" : $"Minecraft {_mcVersion}";
 
             if (_isModpackMode) TxtSearch.PlaceholderText = "Search modpacks...";
+            else if (isBedrock) TxtSearch.PlaceholderText = "Search Bedrock Add-Ons...";
+            else if (isPocketmine && _projectType.Contains("plugin")) TxtSearch.PlaceholderText = "Search Pocketmine plugins (*.phar)...";
             else if (_projectType.Contains("plugin")) TxtSearch.PlaceholderText = "Search Spigot/Paper plugins...";
             else TxtSearch.PlaceholderText = "Search Forge/Fabric mods...";
 
@@ -102,18 +121,28 @@ namespace PocketMC.Desktop.Features.Marketplace
 
             try
             {
-                bool isCurseForge = CmbSource.SelectedIndex == 1;
+                bool isCurseForge = CmbSource.SelectedItem is ComboBoxItem c && c.Content.ToString() == "CurseForge";
+                bool isPoggit = CmbSource.SelectedItem is ComboBoxItem pt && pt.Content.ToString() == "Poggit";
                 string query = TxtSearch.Text ?? "";
                 string sort = (CmbSort.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "relevance";
 
                 List<ModrinthHit> hits;
+                bool isBedrock = _serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase);
+                bool isPocketmine = _serverType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase);
+                string mcVersionArg = (isBedrock || isPocketmine) ? "" : _mcVersion;
+
                 if (isCurseForge)
                 {
-                    hits = await _curseForge.SearchAsync(_projectType, _mcVersion, query, _currentOffset);
+                    // Standard CurseForge uses 432 for Java. If it's bedrock, we override type to '6945' inside the CurseForgeService search...
+                    hits = await _curseForge.SearchAsync(isBedrock ? "6945" : _projectType, mcVersionArg, query, _currentOffset);
+                }
+                else if (isPoggit)
+                {
+                    hits = await _poggit.SearchAsync(query, _currentOffset);
                 }
                 else
                 {
-                    hits = await _modrinth.SearchAsync(_projectType, _mcVersion, sort, query, _currentOffset);
+                    hits = await _modrinth.SearchAsync(_projectType, mcVersionArg, sort, query, _currentOffset);
                 }
 
                 foreach (var hit in hits)
@@ -168,21 +197,29 @@ namespace PocketMC.Desktop.Features.Marketplace
 
             try
             {
-                bool isCurseForge = CmbSource.SelectedIndex == 1;
+                bool isCurseForge = CmbSource.SelectedItem is ComboBoxItem c && c.Content.ToString() == "CurseForge";
+                bool isPoggit = CmbSource.SelectedItem is ComboBoxItem pt && pt.Content.ToString() == "Poggit";
                 ModrinthVersion? version;
+                bool isBedrock = _serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase);
+                bool isPocketmine = _serverType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase);
+                string mcVersionArg = (isBedrock || isPocketmine) ? "" : (_mcVersion == "*" ? "" : _mcVersion);
 
                 if (isCurseForge)
                 {
-                    version = await _curseForge.GetLatestVersionAsync(slug, _mcVersion == "*" ? "" : _mcVersion);
+                    version = await _curseForge.GetLatestVersionAsync(slug, mcVersionArg);
+                }
+                else if (isPoggit)
+                {
+                    version = await _poggit.GetLatestVersionAsync(slug);
                 }
                 else
                 {
-                    version = await _modrinth.GetLatestVersionAsync(slug, _mcVersion == "*" ? "" : _mcVersion);
+                    version = await _modrinth.GetLatestVersionAsync(slug, mcVersionArg);
                 }
 
                 if (version == null || version.Files.Count == 0)
                 {
-                    System.Windows.MessageBox.Show($"No compatible version found on {(isCurseForge ? "CurseForge" : "Modrinth")}.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.MessageBox.Show($"No compatible version found on {(isCurseForge ? "CurseForge" : (isPoggit ? "Poggit" : "Modrinth"))}.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btn.IsEnabled = true;
                     btn.Content = "Install";
                     return;
@@ -203,7 +240,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                 else
                 {
                     if (_serverDir == null) return;
-                    string targetSubDir = _projectType.Contains("plugin") ? "plugins" : "mods";
+                    string targetSubDir = isBedrock ? "behavior_packs" : (_projectType.Contains("plugin") ? "plugins" : "mods");
                     string destDir = Path.Combine(_serverDir, targetSubDir);
                     if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
                     destFile = Path.Combine(destDir, file.FileName);

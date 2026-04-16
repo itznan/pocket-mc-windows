@@ -12,7 +12,7 @@ using PocketMC.Desktop.Features.Dashboard;
 
 namespace PocketMC.Desktop.Features.Instances.Providers;
 
-public class PaperProvider : IServerJarProvider
+public class PaperProvider : IServerSoftwareProvider
 {
     private readonly HttpClient _httpClient;
     private readonly DownloaderService _downloader;
@@ -56,7 +56,7 @@ public class PaperProvider : IServerJarProvider
         return versions;
     }
 
-    public async Task DownloadJarAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
+    public async Task DownloadSoftwareAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
     {
         // Get latest build
         string versionJson = await _httpClient.GetStringAsync($"https://api.papermc.io/v2/projects/paper/versions/{mcVersion}");

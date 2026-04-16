@@ -63,7 +63,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             _logger = logger;
         }
 
-        public async Task EnsureTunnelFlowAsync(Guid instanceId, string instanceName, Action<string?> onAddressResolved)
+        public async Task EnsureTunnelFlowAsync(InstanceCardViewModel vm)
         {
             if (!_applicationState.IsConfigured || !File.Exists(_applicationState.GetPlayitExecutablePath()))
             {
@@ -72,7 +72,7 @@ namespace PocketMC.Desktop.Features.Tunnel
 
             lock (_lock)
             {
-                if (!_resolutionsInFlight.Add(instanceId))
+                if (!_resolutionsInFlight.Add(vm.Id))
                 {
                     return;
                 }
@@ -80,76 +80,113 @@ namespace PocketMC.Desktop.Features.Tunnel
 
             try
             {
-                if (!TryGetServerPort(instanceId, out int serverPort))
+                if (!TryGetServerPort(vm.Id, out int mainPort))
                 {
-                    _logger.LogDebug("Skipping tunnel resolution for {InstanceName} because the server port could not be read.", instanceName);
+                    _logger.LogDebug("Skipping tunnel resolution for {InstanceName} because the server port could not be read.", vm.Name);
                     return;
                 }
 
-                _dispatcher.Invoke(() => onAddressResolved(null));
+                _dispatcher.Invoke(() => { vm.TunnelAddress = null; vm.BedrockTunnelAddress = null; });
                 EnsurePlayitAgentRunning();
 
-                TunnelResolutionResult resolution = await ResolveTunnelWithWarmupAsync(serverPort);
-                switch (resolution.Status)
+                List<int> portsToResolve = new List<int> { mainPort };
+                if (vm.HasGeyser && mainPort != 19132)
                 {
-                    case TunnelResolutionResult.TunnelStatus.Found:
+                    portsToResolve.Add(19132);
+                }
+
+                foreach (int port in portsToResolve)
+                {
+                    bool isBedrockTunnel = (port == 19132);
+                    TunnelResolutionResult resolution = await ResolveTunnelWithWarmupAsync(port);
+                    
+                    if (resolution.Status == TunnelResolutionResult.TunnelStatus.Found)
+                    {
                         if (!string.IsNullOrWhiteSpace(resolution.PublicAddress))
                         {
-                            _applicationState.SetTunnelAddress(instanceId, resolution.PublicAddress!);
-                            _dispatcher.Invoke(() => onAddressResolved(resolution.PublicAddress));
+                            SetTunnelAddress(vm, port, resolution.PublicAddress);
                         }
-                        break;
+                        continue;
+                    }
 
-                    case TunnelResolutionResult.TunnelStatus.CreationStarted:
+                    if (resolution.Status == TunnelResolutionResult.TunnelStatus.CreationStarted)
+                    {
+                        var tcs = new TaskCompletionSource<bool>();
                         _dispatcher.Invoke(() =>
                         {
-                            var guidePage = ActivatorUtilities.CreateInstance<TunnelCreationGuidePage>(_serviceProvider, serverPort);
+                            // Create the guide page, passing port and isBedrockTunnel flag
+                            var guidePage = ActivatorUtilities.CreateInstance<TunnelCreationGuidePage>(_serviceProvider, port, isBedrockTunnel);
+                            
                             guidePage.OnTunnelResolved += address =>
                             {
                                 if (!string.IsNullOrWhiteSpace(address))
                                 {
-                                    _applicationState.SetTunnelAddress(instanceId, address);
+                                    SetTunnelAddress(vm, port, address);
                                 }
-                                _dispatcher.Invoke(() => onAddressResolved(address));
+                                tcs.TrySetResult(true);
                             };
+
+                            guidePage.Unloaded += (s, e) => { tcs.TrySetResult(false); };
 
                             _navigationService.NavigateToDetailPage(
                                 guidePage,
-                                $"Tunnel Setup: {instanceName}",
+                                $"Tunnel Setup: {vm.Name}",
                                 DetailRouteKind.TunnelCreationGuide,
                                 DetailBackNavigation.Dashboard,
                                 clearDetailStack: true);
                         });
-                        break;
 
-                    case TunnelResolutionResult.TunnelStatus.LimitReached:
+                        await tcs.Task;
+                        continue;
+                    }
+
+                    if (resolution.Status == TunnelResolutionResult.TunnelStatus.LimitReached)
+                    {
                         _dispatcher.Invoke(() =>
                             _dialogService.ShowMessage(
                                 "Tunnel Limit Reached",
                                 "Your Playit account already has 4 tunnels. Delete one in Playit or change this server's port, then try again.",
                                 DialogType.Warning));
                         break;
-
-                    case TunnelResolutionResult.TunnelStatus.AgentOffline:
-                        _logger.LogInformation("Playit agent is not ready yet for instance {InstanceName}.", instanceName);
+                    }
+                    else if (resolution.Status == TunnelResolutionResult.TunnelStatus.AgentOffline)
+                    {
+                        _logger.LogInformation("Playit agent is not ready yet for instance {InstanceName}.", vm.Name);
                         break;
-
-                    case TunnelResolutionResult.TunnelStatus.Error:
-                        HandleResolutionError(instanceName, resolution);
-                        break;
+                    }
+                    else if (resolution.Status == TunnelResolutionResult.TunnelStatus.Error)
+                    {
+                        HandleResolutionError(vm.Name, resolution);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to complete the Playit tunnel flow for {InstanceName}.", instanceName);
+                _logger.LogWarning(ex, "Failed to complete the Playit tunnel flow for {InstanceName}.", vm.Name);
             }
             finally
             {
                 lock (_lock)
                 {
-                    _resolutionsInFlight.Remove(instanceId);
+                    _resolutionsInFlight.Remove(vm.Id);
                 }
             }
+        }
+
+        private void SetTunnelAddress(InstanceCardViewModel vm, int port, string address)
+        {
+            _applicationState.SetTunnelAddress(vm.Id, address);
+            _dispatcher.Invoke(() =>
+            {
+                if (port == 19132 && vm.HasGeyser && vm.ServerType != "Bedrock")
+                {
+                    vm.BedrockTunnelAddress = address;
+                }
+                else
+                {
+                    vm.TunnelAddress = address;
+                }
+            });
         }
 
         private async Task<TunnelResolutionResult> ResolveTunnelWithWarmupAsync(int serverPort)

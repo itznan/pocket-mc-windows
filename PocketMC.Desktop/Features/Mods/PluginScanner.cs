@@ -9,6 +9,16 @@ namespace PocketMC.Desktop.Features.Mods
     /// Reads plugin.yml from inside a plugin JAR (which is a ZIP) to extract
     /// metadata for compatibility checking against the server version.
     /// </summary>
+    /// <remarks>
+    /// <b>Deprecated.</b>  This monolithic static scanner was designed for Java JARs only
+    /// and has no concept of engine polymorphism.  New code should implement and consume
+    /// <see cref="IAddonManager"/> instead, where each engine provides its own scanning logic.
+    /// </remarks>
+    [Obsolete(
+        "PluginScanner is deprecated. Use IAddonManager implementations " +
+        "(BedrockAddonInstaller, PocketmineAddonManager) or JavaAddonManager for JAR scanning. " +
+        "This class will be removed in a future release.",
+        error: false)]
     public static class PluginScanner
     {
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);

@@ -93,6 +93,26 @@ namespace PocketMC.Desktop.Features.Dashboard
             }
         }
 
+        private async void BtnCopyBedrockIp_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is InstanceCardViewModel vm)
+            {
+                // the BedrockIpDisplayText is the accurate computed string!
+                string addressToCopy = vm.BedrockIpDisplayText;
+                if (addressToCopy.Contains("local") || string.IsNullOrWhiteSpace(addressToCopy)) return;
+
+                System.Windows.Clipboard.SetText(addressToCopy);
+                
+                // Keep the property nulling clean so we can read the raw string for saving. Wait, we can just save it.
+                vm.BedrockIpDisplayText = "\u2713 Copied";
+                await System.Threading.Tasks.Task.Delay(1500);
+                if (vm.BedrockIpDisplayText == "\u2713 Copied")
+                {
+                    vm.BedrockIpDisplayText = null; // resets to computed property
+                }
+            }
+        }
+
 
     }
 }

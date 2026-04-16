@@ -347,11 +347,77 @@ namespace PocketMC.Desktop.Features.Setup
             catch (Exception ex)
             {
                 ExportBundleStatusText.Text = $"❌ Failed to generate bundle: {ex.Message}";
-                ExportBundleStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF3, 0x8B, 0xA8));
+                ExportBundleStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF3, 0x38, 0xA8));
             }
             finally
             {
                 BtnExportBundle.IsEnabled = true;
+            }
+        }
+
+        // ── UWP Loopback Fix ─────────────────────────────────────────────────
+        // "Fix Bedrock LAN / Localhost" button — wires to UwpLoopbackHelper.
+        // The button and its status TextBlock should be named BtnFixUwpLoopback
+        // and UwpLoopbackStatusText in the XAML (add them to the Network section).
+
+        private async void BtnFixUwpLoopback_Click(object sender, RoutedEventArgs e)
+        {
+            // Guard: check if element exists (XAML may not have it yet in older builds).
+            if (FindName("BtnFixUwpLoopback") is not System.Windows.Controls.Button btn) return;
+            System.Windows.Controls.TextBlock? statusText = FindName("UwpLoopbackStatusText") as System.Windows.Controls.TextBlock;
+
+            btn.IsEnabled = false;
+
+            try
+            {
+                // Fast-path: already exempt — no need for another UAC prompt.
+                if (PocketMC.Desktop.Infrastructure.UwpLoopbackHelper.IsExemptionPresent())
+                {
+                    if (statusText != null)
+                    {
+                        statusText.Text = "✅ Loopback exemption is already active. Bedrock can connect to localhost.";
+                        statusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xA6, 0xE3, 0xA1));
+                        statusText.Visibility = Visibility.Visible;
+                    }
+                    return;
+                }
+
+                if (statusText != null)
+                {
+                    statusText.Text = "⏳ Requesting elevation — please approve the UAC prompt...";
+                    statusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x89, 0xB4, 0xFA));
+                    statusText.Visibility = Visibility.Visible;
+                }
+
+                bool success = await PocketMC.Desktop.Infrastructure.UwpLoopbackHelper.ApplyExemptionAsync();
+
+                if (statusText != null)
+                {
+                    if (success)
+                    {
+                        statusText.Text = "✅ Loopback exemption applied! Restart Minecraft Bedrock and try connecting to localhost.";
+                        statusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xA6, 0xE3, 0xA1));
+                    }
+                    else
+                    {
+                        statusText.Text = "⚠ Could not apply the exemption. You may have cancelled the UAC prompt, or CheckNetIsolation.exe is unavailable.";
+                        statusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF9, 0xE2, 0xAF));
+                    }
+                    statusText.Visibility = Visibility.Visible;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (statusText != null)
+                {
+                    statusText.Text = $"❌ Error: {ex.Message}";
+                    statusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF3, 0x8B, 0xA8));
+                    statusText.Visibility = Visibility.Visible;
+                }
+            }
+            finally
+            {
+                btn.IsEnabled = true;
             }
         }
     }

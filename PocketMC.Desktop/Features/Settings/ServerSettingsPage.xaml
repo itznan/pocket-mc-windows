@@ -264,15 +264,36 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" 
-                                                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" 
-                                                        BorderThickness="1" CornerRadius="4" Padding="12,8" VerticalAlignment="Center">
-                                                    <StackPanel>
-                                                        <TextBlock x:Name="TxtPlayitAddress" Text="{Binding PlayitAddress}" 
-                                                                   FontFamily="Consolas" FontSize="14" 
-                                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                                    </StackPanel>
-                                                </Border>
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <!-- Primary Java Tunnel -->
+                                                    <Border Grid.Row="0" Background="{DynamicResource ControlFillColorDefaultBrush}" 
+                                                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" 
+                                                            BorderThickness="1" CornerRadius="4" Padding="12,8" VerticalAlignment="Center">
+                                                        <StackPanel>
+                                                            <TextBlock x:Name="TxtPlayitAddress" Text="{Binding PlayitAddress}" 
+                                                                       FontFamily="Consolas" FontSize="14" 
+                                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    
+                                                    <!-- Secondary Bedrock Tunnel -->
+                                                    <Border Grid.Row="1" Background="#22F9A825" 
+                                                            BorderBrush="#44F9A825" Margin="0,8,0,0"
+                                                            BorderThickness="1" CornerRadius="4" Padding="12,8" VerticalAlignment="Center"
+                                                            Visibility="{Binding HasGeyser, Converter={StaticResource VisibleIfTrue}}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Bedrock Address:" FontSize="11" Foreground="#F9A825" Margin="0,0,0,2"/>
+                                                            <TextBlock x:Name="TxtPlayitBedrockAddress" Text="{Binding PlayitBedrockAddress}" 
+                                                                       FontFamily="Consolas" FontSize="14" 
+                                                                       Foreground="#FFD54F"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Grid>
 
                                                 <ui:Button Grid.Column="1" Appearance="Secondary" 
                                                            Content="Refresh" Icon="{ui:SymbolIcon ArrowSync24}" 
@@ -399,8 +420,10 @@
                                         <StackPanel>
                                             <TextBlock Visibility="{Binding Addons.ShowVanillaWarning, Converter={StaticResource VisibleIfTrue}}" 
                                                        Text="⚠ Plugins are not supported on Vanilla software. Please use Paper or Spigot." Foreground="#F38BA8" Margin="0,0,0,15" FontSize="12" FontWeight="SemiBold"/>
+                                            <TextBlock Visibility="{Binding Addons.IsPocketmine, Converter={StaticResource VisibleIfTrue}}" 
+                                                       Text="ℹ PocketMine plugins are .phar files. Use the Poggit marketplace button to browse and install them." Foreground="#89B4FA" Margin="0,0,0,10" FontSize="12" TextWrapping="Wrap"/>
                                             <StackPanel Orientation="Horizontal">
-                                                <ui:Button Content="Local JAR" Command="{Binding Addons.AddPluginCommand}" Appearance="Secondary" Margin="0,0,12,0" Icon="{ui:SymbolIcon Add20}"/>
+                                                <ui:Button Content="Local File" Command="{Binding Addons.AddPluginCommand}" Appearance="Secondary" Margin="0,0,12,0" Icon="{ui:SymbolIcon Add20}"/>
                                                 <ui:Button Content="Plugin Marketplace" Command="{Binding Addons.BrowseModrinthPluginsCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Globe20}"/>
                                             </StackPanel>
                                         </StackPanel>
@@ -422,15 +445,20 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
-                                    <TextBlock Text="Server Mods" Style="{StaticResource SettingsHeader}" Margin="4,20,0,12"/>
-                                    <ui:Card Margin="0,0,0,16" Padding="20">
+                                    <!-- Server Mods — hidden for PocketMine (not applicable) -->
+                                    <TextBlock Text="Server Mods" Style="{StaticResource SettingsHeader}" Margin="4,20,0,12"
+                                               Visibility="{Binding Addons.IsJavaEngine, Converter={StaticResource VisibleIfTrue}}"/>
+                                    <ui:Card Margin="0,0,0,16" Padding="20"
+                                             Visibility="{Binding Addons.IsJavaEngine, Converter={StaticResource VisibleIfTrue}}">
                                         <StackPanel Orientation="Horizontal">
                                             <ui:Button Content="Add Mod JAR" Command="{Binding Addons.AddModCommand}" Appearance="Secondary" Margin="0,0,12,0" Icon="{ui:SymbolIcon Add20}"/>
                                             <ui:Button Content="Browse Marketplace" Command="{Binding Addons.BrowseModrinthModsCommand}" Appearance="Primary" Margin="0,0,12,0" Icon="{ui:SymbolIcon Globe20}"/>
                                             <ui:Button Content="Import Pack" Command="{Binding Addons.ImportModpackCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon FolderZip20}"/>
                                         </StackPanel>
                                     </ui:Card>
-                                    <ItemsControl ItemsSource="{Binding Addons.Mods}">
+                                    <!-- Also hide the mods list for PocketMine -->
+                                    <ItemsControl ItemsSource="{Binding Addons.Mods}"
+                                                  Visibility="{Binding Addons.IsJavaEngine, Converter={StaticResource VisibleIfTrue}}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <ui:Card Margin="0,0,0,10" Padding="16,12">
@@ -438,6 +466,37 @@
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                                         <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
                                                         <ui:Button Grid.Column="1" Content="Delete" Appearance="Danger" Command="{Binding DataContext.Addons.DeleteModCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Path}" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </ui:Card>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- BDS: Add-on import section (replaces mods for Bedrock) -->
+                                    <TextBlock Text="Bedrock Add-ons" Style="{StaticResource SettingsHeader}" Margin="4,20,0,12"
+                                               Visibility="{Binding Addons.IsBedrockDedicated, Converter={StaticResource VisibleIfTrue}}"/>
+                                    <ui:Card Margin="0,0,0,16" Padding="20"
+                                             Visibility="{Binding Addons.IsBedrockDedicated, Converter={StaticResource VisibleIfTrue}}">
+                                        <StackPanel>
+                                            <TextBlock Text="ℹ Import .mcpack or .mcaddon files. They will be automatically extracted and registered in your world's pack list."
+                                                       Foreground="#89B4FA" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <ui:Button Content="Import Add-on (.mcpack/.mcaddon)" Command="{Binding Addons.ImportBedrockAddonCommand}" Appearance="Primary" Icon="{ui:SymbolIcon Add20}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </ui:Card>
+                                    <ItemsControl ItemsSource="{Binding Addons.Mods}"
+                                                  Visibility="{Binding Addons.IsBedrockDedicated, Converter={StaticResource VisibleIfTrue}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <ui:Card Margin="0,0,0,10" Padding="16,12">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
+                                                            <TextBlock Text="{Binding AddonType, StringFormat=Type: {0}}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                        </StackPanel>
+                                                        <ui:Button Grid.Column="1" Content="Remove" Appearance="Danger" Command="{Binding DataContext.Addons.DeleteBedrockAddonCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding Path}" VerticalAlignment="Center"/>
                                                     </Grid>
                                                 </ui:Card>
                                             </DataTemplate>

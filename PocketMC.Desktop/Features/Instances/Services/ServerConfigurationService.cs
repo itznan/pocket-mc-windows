@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Infrastructure.FileSystem;
 
@@ -15,6 +16,7 @@ public sealed class ServerConfigurationService
 
     private static readonly HashSet<string> CorePropertyKeys = new(StringComparer.OrdinalIgnoreCase)
     {
+        // ── Java / shared ─────────────────────────────────────────────────
         "motd",
         "level-seed",
         "spawn-protection",
@@ -29,7 +31,22 @@ public sealed class ServerConfigurationService
         "difficulty",
         "enable-command-block",
         "allow-flight",
-        "allow-nether"
+        "allow-nether",
+
+        // ── Bedrock Dedicated Server (BDS) ────────────────────────────────
+        "server-portv6",            // IPv6 listen port
+        "allow-cheats",             // op-level cheat commands
+        "texturepack-required",     // enforce resource pack on join
+        "default-player-permission-level", // visitor / member / operator
+        "tick-distance",            // simulation radius (chunk ticks)
+        "emit-server-telemetry",    // MS telemetry toggle
+
+        // ── PocketMine-MP ─────────────────────────────────────────────────
+        "server-name",              // PM uses this instead of motd
+        "enable-query",
+        "auto-save",
+        "view-distance",
+        "language",
     };
 
     private readonly InstanceManager _instanceManager;
@@ -49,6 +66,10 @@ public sealed class ServerConfigurationService
         if (props.TryGetValue("motd", out var pMotd)) metadata.Motd = pMotd;
         if (props.TryGetValue("max-players", out var pMax) && int.TryParse(pMax, out int max)) metadata.MaxPlayers = max;
 
+        bool isBedrock = metadata.ServerType?.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase) == true || 
+                         metadata.ServerType?.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase) == true;
+        string defaultPort = isBedrock ? "19132" : "25565";
+
         var configuration = new ServerConfiguration
         {
             MinRamMb = metadata.MinRamMb > 0 ? metadata.MinRamMb : 1024,
@@ -64,7 +85,7 @@ public sealed class ServerConfigurationService
             Seed = props.TryGetValue("level-seed", out var seed) ? seed : "",
             SpawnProtection = props.TryGetValue("spawn-protection", out var protection) ? protection : "16",
             MaxPlayers = props.TryGetValue("max-players", out var maxPlayers) ? maxPlayers : "20",
-            ServerPort = props.TryGetValue("server-port", out var port) ? port : "25565",
+            ServerPort = props.TryGetValue("server-port", out var port) ? port : defaultPort,
             ServerIp = props.TryGetValue("server-ip", out var ip) ? ip : "",
             LevelType = props.TryGetValue("level-type", out var levelType) ? levelType : "minecraft:normal",
             OnlineMode = props.TryGetValue("online-mode", out var onlineMode) && onlineMode == "true",
@@ -157,13 +178,29 @@ public sealed class ServerConfigurationService
     public int GetActivePortForInstance(Guid instanceId)
     {
         var path = _registry.GetPath(instanceId);
-        if (path == null) return 25565;
 
-        if (TryGetProperty(path, "server-port", out var portStr) && int.TryParse(portStr, out int port))
+        int defaultPort = 25565;
+        if (path != null)
+        {
+            string metaFile = Path.Combine(path, ".pocket-mc.json");
+            if (File.Exists(metaFile))
+            {
+                try
+                {
+                    var meta = JsonSerializer.Deserialize<InstanceMetadata>(File.ReadAllText(metaFile));
+                    bool isBedrock = meta?.ServerType?.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase) == true ||
+                                     meta?.ServerType?.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase) == true;
+                    if (isBedrock) defaultPort = 19132;
+                }
+                catch { }
+            }
+        }
+
+        if (path != null && TryGetProperty(path, "server-port", out var portStr) && int.TryParse(portStr, out int port))
         {
             return port;
         }
-        return 25565;
+        return defaultPort;
     }
 
     public bool TryGetProperty(string serverDir, string key, out string? value)

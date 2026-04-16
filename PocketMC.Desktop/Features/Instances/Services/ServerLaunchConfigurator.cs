@@ -25,23 +25,39 @@ namespace PocketMC.Desktop.Features.Instances.Services;
             TimeSpan.FromSeconds(1));
 
         private readonly JavaProvisioningService _javaProvisioning;
+        private readonly PhpProvisioningService _phpProvisioning;
         private readonly ILogger<ServerLaunchConfigurator> _logger;
 
-        public ServerLaunchConfigurator(JavaProvisioningService javaProvisioning, ILogger<ServerLaunchConfigurator> logger)
+        public ServerLaunchConfigurator(
+            JavaProvisioningService javaProvisioning, 
+            PhpProvisioningService phpProvisioning,
+            ILogger<ServerLaunchConfigurator> logger)
         {
             _javaProvisioning = javaProvisioning;
+            _phpProvisioning = phpProvisioning;
             _logger = logger;
         }
 
         public async Task<ProcessStartInfo> ConfigureAsync(InstanceMetadata meta, string workingDir, string appRootPath, Action<string> onLog)
         {
-            int requiredJavaVersion = JavaRuntimeResolver.GetRequiredJavaVersion(meta.MinecraftVersion);
-            string javaPath = await EnsureAndResolveJavaPathAsync(meta, requiredJavaVersion, appRootPath, onLog);
-
             if (string.IsNullOrWhiteSpace(workingDir))
             {
                 throw new DirectoryNotFoundException($"Could not locate directory for instance {meta.Name}.");
             }
+
+            if (meta.ServerType != null && meta.ServerType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase))
+            {
+                return ConfigureBedrock(meta, workingDir, onLog);
+            }
+
+            if (meta.ServerType != null && meta.ServerType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase))
+            {
+                return await ConfigurePocketmineAsync(meta, workingDir, appRootPath, onLog);
+            }
+
+            // Java servers
+            int requiredJavaVersion = JavaRuntimeResolver.GetRequiredJavaVersion(meta.MinecraftVersion);
+            string javaPath = await EnsureAndResolveJavaPathAsync(meta, requiredJavaVersion, appRootPath, onLog);
 
             // Forge auto-installation
             await HandleForgeInstallationAsync(meta, workingDir, javaPath, onLog);
@@ -67,6 +83,125 @@ namespace PocketMC.Desktop.Features.Instances.Services;
 
             return psi;
         }
+
+        private ProcessStartInfo ConfigureBedrock(InstanceMetadata meta, string workingDir, Action<string> onLog)
+        {
+            onLog("[PocketMC] Launching Bedrock Dedicated Server...");
+            
+            string executablePath = Path.Combine(workingDir, "bedrock_server.exe");
+            if (!File.Exists(executablePath))
+            {
+                throw new FileNotFoundException($"Bedrock server executable not found at {executablePath}. Ensure the ZIP was extracted correctly.");
+            }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = executablePath,
+                WorkingDirectory = workingDir,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                CreateNoWindow = true,
+                StandardOutputEncoding = Encoding.UTF8
+            };
+
+            return psi;
+        }
+
+        private async Task<ProcessStartInfo> ConfigurePocketmineAsync(InstanceMetadata meta, string workingDir, string appRootPath, Action<string> onLog)
+        {
+            onLog("[PocketMC] Verifying PHP runtime for Pocketmine-MP...");
+            await _phpProvisioning.EnsurePhpAsync(null);
+
+            string phpExePath = Path.Combine(appRootPath, "runtimes", "php", "bin", "php", "php.exe");
+            if (!File.Exists(phpExePath))
+            {
+                throw new FileNotFoundException($"PHP executable not found at {phpExePath}.");
+            }
+
+            string pharPath = Path.Combine(workingDir, "PocketMine-MP.phar");
+            if (!File.Exists(pharPath))
+            {
+                throw new FileNotFoundException($"PocketMine-MP.phar not found at {pharPath}.");
+            }
+
+            // ── PocketMine server.properties sanity fixes ────────────────────────
+            // PocketMine only accepts: DEFAULT, FLAT, NETHER, THE_END, HELL
+            // Java-style values like "minecraft:normal" or "default" (lowercase) cause:
+            //   [ERROR]: Could not generate world: Unknown generator "minecraft:normal"
+            PatchPocketmineServerProperties(workingDir, onLog);
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = phpExePath,
+                WorkingDirectory = workingDir,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                CreateNoWindow = true,
+                StandardOutputEncoding = Encoding.UTF8
+            };
+
+            psi.ArgumentList.Add(pharPath);
+            psi.ArgumentList.Add("--no-wizard");
+
+            // Add pocketmine specific arguments, if any from advanced args
+            AddAdvancedArguments(psi, meta.AdvancedJvmArgs);
+
+            return psi;
+        }
+
+        /// <summary>
+        /// Rewrites keys in server.properties that PocketMine-MP would otherwise reject.
+        /// <list type="bullet">
+        ///   <item><c>level-type</c>: Java namespaced values (e.g. <c>minecraft:normal</c>) → <c>DEFAULT</c></item>
+        /// </list>
+        /// </summary>
+        private void PatchPocketmineServerProperties(string workingDir, Action<string> onLog)
+        {
+            string propsPath = Path.Combine(workingDir, "server.properties");
+            if (!File.Exists(propsPath)) return;
+
+            try
+            {
+                var lines = File.ReadAllLines(propsPath);
+                bool changed = false;
+
+                // Valid PocketMine generator names (case-sensitive in PM source).
+                // Any other value for level-type causes an "Unknown generator" crash.
+                var validPmGenerators = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "DEFAULT", "FLAT", "NETHER", "THE_END", "HELL"
+                };
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+                    if (!line.StartsWith("level-type", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    int eq = line.IndexOf('=');
+                    if (eq < 0) continue;
+
+                    string currentValue = line[(eq + 1)..].Trim();
+                    if (!validPmGenerators.Contains(currentValue))
+                    {
+                        lines[i] = $"level-type=DEFAULT";
+                        onLog($"[PocketMC] Patched server.properties: level-type={currentValue} → DEFAULT (PocketMine does not support Java generator names)");
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                    File.WriteAllLines(propsPath, lines);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not patch PocketMine server.properties; server may crash on first boot.");
+            }
+        }
+
 
         private async Task<string> EnsureAndResolveJavaPathAsync(InstanceMetadata meta, int requiredVersion, string appRootPath, Action<string> onLog)
         {

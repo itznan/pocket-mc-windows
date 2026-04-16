@@ -42,7 +42,7 @@
 
                     <TextBlock FontSize="14" Margin="0,6">
                         <Run FontWeight="SemiBold" Text="2. " Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                        <Run Text="Select tunnel type: Minecraft Java." Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        <Run x:Name="TunnelTypeStep" Text="Select tunnel type: Minecraft Java." Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     </TextBlock>
 
                     <TextBlock FontSize="14" Margin="0,6">
@@ -54,7 +54,7 @@
                         <Run FontWeight="SemiBold" Text="4. " Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         <Run Text="Enter port: " Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                         <Run FontWeight="Bold" Foreground="#F9E2AF" x:Name="PortValueRun" Text="25565"/>
-                        <Run Text=" (your server's configured port)." Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                        <Run x:Name="PortStepNote" Text=" (your server's configured port)." Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     </TextBlock>
 
                     <TextBlock FontSize="14" Margin="0,6">

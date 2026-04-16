@@ -13,7 +13,7 @@ using PocketMC.Desktop.Features.Dashboard;
 
 namespace PocketMC.Desktop.Features.Instances.Providers;
 
-public class FabricProvider : IServerJarProvider
+public class FabricProvider : IServerSoftwareProvider
 {
     private readonly HttpClient _httpClient;
     private readonly DownloaderService _downloader;
@@ -63,7 +63,7 @@ public class FabricProvider : IServerJarProvider
         return versions;
     }
 
-    public async Task DownloadJarAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
+    public async Task DownloadSoftwareAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
     {
         // Get latest loader and installer versions
         string loaderVersion = await GetLatestLoaderVersionAsync();

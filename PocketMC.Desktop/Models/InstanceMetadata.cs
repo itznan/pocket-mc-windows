@@ -30,5 +30,9 @@ namespace PocketMC.Desktop.Models
         // Runtime configuration (NET-14)
         public string? CustomJavaPath { get; set; } = null;
         public string? AdvancedJvmArgs { get; set; } = null;
+
+        // Cross-play / Bedrock support
+        /// <summary>True when Geyser + Floodgate were installed for this Java instance.</summary>
+        public bool HasGeyser { get; set; } = false;
     }
 }

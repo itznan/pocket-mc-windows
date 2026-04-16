@@ -222,15 +222,15 @@ public class ServerProcess : IDisposable
         else
         {
             OnOutputLine?.Invoke(sanitizedLine);
-            if (State == ServerState.Starting && sanitizedLine.Contains("Done (")) SetState(ServerState.Online);
+            if (State == ServerState.Starting && (sanitizedLine.Contains("Done (") || sanitizedLine.Contains("Server started."))) SetState(ServerState.Online);
             UpdatePlayerCount(sanitizedLine);
         }
     }
 
     private void UpdatePlayerCount(string line)
     {
-        if (line.Contains(" joined the game")) PlayerCount++;
-        else if (line.Contains(" left the game")) { PlayerCount = Math.Max(0, PlayerCount - 1); }
+        if (line.Contains(" joined the game") || line.Contains("Player connected:")) PlayerCount++;
+        else if (line.Contains(" left the game") || line.Contains("Player disconnected:")) { PlayerCount = Math.Max(0, PlayerCount - 1); }
         else if (line.Contains("players online:"))
         {
             var match = PlayerCountRegex.Match(line);

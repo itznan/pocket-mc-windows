@@ -13,7 +13,7 @@ using PocketMC.Desktop.Features.Dashboard;
 
 namespace PocketMC.Desktop.Features.Instances.Providers;
 
-public class ForgeProvider : IServerJarProvider
+public class ForgeProvider : IServerSoftwareProvider
 {
     private readonly HttpClient _httpClient;
     private readonly DownloaderService _downloader;
@@ -91,7 +91,7 @@ public class ForgeProvider : IServerJarProvider
             .ToList();
     }
 
-    public async Task DownloadJarAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
+    public async Task DownloadSoftwareAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
     {
         string forgeVersion = await GetLatestForgeVersionAsync(mcVersion);
         await DownloadForgeJarAsync(mcVersion, forgeVersion, destinationPath, progress);

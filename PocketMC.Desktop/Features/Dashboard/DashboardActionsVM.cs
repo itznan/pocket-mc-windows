@@ -104,7 +104,7 @@ namespace PocketMC.Desktop.Features.Dashboard
                 // The update state will be handled by listening to OnInstanceStateChanged in DashboardViewModel or CardVM.
                 onStarted(vm);
 
-                _ = _tunnelOrchestrator.EnsureTunnelFlowAsync(vm.Id, vm.Name, addr => vm.TunnelAddress = addr);
+                _ = _tunnelOrchestrator.EnsureTunnelFlowAsync(vm);
             }
             catch (Exception ex)
             {
@@ -206,7 +206,7 @@ namespace PocketMC.Desktop.Features.Dashboard
                 vm.UpdateState(ServerState.Stopping);
                 await _lifecycleService.RestartAsync(vm.Id);
                 onStarted(vm);
-                _ = _tunnelOrchestrator.EnsureTunnelFlowAsync(vm.Id, vm.Name, addr => vm.TunnelAddress = addr);
+                _ = _tunnelOrchestrator.EnsureTunnelFlowAsync(vm);
             }
             catch (Exception ex)
             {

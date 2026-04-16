@@ -56,10 +56,11 @@
                                             <RowDefinition Height="Auto"/> <!-- Row 0: Title & Menu -->
                                             <RowDefinition Height="Auto"/> <!-- Row 1: Description -->
                                             <RowDefinition Height="Auto"/> <!-- Row 2: Status -->
-                                            <RowDefinition Height="Auto"/> <!-- Row 3: IP Row -->
-                                            <RowDefinition Height="Auto"/> <!-- Row 4: Stats Row -->
-                                            <RowDefinition Height="*"/>    <!-- Row 5: Spacer -->
-                                            <RowDefinition Height="Auto"/> <!-- Row 6: Action Buttons -->
+                                            <RowDefinition Height="Auto"/> <!-- Row 3: Java IP Row -->
+                                            <RowDefinition Height="Auto"/> <!-- Row 4: Bedrock IP Row -->
+                                            <RowDefinition Height="Auto"/> <!-- Row 5: Stats Row -->
+                                            <RowDefinition Height="*"/>    <!-- Row 6: Spacer -->
+                                            <RowDefinition Height="Auto"/> <!-- Row 7: Action Buttons -->
                                         </Grid.RowDefinitions>
                                 
                                 <!-- Title row (Row 0) -->
@@ -122,9 +123,26 @@
                                                    ToolTip="Copy IP to clipboard"/>
                                     </Grid>
                                 </Border>
-
-                                <!-- Stats Row (Row 4) — always visible, 3 equal columns with dividers -->
-                                <Grid Grid.Row="4" Margin="0,0,0,8">
+                                <!-- Bedrock IP Row (Row 4) — visible only for Bedrock/Geyser servers -->
+                                <Border Grid.Row="4"
+                                        Visibility="{Binding ShowBedrockIp, Converter={StaticResource BoolToVis}}"
+                                        Background="#22F9A825" CornerRadius="6" Padding="8,3" Margin="0,-6,0,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding BedrockIpLabel}" FontSize="11" Foreground="#F9A825" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding BedrockIpDisplayText}" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="#FFD54F" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <ui:Button Grid.Column="2" Appearance="Transparent" Padding="4,2" Margin="4,0,0,0"
+                                                   Icon="{ui:SymbolIcon Copy16}" Cursor="Hand"
+                                                   Click="BtnCopyBedrockIp_Click"
+                                                   ToolTip="Copy IP to clipboard"/>
+                                    </Grid>
+                                </Border>
+                                <Grid Grid.Row="5" Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
@@ -161,8 +179,8 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <!-- Action buttons (Row 6) -->
-                                <Grid Grid.Row="6" Margin="0,8,0,0">
+                                <!-- Action buttons (Row 7) -->
+                                <Grid Grid.Row="7" Margin="0,8,0,0">
                                     <!-- STOPPED state -->
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Visibility="{Binding StoppedControlsVisibility}">
                                         <ui:Button Content="Start" Appearance="Primary" Margin="0,0,4,0"

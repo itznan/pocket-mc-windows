@@ -66,6 +66,11 @@ namespace PocketMC.Desktop.Features.Settings
         private string _playitAddress = "Resolving tunnel...";
         public string PlayitAddress { get => _playitAddress; set => SetProperty(ref _playitAddress, value); }
 
+        private string _playitBedrockAddress = "Resolving Bedrock tunnel...";
+        public string PlayitBedrockAddress { get => _playitBedrockAddress; set => SetProperty(ref _playitBedrockAddress, value); }
+
+        public bool HasGeyser => Metadata.HasGeyser;
+
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand ResolvePlayitCommand { get; }
@@ -202,25 +207,37 @@ namespace PocketMC.Desktop.Features.Settings
             if (!int.TryParse(General.ServerPort, out int port))
             {
                 PlayitAddress = "⚠ Invalid port number.";
+                if (HasGeyser) PlayitBedrockAddress = "⚠ Invalid port number.";
                 return;
             }
             PlayitAddress = "⏳ Resolving tunnel...";
+            if (HasGeyser) PlayitBedrockAddress = "⏳ Resolving Bedrock tunnel...";
             try
             {
                 var result = await client.GetTunnelsAsync();
                 if (!result.Success)
                 {
                     PlayitAddress = "⚠ Failed to reach Playit API.";
+                    if (HasGeyser) PlayitBedrockAddress = "⚠ Failed to reach Playit API.";
                     return;
                 }
                 var match = PlayitApiClient.FindTunnelForPort(result.Tunnels, port);
                 PlayitAddress = match != null
                     ? match.PublicAddress
                     : $"No tunnel found for port {port}. Please create a new tunnel.";
+                    
+                if (HasGeyser)
+                {
+                    var bedrockMatch = PlayitApiClient.FindTunnelForPort(result.Tunnels, 19132);
+                    PlayitBedrockAddress = bedrockMatch != null
+                        ? bedrockMatch.PublicAddress
+                        : "No Bedrock tunnel found for port 19132. Please create one.";
+                }
             }
             catch
             {
                 PlayitAddress = "⚠ Connection failed. Check your internet.";
+                if (HasGeyser) PlayitBedrockAddress = "⚠ Connection failed. Check your internet.";
             }
         }
 

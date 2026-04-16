@@ -79,7 +79,7 @@ namespace PocketMC.Desktop.Features.Mods
             else if (pack.Loader.Equals("Forge", StringComparison.OrdinalIgnoreCase))
             {
                 string forgeJarPath = Path.Combine(instancePath, "forge-installer.jar");
-                await _forgeProvider.DownloadJarAsync(pack.MinecraftVersion, forgeJarPath);
+                await _forgeProvider.DownloadForgeJarAsync(pack.MinecraftVersion, pack.LoaderVersion, forgeJarPath);
             }
 
             // 3. Resolve and Download Mods

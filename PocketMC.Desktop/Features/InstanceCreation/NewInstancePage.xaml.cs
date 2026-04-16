@@ -32,6 +32,10 @@ namespace PocketMC.Desktop.Features.InstanceCreation
         private readonly PaperProvider _paperProvider;
         private readonly FabricProvider _fabricProvider;
         private readonly ForgeProvider _forgeProvider;
+        private readonly BedrockBdsProvider _bedrockProvider;
+        private readonly PocketmineProvider _pocketmineProvider;
+        private readonly GeyserProvisioningService _geyserProvisioning;
+        private readonly DownloaderService _downloader;
         private readonly ILogger<NewInstancePage> _logger;
         private bool _isCreating;
         private bool _isLoadingVersions;
@@ -46,6 +50,10 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             PaperProvider paperProvider,
             FabricProvider fabricProvider,
             ForgeProvider forgeProvider,
+            BedrockBdsProvider bedrockProvider,
+            PocketmineProvider pocketmineProvider,
+            GeyserProvisioningService geyserProvisioning,
+            DownloaderService downloader,
             ILogger<NewInstancePage> logger)
         {
             InitializeComponent();
@@ -56,6 +64,10 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             _paperProvider = paperProvider;
             _fabricProvider = fabricProvider;
             _forgeProvider = forgeProvider;
+            _bedrockProvider = bedrockProvider;
+            _pocketmineProvider = pocketmineProvider;
+            _geyserProvisioning = geyserProvisioning;
+            _downloader = downloader;
             _logger = logger;
 
             Loaded += OnLoaded;
@@ -93,6 +105,17 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             else
             {
                 TxtForgeWarning.Visibility = Visibility.Collapsed;
+            }
+
+            if (serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase) || 
+                serverType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase))
+            {
+                AddonPanel.Visibility = Visibility.Collapsed;
+                ChkEnableGeyser.IsChecked = false;
+            }
+            else
+            {
+                AddonPanel.Visibility = Visibility.Visible;
             }
 
             await LoadVersionsAsync(serverType);
@@ -160,7 +183,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                     ChkShowSnapshots.Opacity = 1.0;
                 }
 
-                IServerJarProvider provider = GetProvider(serverType);
+                IServerSoftwareProvider provider = GetProvider(serverType);
                 var versions = await provider.GetAvailableVersionsAsync();
 
                 if (requestId != Volatile.Read(ref _versionLoadRequestId))
@@ -254,10 +277,12 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                 }
 
                 createdFolderName = Path.GetFileName(createdInstancePath);
-                string jarFile = serverType == "Forge" ? "forge-installer.jar" : "server.jar";
+                string jarFile = "server.jar";
+                if (serverType == "Forge") jarFile = "forge-installer.jar";
+                else if (serverType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase)) jarFile = "PocketMine-MP.phar";
                 string jarPath = Path.Combine(createdInstancePath, jarFile);
 
-                IServerJarProvider provider = GetProvider(serverType);
+                IServerSoftwareProvider provider = GetProvider(serverType);
                 var progress = new Progress<DownloadProgress>(progress =>
                 {
                     Dispatcher.Invoke(() =>
@@ -270,11 +295,33 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                     });
                 });
 
-                TxtProgress.Text = "Downloading server jar...";
+                TxtProgress.Text = "Downloading server software...";
 
                 string loaderVersion = (CmbLoaderVersion.SelectedItem as ModLoaderVersion)?.Version ?? "";
 
-                if (serverType == "Fabric" && !string.IsNullOrEmpty(loaderVersion))
+                bool isBedrock = serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase);
+
+                if (isBedrock)
+                {
+                    // Ensure the instance directory exists before writing anything into it.
+                    Directory.CreateDirectory(createdInstancePath);
+
+                    // Use system temp dir — guaranteed writable, not inside the instance path.
+                    string tempZip = Path.Combine(Path.GetTempPath(), $"pocketmc-bds-{Guid.NewGuid():N}.zip");
+                    try
+                    {
+                        // DownloadSoftwareAsync writes the ZIP to tempZip, then we extract.
+                        await provider.DownloadSoftwareAsync(selectedVersion.Id, tempZip, progress);
+                        Dispatcher.Invoke(() => TxtProgress.Text = "Extracting Bedrock server files...");
+                        await _downloader.ExtractZipAsync(tempZip, createdInstancePath, progress);
+                    }
+                    finally
+                    {
+                        try { if (File.Exists(tempZip)) File.Delete(tempZip); } catch { }
+                    }
+                }
+
+                else if (serverType == "Fabric" && !string.IsNullOrEmpty(loaderVersion))
                 {
                     await _fabricProvider.DownloadFabricJarAsync(selectedVersion.Id, loaderVersion, jarPath, progress);
                 }
@@ -283,15 +330,25 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                     string forgeJarPath = Path.Combine(createdInstancePath, "forge-installer.jar");
                     await _forgeProvider.DownloadForgeJarAsync(selectedVersion.Id, loaderVersion, forgeJarPath, progress);
                 }
-                else
+                else if (!isBedrock)
                 {
-                    await provider.DownloadJarAsync(selectedVersion.Id, jarPath, progress);
+                    await provider.DownloadSoftwareAsync(selectedVersion.Id, jarPath, progress);
                 }
 
 
                 if (ChkAcceptEula.IsChecked == true && createdFolderName != null)
                 {
                     _instanceManager.AcceptEula(createdFolderName);
+                }
+
+                if (ChkEnableGeyser.IsChecked == true && createdInstancePath != null)
+                {
+                    TxtProgress.Text = "Setting up Geyser cross-play...";
+                    await _geyserProvisioning.EnsureGeyserSetupAsync(createdInstancePath, serverType, progress);
+
+                    // Persist the HasGeyser flag so the dashboard shows the Bedrock IP row
+                    metadata.HasGeyser = true;
+                    _instanceManager.SaveMetadata(metadata, createdInstancePath);
                 }
 
                 if (!NavigateToDashboard())
@@ -413,7 +470,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             return $"{megabytes:0.0} MB";
         }
 
-        private IServerJarProvider GetProvider(string serverType)
+        private IServerSoftwareProvider GetProvider(string serverType)
         {
             if (string.Equals(serverType, "Paper", StringComparison.OrdinalIgnoreCase))
             {
@@ -428,6 +485,16 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             if (string.Equals(serverType, "Forge", StringComparison.OrdinalIgnoreCase))
             {
                 return _forgeProvider;
+            }
+
+            if (serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase))
+            {
+                return _bedrockProvider;
+            }
+
+            if (serverType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase))
+            {
+                return _pocketmineProvider;
             }
 
             return _vanillaProvider;

@@ -95,11 +95,20 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<WorldManager>();
             services.AddSingleton<PocketMC.Desktop.Features.Diagnostics.DiagnosticReportingService>();
             services.AddSingleton<PocketMC.Desktop.Features.Diagnostics.DependencyHealthMonitor>();
+            
+            services.AddSingleton<PhpProvisioningService>();
+            services.AddSingleton<GeyserProvisioningService>();
+
+            // Addon management — engine-specific IAddonManager implementations
+            services.AddSingleton<BedrockAddonInstaller>();
+
 
             services.AddHttpClient<VanillaProvider>(SetDefaultUserAgent);
             services.AddHttpClient<FabricProvider>(SetDefaultUserAgent);
             services.AddHttpClient<ForgeProvider>(SetDefaultUserAgent);
             services.AddHttpClient<PaperProvider>(SetDefaultUserAgent);
+            services.AddHttpClient<PocketmineProvider>(SetDefaultUserAgent);
+            services.AddHttpClient<BedrockBdsProvider>(SetDefaultUserAgent);
 
             return services;
         }
@@ -135,6 +144,8 @@ namespace PocketMC.Desktop.Composition
                 AutomaticDecompression =
                     DecompressionMethods.GZip | DecompressionMethods.Deflate
             });
+
+            services.AddSingleton<PoggitService>();
 
             return services;
         }

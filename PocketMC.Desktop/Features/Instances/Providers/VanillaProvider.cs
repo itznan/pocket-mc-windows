@@ -15,7 +15,7 @@ using PocketMC.Desktop.Features.Dashboard;
 
 namespace PocketMC.Desktop.Features.Instances.Providers;
 
-public class VanillaProvider : IServerJarProvider
+public class VanillaProvider : IServerSoftwareProvider
 {
     private readonly HttpClient _httpClient;
     private readonly ApplicationState _appState;
@@ -53,7 +53,7 @@ public class VanillaProvider : IServerJarProvider
         }
     }
 
-    public async Task DownloadJarAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
+    public async Task DownloadSoftwareAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null)
     {
         _logger.LogInformation("Resolving download URL for Vanilla {Version}", mcVersion);
 

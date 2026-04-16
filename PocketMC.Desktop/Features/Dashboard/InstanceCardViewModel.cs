@@ -22,6 +22,8 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     private string _ramText = "· · ·";
     private string _playerStatus = "· · ·";
     private string? _tunnelAddress;
+    private string? _bedrockTunnelAddress;
+    private string? _bedrockIpDisplayTextOverride;
     private string _ipDisplayText = "Will Appear Here!";
 
     public InstanceCardViewModel(InstanceMetadata metadata, ServerProcessManager serverProcessManager, IServerLifecycleService lifecycleService)
@@ -51,6 +53,47 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     public string ServerType => _metadata.ServerType;
     public int MaxPlayers => _metadata.MaxPlayers;
     public bool HasTunnelAddress => !string.IsNullOrEmpty(_tunnelAddress);
+
+    /// <summary>True for native Bedrock servers (BDS, Pocketmine).</summary>
+    public bool IsBedrockServer => 
+        _metadata.ServerType?.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase) == true ||
+        _metadata.ServerType?.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase) == true;
+
+    /// <summary>True when a Java server has Geyser cross-play enabled.</summary>
+    public bool HasGeyser => _metadata.HasGeyser;
+
+    /// <summary>Whether to show a separate Bedrock IP row on the card.
+    /// Only meaningful for Java servers with Geyser cross-play enabled, where
+    /// Java players and Bedrock players reach the server on different addresses.
+    /// Native BDS / PocketMine servers have a single address — no second row needed.</summary>
+    public bool ShowBedrockIp => !IsBedrockServer && HasGeyser;
+
+    /// <summary>Label prefix for the secondary IP row.</summary>
+    public string BedrockIpLabel => "Bedrock (Geyser):";
+
+    /// <summary>Text for the Bedrock IP row (tunnel address + :19132, or local note).</summary>
+    public string BedrockIpDisplayText
+    {
+        get
+        {
+            if (_bedrockIpDisplayTextOverride != null) return _bedrockIpDisplayTextOverride;
+
+            if (IsBedrockServer && !string.IsNullOrEmpty(_tunnelAddress))
+            {
+                return _tunnelAddress;
+            }
+            if (HasGeyser && !string.IsNullOrEmpty(_bedrockTunnelAddress))
+            {
+                return _bedrockTunnelAddress;
+            }
+            return "127.0.0.1:19132 (local)";
+        }
+        set
+        {
+            _bedrockIpDisplayTextOverride = value;
+            OnPropertyChanged(nameof(BedrockIpDisplayText));
+        }
+    }
 
     public string StatusText => _countdownText ?? _state switch
     {
@@ -85,7 +128,20 @@ public class InstanceCardViewModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(DisplayAddress));
                 OnPropertyChanged(nameof(HasTunnelAddress));
+                OnPropertyChanged(nameof(BedrockIpDisplayText));
                 UpdateIpDisplay();
+            }
+        }
+    }
+
+    public string? BedrockTunnelAddress
+    {
+        get => _bedrockTunnelAddress;
+        set
+        {
+            if (SetProperty(ref _bedrockTunnelAddress, value))
+            {
+                OnPropertyChanged(nameof(BedrockIpDisplayText));
             }
         }
     }

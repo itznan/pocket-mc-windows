@@ -20,6 +20,7 @@ namespace PocketMC.Desktop.Features.Tunnel
         private readonly TunnelService _tunnelService;
         private readonly WindowsToastNotificationService _toastNotificationService;
         private readonly int _serverPort;
+        private readonly bool _isBedrockTunnel;
         private CancellationTokenSource? _pollingCts;
         private int _closeRequested;
 
@@ -30,15 +31,24 @@ namespace PocketMC.Desktop.Features.Tunnel
             IAppNavigationService navigationService,
             TunnelService tunnelService,
             WindowsToastNotificationService toastNotificationService,
-            int serverPort)
+            int serverPort,
+            bool isBedrockTunnel = false)
         {
             InitializeComponent();
             _navigationService = navigationService;
             _tunnelService = tunnelService;
             _toastNotificationService = toastNotificationService;
             _serverPort = serverPort;
+            _isBedrockTunnel = isBedrockTunnel;
 
             PortValueRun.Text = serverPort.ToString();
+
+            // Update step 2 and the port instruction based on tunnel type
+            if (isBedrockTunnel)
+            {
+                TunnelTypeStep.Text = "Select tunnel type: Minecraft Bedrock.";
+                PortStepNote.Text = $" — Bedrock clients connect on this UDP port.";
+            }
 
             _pollingCts = new CancellationTokenSource();
             _ = PollForTunnelAsync(_pollingCts.Token);

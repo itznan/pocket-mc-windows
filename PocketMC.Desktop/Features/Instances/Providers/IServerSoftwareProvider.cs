@@ -9,11 +9,11 @@ using PocketMC.Desktop.Features.Dashboard;
 
 namespace PocketMC.Desktop.Features.Instances.Providers;
 
-public interface IServerJarProvider
+public interface IServerSoftwareProvider
 {
     string DisplayName { get; }
 
     Task<List<MinecraftVersion>> GetAvailableVersionsAsync();
 
-    Task DownloadJarAsync(string mcVersion, string destinationPath, IProgress<DownloadProgress>? progress = null);
+    Task DownloadSoftwareAsync(string versionId, string destinationPath, IProgress<DownloadProgress>? progress = null);
 }
