@@ -8,7 +8,7 @@
     <td align="left">
       <h2 style="border: none; margin-bottom: 10px;">PocketMC</h2>
       <p><b>Run Minecraft Java, Bedrock, and Cross-play servers on Windows.<br> No terminal. No Java headaches. No mess.</b></p>
-      <a href="https://github.com/PocketMC/pocket-mc-windows/actions"><img src="https://img.shields.io/github/actions/workflow/status/PocketMC/pocket-mc-windows/production-build.yml?branch=main&style=flat-square&logo=github" alt="Build" /></a>
+      <a href="https://github.com/PocketMC/pocket-mc-windows/actions"><img src="https://img.shields.io/github/actions/workflow/status/PocketMC/pocket-mc-windows/production-build.yml?branch=master&style=flat-square&logo=github" alt="Build" /></a>
       <a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet" alt=".NET" /></a>
       <a href="https://www.microsoft.com/windows"><img src="https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square&logo=windows" alt="Platform" /></a>
       <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22C55E?style=flat-square" alt="License" /></a>
