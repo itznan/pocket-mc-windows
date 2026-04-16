@@ -114,5 +114,5 @@ jobs:
     - name: Upload Release Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Release ${{ env.VERSION }}
+        name: Release 1.4.0
         path: Releases/
