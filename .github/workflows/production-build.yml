@@ -35,16 +35,20 @@ jobs:
 
       # --- CI: BUILD & TEST (Runs on PRs and Pushes) ---
 
-      - name: Publish & Build (Release)
+      - name: Build Entire Solution
+        run: dotnet build PocketMC.Desktop.sln -c Release
+
+      - name: Run Tests
+        run: dotnet test PocketMC.Desktop.sln -c Release --no-build
+
+      - name: Publish App
         run: |
           dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
             -c Release `
             -r $env:RUNTIME `
+            --no-build `
             --self-contained false `
             -o publish
-
-      - name: Run Tests
-        run: dotnet test PocketMC.Desktop.sln -c Release --no-build
 
       # --- CD: PACK & RELEASE (Runs ONLY on Push to Master) ---
 
