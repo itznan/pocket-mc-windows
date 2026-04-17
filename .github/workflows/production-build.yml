@@ -12,77 +12,76 @@ jobs:
     runs-on: windows-latest
 
     env:
-      DOTNET_VERSION: '8.0.x'
+      DOTNET_VERSION: "8.0.x"
       RUNTIME: win-x64
       APP_ID: PocketMC
 
     steps:
-    # -------------------------
-    # 1. CHECKOUT
-    # -------------------------
-    - uses: actions/checkout@v4
+      # -------------------------
+      # 1. CHECKOUT
+      # -------------------------
+      - uses: actions/checkout@v4
 
-    # -------------------------
-    # 2. SETUP DEPENDENCIES
-    # -------------------------
-    - uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+      # -------------------------
+      # 2. SETUP DEPENDENCIES
+      # -------------------------
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    # -------------------------
-    # 3. ADD TOOL PATH
-    # -------------------------
-    - name: Add .NET tools to PATH
-      run: echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
+      # -------------------------
+      # 3. ADD TOOL PATH
+      # -------------------------
+      - name: Add .NET tools to PATH
+        run: echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
 
-    # -------------------------
-    # 4. INSTALL VELOPACK CLI
-    # -------------------------
-    - name: Install Velopack
-      run: dotnet tool install -g vpk
+      # -------------------------
+      # 4. INSTALL VELOPACK CLI
+      # -------------------------
+      - name: Install Velopack
+        run: dotnet tool install -g vpk
 
-    # -------------------------
-    # 5. DEBUG BUILD
-    # -------------------------
-    - name: Debug Build
-      run: dotnet build PocketMC.Desktop.sln -c Debug
+      # -------------------------
+      # 5. DEBUG BUILD
+      # -------------------------
+      - name: Debug Build
+        run: dotnet build PocketMC.Desktop.sln -c Debug
 
-    # -------------------------
-    # 6. RELEASE BUILD
-    # -------------------------
-    - name: Release Build
-      run: dotnet build PocketMC.Desktop.sln -c Release
+      # -------------------------
+      # 6. RELEASE BUILD
+      # -------------------------
+      - name: Release Build
+        run: dotnet build PocketMC.Desktop.sln -c Release
 
-    # -------------------------
-    # 7. TEST
-    # -------------------------
-    - name: Run Tests
-      run: dotnet test PocketMC.Desktop.sln --no-build
+      # -------------------------
+      # 7. TEST
+      # -------------------------
+      - name: Run Tests
+        run: dotnet test PocketMC.Desktop.sln --no-build
 
-    # -------------------------
-    # 8. PUBLISH MULTI-DLL
-    # -------------------------
-    - name: Publish Multi-DLL
-      run: |
-        dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
-          -c Release `
-          -r $env:RUNTIME `
-          --self-contained false `
-          -o publish
-
-    # -------------------------
-    # 10. GET PREVIOUS VERSION
-    # -------------------------
-    #- name: Get Previous Version
-      #id: version
-      #env:
-       #GH_TOKEN: ${{ github.token }}
-      #run: |
+      # -------------------------
+      # 8. PUBLISH MULTI-DLL
+      # -------------------------
+      - name: Publish Multi-DLL
+        run: |
+          dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
+            -c Release `
+            -r $env:RUNTIME `
+            --self-contained false `
+            -o publish
+        # -------------------------
+        # 10. GET PREVIOUS VERSION
+        # -------------------------
+        #- name: Get Previous Version
+        #id: version
+        #env:
+        #GH_TOKEN: ${{ github.token }}
+        #run: |
         #$latest = gh release list --limit 1 --json tagName | ConvertFrom-Json
         #if ($latest) {
-          #$tag = $latest[0].tagName.Replace("v","")
+        #$tag = $latest[0].tagName.Replace("v","")
         #} else {
-          #$tag = "1.0.0"
+        #$tag = "1.0.0"
         #}
 
         #$parts = $tag.Split(".")
@@ -93,27 +92,29 @@ jobs:
         #$newVersion = "$major.$minor.$patch"
         #echo "VERSION=$newVersion" >> $env:GITHUB_ENV
 
-    # -------------------------
-    # 11. DOWNLOAD PREVIOUS RELEASE
-    # -------------------------
-    - name: Download previous release
-      uses: robinraju/release-downloader@v1
-      with:
-        latest: true
-        out-file-path: Releases
-      continue-on-error: true
+        # -------------------------
+        # 11. DOWNLOAD PREVIOUS RELEASE
+        # -------------------------
+      - name: Download previous release
+        uses: robinraju/release-downloader@v1
+        with:
+          latest: true
+          out-file-path: Releases
+        continue-on-error: true
 
-    # -------------------------
-    # 12. VELOPACK PACKAGE
-    # -------------------------
-    - name: Pack with Velopack
-      run: vpk pack --packId ${{ env.APP_ID }} --packVersion 1.4.0 --packDir publish --mainExe PocketMC.Desktop.exe --framework net8.0 --runtime ${{ env.RUNTIME }} --outputDir Releases
+      # -------------------------
+      # 12. VELOPACK PACKAGE
+      # -------------------------
+      - name: Pack with Velopack
+        run: vpk pack --packId ${{ env.APP_ID }} --packVersion 1.4.0 --packDir publish
+          --mainExe PocketMC.Desktop.exe --framework net8.0 --runtime ${{
+          env.RUNTIME }} --outputDir Releases
 
-    # -------------------------
-    # 13. UPLOAD RELEASE ARTIFACTS
-    # -------------------------
-    - name: Upload Release Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Release 1.4.0
-        path: Releases/
+      # -------------------------
+      # 13. UPLOAD RELEASE ARTIFACTS
+      # -------------------------
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release 1.4.1
+          path: Releases/
