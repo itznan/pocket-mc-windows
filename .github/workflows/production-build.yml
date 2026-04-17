@@ -52,12 +52,12 @@ jobs:
             --self-contained false `
             -o publish
             
-      - name: Download previous release
+      - name: Download previous release assets
         uses: robinraju/release-downloader@v1
         with:
-             latest: true
-             out-file-path: Releases
-             continue-on-error: true
+          repository: PocketMC/pocket-mc-windows
+          latest: true
+          out-file-path: previous_release
 
 
       # Inject the dynamic env.VERSION instead of hardcoding 1.4.0
