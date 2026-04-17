@@ -57,7 +57,7 @@ jobs:
         with:
           repository: PocketMC/pocket-mc-windows
           latest: true
-          out-file-path: previous_release
+          out-file-path: Releases
 
 
       # Inject the dynamic env.VERSION instead of hardcoding 1.4.0
