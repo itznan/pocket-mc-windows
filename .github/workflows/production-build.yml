@@ -4,15 +4,7 @@ on:
   push:
     branches:
       - master
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
 
 permissions:
   contents: write
@@ -25,6 +17,7 @@ jobs:
       DOTNET_VERSION: "8.0.x"
       RUNTIME: win-x64
       APP_ID: PocketMC
+      VERSION: 1.4.1   # <-- single source of truth
 
     steps:
       - uses: actions/checkout@v4
@@ -33,45 +26,31 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # --- CI: BUILD & TEST (Runs on PRs and Pushes) ---
+      - name: Add .NET tools to PATH
+        shell: pwsh
+        run: echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
 
-      - name: Build Entire Solution
+      - name: Install Velopack
+        run: dotnet tool install -g vpk
+
+      - name: Debug Build
+        run: dotnet build PocketMC.Desktop.sln -c Debug
+
+      - name: Release Build
         run: dotnet build PocketMC.Desktop.sln -c Release
 
       - name: Run Tests
-        run: dotnet test PocketMC.Desktop.sln -c Release --no-build
+        run: dotnet test PocketMC.Desktop.sln --no-build
 
-      - name: Publish App
+      - name: Publish Multi-DLL
         run: |
           dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
             -c Release `
             -r $env:RUNTIME `
-            --no-build `
             --self-contained false `
             -o publish
-
-      # --- CD: PACK & RELEASE (Runs ONLY on Push to Master) ---
-
-      - name: Extract Version from csproj
-        if: github.event_name == 'push'
-        id: version
-        run: |
-          [xml]$csproj = Get-Content PocketMC.Desktop/PocketMC.Desktop.csproj
-          $version = $csproj.Project.PropertyGroup.Version
-          if ([string]::IsNullOrWhiteSpace($version)) { $version = "1.0.0" }
-          echo "APP_VERSION=$version" >> $env:GITHUB_ENV
-          Write-Host "Detected Version: $version"
-
-      - name: Add .NET tools to PATH
-        if: github.event_name == 'push'
-        run: echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
-
-      - name: Install Velopack
-        if: github.event_name == 'push'
-        run: dotnet tool install -g vpk
-
+            
       - name: Download previous release assets
-        if: github.event_name == 'push'
         uses: robinraju/release-downloader@v1
         with:
           repository: PocketMC/pocket-mc-windows
@@ -79,22 +58,50 @@ jobs:
           fileName: "*"
           out-file-path: Releases
           token: ${{ secrets.GITHUB_TOKEN }}
+        
 
+      # 🔍 Extract previous version
+      - name: Get previous version
+        id: prev
+        shell: pwsh
+        run: |
+          if (Test-Path "Releases") {
+            $file = Get-ChildItem Releases -Filter "*.nupkg" | Select-Object -First 1
+            if ($file -and $file.Name -match "\d+\.\d+\.\d+") {
+              echo "version=$($Matches[0])" >> $env:GITHUB_OUTPUT
+              exit 0
+            }
+          }
+          echo "version=none" >> $env:GITHUB_OUTPUT
+
+      # 🧠 Compare versions
+      - name: Compare versions
+        id: compare
+        shell: pwsh
+        run: |
+          if ("${{ steps.prev.outputs.version }}" -eq "${{ env.VERSION }}") {
+            echo "skip=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "skip=false" >> $env:GITHUB_OUTPUT
+          }
+
+      # 🚀 Pack only if version changed
       - name: Pack with Velopack
-        if: github.event_name == 'push'
+        if: steps.compare.outputs.skip == 'false'
         run: >
           vpk pack 
           --packId ${{ env.APP_ID }} 
-          --packVersion ${{ env.APP_VERSION }}
+          --packVersion ${{ env.VERSION }}
           --packDir publish 
           --mainExe PocketMC.Desktop.exe 
           --framework net8.0 
           --runtime ${{ env.RUNTIME }} 
           --outputDir Releases
 
+      # 📦 Upload only if packaged
       - name: Upload Release Artifacts
-        if: github.event_name == 'push'
+        if: steps.compare.outputs.skip == 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: PocketMC-Release-${{ env.APP_VERSION }}
+          name: PocketMC-Release-${{ env.VERSION }}
           path: Releases/
