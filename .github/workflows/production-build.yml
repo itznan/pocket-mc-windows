@@ -51,34 +51,21 @@ jobs:
             -r $env:RUNTIME `
             --self-contained false `
             -o publish
-
-      # Dynamically set the version based on the tag, or fallback to the run number for normal commits
-      - name: Set Package Version
-        id: version
-        run: |
-          $ref = "${{ github.ref }}"
-          if ($ref.StartsWith("refs/tags/")) {
-            # Strip 'refs/tags/v' or 'refs/tags/' to get a clean semantic version (e.g., 1.4.1)
-            $version = $ref.Replace("refs/tags/v", "").Replace("refs/tags/", "")
-          } else {
-            # Dummy version for PRs and standard branch pushes to prevent Velopack from crashing
-            $version = "0.0.${{ github.run_number }}"
-          }
-          echo "VERSION=$version" >> $env:GITHUB_ENV
-
+            
       - name: Download previous release
         uses: robinraju/release-downloader@v1
         with:
-          latest: true
-          out-file-path: Releases
-        continue-on-error: true
+             latest: true
+             out-file-path: Releases
+             continue-on-error: true
+
 
       # Inject the dynamic env.VERSION instead of hardcoding 1.4.0
       - name: Pack with Velopack
         run: >
           vpk pack 
           --packId ${{ env.APP_ID }} 
-          --packVersion ${{ env.VERSION }} 
+          --packVersion 1.4.1
           --packDir publish 
           --mainExe PocketMC.Desktop.exe 
           --framework net8.0 
@@ -89,7 +76,7 @@ jobs:
       - name: Upload Release Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: PocketMC-Build-${{ env.VERSION }}
+          name: PocketMC-Release-1.4.1
           path: Releases/
 
       # This step actually creates the GitHub Release and attaches the Velopack files
