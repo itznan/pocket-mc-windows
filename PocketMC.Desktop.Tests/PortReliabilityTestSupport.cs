@@ -148,6 +148,7 @@ internal sealed class PortReliabilityTestWorkspace : IDisposable
             Registry,
             ConfigurationService,
             processManager ?? CreateServerProcessManager(),
+            AppState,
             NullLogger<PortPreflightService>.Instance);
     }
 

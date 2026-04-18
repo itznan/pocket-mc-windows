@@ -43,7 +43,7 @@ public sealed class PortPreflightServiceTests
     }
 
     [Fact]
-    public void Check_WhenAnotherPocketMcInstanceUsesSamePort_ReturnsInternalConflict()
+    public void Check_WhenAnotherPocketMcInstanceUsesSamePortButIsNotRunning_ReturnsSuccess()
     {
         using var workspace = new PortReliabilityTestWorkspace();
         var service = workspace.CreatePortPreflightService();
@@ -55,11 +55,9 @@ public sealed class PortPreflightServiceTests
 
         PortCheckResult result = service.Check(second, workspace.GetInstancePath(second.Id));
 
-        Assert.False(result.IsSuccessful);
-        Assert.Equal(PortFailureCode.InUseByPocketMcInstance, result.FailureCode);
-        Assert.Single(result.Conflicts);
-        Assert.Equal(first.Id, result.Conflicts[0].ExistingLease?.InstanceId);
-        Assert.Contains(first.Name, result.FailureMessage);
+        Assert.True(result.IsSuccessful);
+        Assert.Equal(PortFailureCode.None, result.FailureCode);
+        Assert.Empty(result.Conflicts);
     }
 
     [Fact]

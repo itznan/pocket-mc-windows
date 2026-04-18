@@ -23,6 +23,7 @@ public sealed class PortPreflightService
     private readonly InstanceRegistry _registry;
     private readonly ServerConfigurationService _configurationService;
     private readonly ServerProcessManager _serverProcessManager;
+    private readonly PocketMC.Desktop.Features.Shell.ApplicationState _applicationState;
     private readonly ILogger<PortPreflightService> _logger;
 
     /// <summary>
@@ -32,11 +33,13 @@ public sealed class PortPreflightService
         InstanceRegistry registry,
         ServerConfigurationService configurationService,
         ServerProcessManager serverProcessManager,
+        PocketMC.Desktop.Features.Shell.ApplicationState applicationState,
         ILogger<PortPreflightService> logger)
     {
         _registry = registry;
         _configurationService = configurationService;
         _serverProcessManager = serverProcessManager;
+        _applicationState = applicationState;
         _logger = logger;
     }
 
@@ -69,6 +72,8 @@ public sealed class PortPreflightService
         var occupiedTargets = GetOtherInstanceTargets(metadata.Id);
         var detectedConflicts = new List<DetectedConflict>();
         var recommendations = new List<PortRecoveryRecommendation>();
+
+        bool isPlayitEnabled = _applicationState.IsConfigured && System.IO.File.Exists(_applicationState.GetPlayitExecutablePath());
 
         foreach (var target in targets)
         {
@@ -118,9 +123,17 @@ public sealed class PortPreflightService
                     continue;
                 }
 
-                string detail = occupied.IsRunning
-                    ? $"Instance '{occupied.Metadata.Name}' is currently running with a matching {FormatProtocol(target.Protocol)} port binding."
-                    : $"Instance '{occupied.Metadata.Name}' is configured with a matching {FormatProtocol(target.Protocol)} port binding.";
+                if (!occupied.IsRunning)
+                {
+                    continue;
+                }
+
+                if (isPlayitEnabled)
+                {
+                    continue;
+                }
+
+                string detail = $"Instance '{occupied.Metadata.Name}' is currently running with a matching {FormatProtocol(target.Protocol)} port binding.";
 
                 detectedConflicts.Add(
                     new DetectedConflict(
