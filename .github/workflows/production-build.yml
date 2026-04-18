@@ -17,7 +17,7 @@ jobs:
       DOTNET_VERSION: "8.0.x"
       RUNTIME: win-x64
       APP_ID: PocketMC
-      VERSION: 1.4.2 # <-- single source of truth
+      VERSION: 1.4.3 # <-- single source of truth
 
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +99,6 @@ jobs:
         with:
           name: PocketMC-Release-${{ env.VERSION }}
           path: Releases/
-
           # 🧹 Keep only current version artifacts
       - name: Clean old packages
         if: steps.compare.outputs.skip == 'false'
