@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,6 +14,7 @@ using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Features.Settings;
+using PocketMC.Desktop.Features.Networking;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {
@@ -26,7 +28,7 @@ namespace PocketMC.Desktop.Features.Tunnel
     public class PlayitOriginData { [JsonPropertyName("local_port")] public int LocalPort { get; set; } }
 
     // --- Custom UI Models ---
-    public class TunnelData { public string Id { get; set; } = string.Empty; public string? Name { get; set; } public int Port { get; set; } public string PublicAddress { get; set; } = string.Empty; }
+    public class TunnelData { public string Id { get; set; } = string.Empty; public string? Name { get; set; } public int Port { get; set; } public string PublicAddress { get; set; } = string.Empty; public string? TunnelType { get; set; } public PortProtocol? Protocol { get; set; } }
     public class TunnelListResult { public bool Success { get; set; } public List<TunnelData> Tunnels { get; set; } = new(); public string? ErrorMessage { get; set; } public bool IsTokenInvalid { get; set; } public bool RequiresClaim { get; set; } }
 
     /// <summary>
@@ -85,7 +87,7 @@ namespace PocketMC.Desktop.Features.Tunnel
                     {
                         if (pt.Alloc?.Data == null || pt.Origin?.Data == null) continue;
                         string publicAddress = !string.IsNullOrEmpty(pt.Alloc.Data.AssignedSrv) ? pt.Alloc.Data.AssignedSrv : $"{pt.Alloc.Data.IpHostname}:{pt.Alloc.Data.PortStart}";
-                        normalizedTunnels.Add(new TunnelData { Id = pt.Id, Name = pt.Name, Port = pt.Origin.Data.LocalPort, PublicAddress = publicAddress });
+                        normalizedTunnels.Add(new TunnelData { Id = pt.Id, Name = pt.Name, Port = pt.Origin.Data.LocalPort, PublicAddress = publicAddress, TunnelType = pt.TunnelType, Protocol = InferProtocol(pt.TunnelType) });
                     }
                 }
                 return new TunnelListResult { Success = true, Tunnels = normalizedTunnels };
@@ -93,6 +95,43 @@ namespace PocketMC.Desktop.Features.Tunnel
             catch (Exception ex) { return new TunnelListResult { Success = false, ErrorMessage = ex.Message }; }
         }
 
-        public static TunnelData? FindTunnelForPort(List<TunnelData> tunnels, int serverPort) => tunnels.Find(t => t.Port == serverPort);
+        /// <summary>
+        /// Finds the best matching Playit tunnel for a structured local port request.
+        /// </summary>
+        public static TunnelData? FindTunnelForRequest(IEnumerable<TunnelData> tunnels, PortCheckRequest request)
+        {
+            return tunnels.FirstOrDefault(t =>
+                t.Port == request.Port &&
+                (!t.Protocol.HasValue || ProtocolsOverlap(t.Protocol.Value, request.Protocol)));
+        }
+
+        private static PortProtocol? InferProtocol(string? tunnelType)
+        {
+            if (string.IsNullOrWhiteSpace(tunnelType))
+            {
+                return null;
+            }
+
+            if (tunnelType.Contains("bedrock", StringComparison.OrdinalIgnoreCase) ||
+                tunnelType.Contains("udp", StringComparison.OrdinalIgnoreCase))
+            {
+                return PortProtocol.Udp;
+            }
+
+            if (tunnelType.Contains("java", StringComparison.OrdinalIgnoreCase) ||
+                tunnelType.Contains("tcp", StringComparison.OrdinalIgnoreCase))
+            {
+                return PortProtocol.Tcp;
+            }
+
+            return null;
+        }
+
+        private static bool ProtocolsOverlap(PortProtocol left, PortProtocol right)
+        {
+            return left == PortProtocol.TcpAndUdp ||
+                   right == PortProtocol.TcpAndUdp ||
+                   left == right;
+        }
     }
 }

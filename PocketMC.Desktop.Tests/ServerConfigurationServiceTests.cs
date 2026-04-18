@@ -1,15 +1,11 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
-using PocketMC.Desktop.Features.Instances;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
-using PocketMC.Desktop.Features.Dashboard;
+using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Instances;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
 
 namespace PocketMC.Desktop.Tests;
 
@@ -21,7 +17,7 @@ public sealed class ServerConfigurationServiceTests : IDisposable
     public void Load_SeparatesCoreAndAdvancedServerProperties()
     {
         var manager = CreateManager(out var registry, out _);
-        var service = new ServerConfigurationService(manager, registry);
+        var service = new ServerConfigurationService(manager);
         var metadata = manager.CreateInstance("Settings Test", "");
         string serverDir = registry.GetPath(metadata.Id)!;
         File.WriteAllLines(
@@ -44,7 +40,7 @@ public sealed class ServerConfigurationServiceTests : IDisposable
     public void Save_UpdatesMetadataAndServerProperties()
     {
         var manager = CreateManager(out var registry, out _);
-        var service = new ServerConfigurationService(manager, registry);
+        var service = new ServerConfigurationService(manager);
         var metadata = manager.CreateInstance("Settings Save Test", "");
         string serverDir = registry.GetPath(metadata.Id)!;
         File.WriteAllText(Path.Combine(serverDir, "server.properties"), "motd=Old" + Environment.NewLine, new UTF8Encoding(false));
@@ -78,21 +74,21 @@ public sealed class ServerConfigurationServiceTests : IDisposable
         Assert.Equal(6144, savedMetadata.MaxRamMb);
     }
 
-        private class MockAssetProvider : PocketMC.Desktop.Core.Interfaces.IAssetProvider
-        {
-            public Stream? GetAssetStream(string assetName) => null;
-        }
+    private sealed class MockAssetProvider : PocketMC.Desktop.Core.Interfaces.IAssetProvider
+    {
+        public Stream? GetAssetStream(string assetName) => null;
+    }
 
-        private InstanceManager CreateManager(out InstanceRegistry registry, out InstancePathService pathService)
-        {
-            var state = new ApplicationState();
-            state.ApplySettings(new AppSettings { AppRootPath = _tempDirectory });
+    private InstanceManager CreateManager(out InstanceRegistry registry, out InstancePathService pathService)
+    {
+        var state = new ApplicationState();
+        state.ApplySettings(new AppSettings { AppRootPath = _tempDirectory });
 
-            pathService = new InstancePathService(state);
-            registry = new InstanceRegistry(pathService, NullLogger<InstanceRegistry>.Instance);
+        pathService = new InstancePathService(state);
+        registry = new InstanceRegistry(pathService, NullLogger<InstanceRegistry>.Instance);
 
-            return new InstanceManager(registry, pathService, state, new MockAssetProvider(), NullLogger<InstanceManager>.Instance);
-        }
+        return new InstanceManager(registry, pathService, state, new MockAssetProvider(), NullLogger<InstanceManager>.Instance);
+    }
 
     public void Dispose()
     {

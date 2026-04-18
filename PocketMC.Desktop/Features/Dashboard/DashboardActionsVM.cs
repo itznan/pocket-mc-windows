@@ -21,6 +21,7 @@ using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Core.Presentation;
 using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Features.Intelligence;
+using PocketMC.Desktop.Features.Networking;
 
 namespace PocketMC.Desktop.Features.Dashboard
 {
@@ -30,9 +31,8 @@ namespace PocketMC.Desktop.Features.Dashboard
         private readonly InstanceManager _instanceManager;
         private readonly InstanceRegistry _registry;
         private readonly IServerLifecycleService _lifecycleService;
-        private readonly ServerProcessManager _serverProcessManager; // Still needed for port checking or active processes
-        private readonly ServerConfigurationService _serverConfigurationService;
         private readonly InstanceTunnelOrchestrator _tunnelOrchestrator;
+        private readonly PortFailureMessageService _portFailureMessageService;
         private readonly IDialogService _dialogService;
         private readonly IAppNavigationService _navigationService;
         private readonly IServiceProvider _serviceProvider;
@@ -43,9 +43,8 @@ namespace PocketMC.Desktop.Features.Dashboard
             InstanceManager instanceManager,
             InstanceRegistry registry,
             IServerLifecycleService lifecycleService,
-            ServerProcessManager serverProcessManager,
-            ServerConfigurationService serverConfigurationService,
             InstanceTunnelOrchestrator tunnelOrchestrator,
+            PortFailureMessageService portFailureMessageService,
             IDialogService dialogService,
             IAppNavigationService navigationService,
             IServiceProvider serviceProvider,
@@ -55,9 +54,8 @@ namespace PocketMC.Desktop.Features.Dashboard
             _instanceManager = instanceManager;
             _registry = registry;
             _lifecycleService = lifecycleService;
-            _serverProcessManager = serverProcessManager;
-            _serverConfigurationService = serverConfigurationService;
             _tunnelOrchestrator = tunnelOrchestrator;
+            _portFailureMessageService = portFailureMessageService;
             _dialogService = dialogService;
             _navigationService = navigationService;
             _serviceProvider = serviceProvider;
@@ -68,9 +66,6 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             try
             {
-                string? instancePath = _registry.GetPath(vm.Id);
-                if (instancePath == null) return;
-
                 var availableMb = MemoryHelper.GetAvailablePhysicalMemoryMb();
                 var requiredMb = (ulong)vm.Metadata.MaxRamMb;
                 if (availableMb < requiredMb + 512)
@@ -81,30 +76,16 @@ namespace PocketMC.Desktop.Features.Dashboard
                     if (result != DialogResult.Yes) return;
                 }
 
-                int targetPort = _serverConfigurationService.GetActivePortForInstance(vm.Id);
-                var otherRunningPorts = _serverProcessManager.ActiveProcesses
-                    .Where(kvp => kvp.Key != vm.Id)
-                    .Select(kvp => _registry.GetPath(kvp.Key))
-                    .Where(p => p != null)
-                    .Select(p =>
-                    {
-                        _serverConfigurationService.TryGetProperty(p!, "server-port", out string? portStr);
-                        return int.TryParse(portStr, out int port) ? port : 25565;
-                    });
-
-                if (otherRunningPorts.Contains(targetPort))
-                {
-                    await _dialogService.ShowDialogAsync("Port Collision",
-                        $"Another running server is already using port {targetPort}.",
-                        DialogType.Warning);
-                    return;
-                }
-
                 await _lifecycleService.StartAsync(vm.Metadata);
+                vm.ClearPortIssue();
                 // The update state will be handled by listening to OnInstanceStateChanged in DashboardViewModel or CardVM.
                 onStarted(vm);
 
                 _ = _tunnelOrchestrator.EnsureTunnelFlowAsync(vm);
+            }
+            catch (PortReliabilityException ex)
+            {
+                HandlePortReliabilityFailure(vm, ex, "startup", onStarted);
             }
             catch (Exception ex)
             {
@@ -205,8 +186,13 @@ namespace PocketMC.Desktop.Features.Dashboard
             {
                 vm.UpdateState(ServerState.Stopping);
                 await _lifecycleService.RestartAsync(vm.Id);
+                vm.ClearPortIssue();
                 onStarted(vm);
                 _ = _tunnelOrchestrator.EnsureTunnelFlowAsync(vm);
+            }
+            catch (PortReliabilityException ex)
+            {
+                HandlePortReliabilityFailure(vm, ex, "restart", onStarted);
             }
             catch (Exception ex)
             {
@@ -272,6 +258,33 @@ namespace PocketMC.Desktop.Features.Dashboard
             if (process == null) return;
             var consolePage = ActivatorUtilities.CreateInstance<ServerConsolePage>(_serviceProvider, vm.Metadata, process);
             _navigationService.NavigateToDetailPage(consolePage, $"Console: {vm.Name}", DetailRouteKind.ServerConsole, DetailBackNavigation.Dashboard, true);
+        }
+
+        private void HandlePortReliabilityFailure(
+            InstanceCardViewModel vm,
+            PortReliabilityException ex,
+            string operation,
+            Action<InstanceCardViewModel> onStateChanged)
+        {
+            PortFailureDisplayInfo displayInfo = _portFailureMessageService.CreateDisplayInfo(ex, vm.Name);
+            PortCheckResult primary = ex.PrimaryResult;
+
+            vm.UpdateState(ServerState.Stopped);
+            vm.SetPortIssue(displayInfo.BadgeText, displayInfo.Message);
+            onStateChanged(vm);
+
+            _logger.LogWarning(
+                "Port reliability blocked {Operation} for server {ServerName}. Code={FailureCode}, Binding={Binding}, Engine={Engine}, Port={Port}, Protocol={Protocol}, IpMode={IpMode}",
+                operation,
+                vm.Name,
+                primary.FailureCode,
+                primary.Request.BindingRole,
+                primary.Request.Engine,
+                primary.Request.Port,
+                primary.Request.Protocol,
+                primary.Request.IpMode);
+
+            _dialogService.ShowMessage(displayInfo.Title, displayInfo.Message, DialogType.Warning);
         }
     }
 }

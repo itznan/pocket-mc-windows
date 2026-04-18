@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using PocketMC.Desktop.Features.Networking;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {
@@ -32,6 +33,52 @@ namespace PocketMC.Desktop.Features.Tunnel
         public bool IsTokenInvalid { get; set; }
         public bool RequiresClaim { get; set; }
         public IReadOnlyList<TunnelData> ExistingTunnels { get; set; } = Array.Empty<TunnelData>();
+        public PortFailureCode FailureCode { get; set; } = PortFailureCode.None;
+
+        public PortCheckResult? ToPortCheckResult(PortCheckRequest request)
+        {
+            PortFailureCode failureCode = FailureCode == PortFailureCode.None
+                ? ClassifyFailureCode()
+                : FailureCode;
+
+            if (failureCode == PortFailureCode.None)
+            {
+                return null;
+            }
+
+            return new PortCheckResult(
+                request,
+                isSuccessful: false,
+                canBindLocally: true,
+                failureCode: failureCode,
+                failureMessage: ErrorMessage ?? BuildDefaultFailureMessage(failureCode, request));
+        }
+
+        private PortFailureCode ClassifyFailureCode()
+        {
+            return Status switch
+            {
+                TunnelStatus.LimitReached => PortFailureCode.TunnelLimitReached,
+                TunnelStatus.AgentOffline => PortFailureCode.PlayitAgentOffline,
+                TunnelStatus.Error when IsTokenInvalid => PortFailureCode.PlayitTokenInvalid,
+                TunnelStatus.Error when RequiresClaim => PortFailureCode.PlayitClaimRequired,
+                TunnelStatus.Error => PortFailureCode.PublicReachabilityFailure,
+                _ => PortFailureCode.None
+            };
+        }
+
+        private static string BuildDefaultFailureMessage(PortFailureCode failureCode, PortCheckRequest request)
+        {
+            return failureCode switch
+            {
+                PortFailureCode.TunnelLimitReached => $"No Playit tunnel slots are available for {request.DisplayName} port {request.Port}.",
+                PortFailureCode.PlayitAgentOffline => "The Playit agent is not connected.",
+                PortFailureCode.PlayitTokenInvalid => "The Playit agent token is invalid or expired.",
+                PortFailureCode.PlayitClaimRequired => "The Playit agent must be claimed before tunnel resolution can continue.",
+                PortFailureCode.PublicReachabilityFailure => $"PocketMC could not resolve a public Playit address for {request.DisplayName} port {request.Port}.",
+                _ => $"Tunnel resolution failed for port {request.Port}."
+            };
+        }
     }
 
     /// <summary>
@@ -56,13 +103,19 @@ namespace PocketMC.Desktop.Features.Tunnel
         /// </summary>
         public async Task<TunnelResolutionResult> ResolveTunnelAsync(int serverPort)
         {
+            return await ResolveTunnelAsync(new PortCheckRequest(serverPort));
+        }
+
+        public async Task<TunnelResolutionResult> ResolveTunnelAsync(PortCheckRequest request)
+        {
             if (_agentService.State != PlayitAgentState.Connected &&
                 _agentService.State != PlayitAgentState.Starting)
             {
                 return new TunnelResolutionResult
                 {
                     Status = TunnelResolutionResult.TunnelStatus.AgentOffline,
-                    ErrorMessage = "Playit agent is not connected."
+                    ErrorMessage = "Playit agent is not connected.",
+                    FailureCode = PortFailureCode.PlayitAgentOffline
                 };
             }
 
@@ -75,11 +128,12 @@ namespace PocketMC.Desktop.Features.Tunnel
                     Status = TunnelResolutionResult.TunnelStatus.Error,
                     ErrorMessage = result.ErrorMessage,
                     IsTokenInvalid = result.IsTokenInvalid,
-                    RequiresClaim = result.RequiresClaim
+                    RequiresClaim = result.RequiresClaim,
+                    FailureCode = ClassifyApiFailure(result)
                 };
             }
 
-            var matching = PlayitApiClient.FindTunnelForPort(result.Tunnels, serverPort);
+            var matching = PlayitApiClient.FindTunnelForRequest(result.Tunnels, request);
             if (matching != null)
             {
                 return new TunnelResolutionResult
@@ -94,7 +148,8 @@ namespace PocketMC.Desktop.Features.Tunnel
                 return new TunnelResolutionResult
                 {
                     Status = TunnelResolutionResult.TunnelStatus.LimitReached,
-                    ExistingTunnels = result.Tunnels
+                    ExistingTunnels = result.Tunnels,
+                    FailureCode = PortFailureCode.TunnelLimitReached
                 };
             }
 
@@ -123,7 +178,21 @@ namespace PocketMC.Desktop.Features.Tunnel
         /// </summary>
         public async Task<string?> PollForNewTunnelAsync(int serverPort, CancellationToken cancellationToken, TimeSpan? timeout = null)
         {
+            return await PollForNewTunnelAsync(new PortCheckRequest(serverPort), cancellationToken, timeout);
+        }
+
+        public async Task<string?> PollForNewTunnelAsync(PortCheckRequest request, CancellationToken cancellationToken, TimeSpan? timeout = null)
+        {
+            TunnelResolutionResult result = await PollForNewTunnelResultAsync(request, cancellationToken, timeout);
+            return result.Status == TunnelResolutionResult.TunnelStatus.Found
+                ? result.PublicAddress
+                : null;
+        }
+
+        public async Task<TunnelResolutionResult> PollForNewTunnelResultAsync(PortCheckRequest request, CancellationToken cancellationToken, TimeSpan? timeout = null)
+        {
             var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromMinutes(5));
+            TunnelResolutionResult? lastFailure = null;
 
             while (DateTime.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
             {
@@ -132,15 +201,50 @@ namespace PocketMC.Desktop.Features.Tunnel
                 var result = await _apiClient.GetTunnelsAsync();
                 if (result.Success)
                 {
-                    var matching = PlayitApiClient.FindTunnelForPort(result.Tunnels, serverPort);
+                    var matching = PlayitApiClient.FindTunnelForRequest(result.Tunnels, request);
                     if (matching != null)
                     {
-                        return matching.PublicAddress;
+                        return new TunnelResolutionResult
+                        {
+                            Status = TunnelResolutionResult.TunnelStatus.Found,
+                            PublicAddress = matching.PublicAddress
+                        };
                     }
+
+                    continue;
                 }
+
+                lastFailure = new TunnelResolutionResult
+                {
+                    Status = TunnelResolutionResult.TunnelStatus.Error,
+                    ErrorMessage = result.ErrorMessage,
+                    IsTokenInvalid = result.IsTokenInvalid,
+                    RequiresClaim = result.RequiresClaim,
+                    FailureCode = ClassifyApiFailure(result)
+                };
             }
 
-            return null;
+            return lastFailure ?? new TunnelResolutionResult
+            {
+                Status = TunnelResolutionResult.TunnelStatus.Error,
+                FailureCode = PortFailureCode.PublicReachabilityFailure,
+                ErrorMessage = $"Timed out waiting for a Playit public address for {request.DisplayName} port {request.Port}."
+            };
+        }
+
+        private static PortFailureCode ClassifyApiFailure(TunnelListResult result)
+        {
+            if (result.IsTokenInvalid)
+            {
+                return PortFailureCode.PlayitTokenInvalid;
+            }
+
+            if (result.RequiresClaim)
+            {
+                return PortFailureCode.PlayitClaimRequired;
+            }
+
+            return PortFailureCode.PublicReachabilityFailure;
         }
     }
 }

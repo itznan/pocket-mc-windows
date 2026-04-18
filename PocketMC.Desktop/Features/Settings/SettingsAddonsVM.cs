@@ -112,7 +112,7 @@ namespace PocketMC.Desktop.Features.Settings
                 async p => { if (IsBedrockDedicated) await DeleteBedrockAddonAsync(p as string); else await DeleteModAsync(p as string); },
                 _ => !_isRunningCheck());
             BrowseModrinthModsCommand   = new RelayCommand(
-                _ => { if (IsBedrockDedicated) ImportBedrockAddonCommand.Execute(null); else BrowseModrinth("project_type:mod"); },
+                _ => { if (IsBedrockDedicated) ImportBedrockAddonCommand?.Execute(null); else BrowseModrinth("project_type:mod"); },
                 _ => true);
             ImportModpackCommand        = new RelayCommand(async _ => await ImportModpackAsync(), _ => IsJavaEngine);
             BrowseModpacksCommand       = new RelayCommand(_ => BrowseModrinth("project_type:modpack"), _ => IsJavaEngine);

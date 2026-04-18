@@ -5,9 +5,6 @@ using PocketMC.Desktop.Features.Instances;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
-using PocketMC.Desktop.Features.Instances;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
 
 namespace PocketMC.Desktop.Tests;
 

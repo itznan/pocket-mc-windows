@@ -1,0 +1,247 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Logging;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Networking;
+using PocketMC.Desktop.Features.Shell;
+using PocketMC.Desktop.Features.Tunnel;
+using PocketMC.Desktop.Models;
+
+namespace PocketMC.Desktop.Features.Diagnostics;
+
+/// <summary>
+/// Builds a redacted, structured snapshot of PocketMC port diagnostics for support bundles.
+/// </summary>
+public sealed class PortDiagnosticsSnapshotBuilder
+{
+    private const string RedactedPublicAddress = "[REDACTED_PUBLIC_ADDRESS]";
+
+    private readonly ApplicationState _appState;
+    private readonly InstanceRegistry _instanceRegistry;
+    private readonly PortPreflightService _portPreflightService;
+    private readonly PortLeaseRegistry _portLeaseRegistry;
+    private readonly PortRecoveryService _portRecoveryService;
+    private readonly PlayitAgentService _playitAgentService;
+    private readonly PlayitApiClient _playitApiClient;
+    private readonly DependencyHealthMonitor _dependencyHealthMonitor;
+    private readonly ILogger<PortDiagnosticsSnapshotBuilder> _logger;
+
+    public PortDiagnosticsSnapshotBuilder(
+        ApplicationState appState,
+        InstanceRegistry instanceRegistry,
+        PortPreflightService portPreflightService,
+        PortLeaseRegistry portLeaseRegistry,
+        PortRecoveryService portRecoveryService,
+        PlayitAgentService playitAgentService,
+        PlayitApiClient playitApiClient,
+        DependencyHealthMonitor dependencyHealthMonitor,
+        ILogger<PortDiagnosticsSnapshotBuilder> logger)
+    {
+        _appState = appState;
+        _instanceRegistry = instanceRegistry;
+        _portPreflightService = portPreflightService;
+        _portLeaseRegistry = portLeaseRegistry;
+        _portRecoveryService = portRecoveryService;
+        _playitAgentService = playitAgentService;
+        _playitApiClient = playitApiClient;
+        _dependencyHealthMonitor = dependencyHealthMonitor;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Builds the current port diagnostics snapshot.
+    /// </summary>
+    public PortDiagnosticsSnapshot Build()
+    {
+        var instances = _instanceRegistry.GetAll().ToArray();
+        var recoveryHistory = _portRecoveryService.GetRecentHistory();
+
+        var snapshot = new PortDiagnosticsSnapshot
+        {
+            GeneratedAtUtc = DateTimeOffset.UtcNow,
+            AppRootState = _appState.IsConfigured ? "Configured" : "NotConfigured",
+            InstancePortMappings = instances.Select(BuildInstanceMapping).ToList(),
+            LeaseRegistryState = _portLeaseRegistry.GetAllLeases().Select(BuildLease).ToList(),
+            RecentPortFailures = recoveryHistory.Select(BuildFailure).ToList(),
+            RecoveryHistory = recoveryHistory.Select(BuildRecoveryHistory).ToList(),
+            TunnelState = BuildTunnelState(instances),
+            PublicConnectivityDependencies = BuildPublicConnectivityDependencies()
+        };
+
+        return snapshot;
+    }
+
+    private PortDiagnosticsInstanceMapping BuildInstanceMapping(InstanceMetadata metadata)
+    {
+        string? instancePath = _instanceRegistry.GetPath(metadata.Id);
+        PortCheckResult? preflightResult = null;
+        IReadOnlyList<PortCheckRequest> requests = Array.Empty<PortCheckRequest>();
+
+        try
+        {
+            preflightResult = _portPreflightService.Check(metadata, instancePath);
+            requests = _portPreflightService.BuildRequests(metadata, instancePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to build port mapping diagnostics for {InstanceName}.", metadata.Name);
+        }
+
+        return new PortDiagnosticsInstanceMapping
+        {
+            InstanceId = metadata.Id,
+            InstanceName = metadata.Name,
+            ServerType = metadata.ServerType,
+            HasGeyser = metadata.HasGeyser,
+            InstancePathPresent = !string.IsNullOrWhiteSpace(instancePath) && Directory.Exists(instancePath),
+            CurrentPreflightSuccessful = preflightResult?.IsSuccessful ?? false,
+            CurrentPreflightFailureCode = preflightResult?.FailureCode ?? PortFailureCode.UnknownPortFailure,
+            CurrentPreflightFailureMessage = preflightResult?.FailureMessage,
+            Ports = requests.Select(BuildExpectation).ToList()
+        };
+    }
+
+    private static PortDiagnosticsExpectation BuildExpectation(PortCheckRequest request)
+    {
+        return new PortDiagnosticsExpectation
+        {
+            DisplayName = request.DisplayName,
+            BindingRole = request.BindingRole,
+            Engine = request.Engine,
+            Port = request.Port,
+            Protocol = request.Protocol,
+            IpMode = request.IpMode,
+            BindAddress = request.BindAddress,
+            CheckTunnelAvailability = request.CheckTunnelAvailability,
+            CheckPublicReachability = request.CheckPublicReachability
+        };
+    }
+
+    private static PortDiagnosticsLease BuildLease(PortLease lease)
+    {
+        return new PortDiagnosticsLease
+        {
+            Port = lease.Port,
+            Protocol = lease.Protocol,
+            IpMode = lease.IpMode,
+            BindAddress = lease.BindAddress,
+            InstanceId = lease.InstanceId,
+            InstanceName = lease.InstanceName,
+            InstancePathPresent = !string.IsNullOrWhiteSpace(lease.InstancePath) && Directory.Exists(lease.InstancePath),
+            AcquiredAtUtc = lease.AcquiredAtUtc
+        };
+    }
+
+    private static PortDiagnosticsFailure BuildFailure(PortRecoveryHistoryEntry entry)
+    {
+        return new PortDiagnosticsFailure
+        {
+            OccurredAtUtc = entry.OccurredAtUtc,
+            InstanceId = entry.InstanceId,
+            InstanceName = entry.InstanceName,
+            DisplayName = entry.DisplayName,
+            BindingRole = entry.BindingRole,
+            Engine = entry.Engine,
+            Port = entry.Port,
+            Protocol = entry.Protocol,
+            IpMode = entry.IpMode,
+            BindAddress = entry.BindAddress,
+            FailureCode = entry.FailureCode,
+            FailureMessage = entry.FailureMessage
+        };
+    }
+
+    private static PortDiagnosticsRecoveryHistory BuildRecoveryHistory(PortRecoveryHistoryEntry entry)
+    {
+        return new PortDiagnosticsRecoveryHistory
+        {
+            OccurredAtUtc = entry.OccurredAtUtc,
+            InstanceId = entry.InstanceId,
+            InstanceName = entry.InstanceName,
+            DisplayName = entry.DisplayName,
+            BindingRole = entry.BindingRole,
+            Engine = entry.Engine,
+            Port = entry.Port,
+            Protocol = entry.Protocol,
+            IpMode = entry.IpMode,
+            BindAddress = entry.BindAddress,
+            FailureCode = entry.FailureCode,
+            Action = entry.Action,
+            IsTransient = entry.IsTransient,
+            RetryDelaySeconds = entry.RetryDelay?.TotalSeconds,
+            AttemptNumber = entry.AttemptNumber,
+            MaxAttempts = entry.MaxAttempts,
+            SuggestedPort = entry.SuggestedPort
+        };
+    }
+
+    private PortDiagnosticsTunnelState BuildTunnelState(IReadOnlyList<InstanceMetadata> instances)
+    {
+        return new PortDiagnosticsTunnelState
+        {
+            PlayitAgentState = _playitAgentService.State,
+            PlayitAgentRunning = _playitAgentService.IsRunning,
+            PlayitBinaryAvailable = _playitAgentService.IsBinaryAvailable,
+            PlayitAgentSecretPresent = !string.IsNullOrWhiteSpace(_playitApiClient.GetSecretKey()),
+            Instances = instances.Select(BuildInstanceTunnelState).ToList()
+        };
+    }
+
+    private PortDiagnosticsInstanceTunnelState BuildInstanceTunnelState(InstanceMetadata metadata)
+    {
+        string? cachedAddress = _appState.GetTunnelAddress(metadata.Id);
+        IReadOnlyList<PortCheckRequest> requests;
+
+        try
+        {
+            requests = _portPreflightService.BuildRequests(metadata, _instanceRegistry.GetPath(metadata.Id));
+        }
+        catch
+        {
+            requests = Array.Empty<PortCheckRequest>();
+        }
+
+        return new PortDiagnosticsInstanceTunnelState
+        {
+            InstanceId = metadata.Id,
+            InstanceName = metadata.Name,
+            CachedTunnelAddressPresent = !string.IsNullOrWhiteSpace(cachedAddress),
+            CachedTunnelAddress = string.IsNullOrWhiteSpace(cachedAddress) ? null : RedactedPublicAddress,
+            ExpectedLocalPorts = requests.Select(x => x.Port).Distinct().OrderBy(x => x).ToList(),
+            ExpectedTunnelPorts = requests
+                .Where(IsTunnelRelevantRequest)
+                .Select(BuildExpectation)
+                .ToList()
+        };
+    }
+
+    private static bool IsTunnelRelevantRequest(PortCheckRequest request)
+    {
+        return request.IpMode != PortIpMode.IPv6;
+    }
+
+    private List<PortDiagnosticsDependencyHealth> BuildPublicConnectivityDependencies()
+    {
+        var health = _dependencyHealthMonitor.GetAllHealth()
+            .Where(x => x.Name.Contains("Playit", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (health.Count == 0)
+        {
+            health.Add(_dependencyHealthMonitor.GetHealth("Playit.gg API"));
+        }
+
+        return health
+            .Select(x => new PortDiagnosticsDependencyHealth
+            {
+                Name = x.Name,
+                Status = x.Status,
+                LatencyMilliseconds = x.Latency.TotalMilliseconds,
+                LastCheckedUtc = x.LastChecked,
+                ErrorMessage = x.ErrorMessage
+            })
+            .ToList();
+    }
+}

@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Features.Instances.Services;
@@ -13,15 +15,18 @@ public class DiagnosticReportingService
 {
     private readonly ApplicationState _appState;
     private readonly InstanceRegistry _instanceRegistry;
+    private readonly PortDiagnosticsSnapshotBuilder _portDiagnosticsSnapshotBuilder;
     private readonly ILogger<DiagnosticReportingService> _logger;
 
     public DiagnosticReportingService(
-        ApplicationState appState, 
+        ApplicationState appState,
         InstanceRegistry instanceRegistry,
+        PortDiagnosticsSnapshotBuilder portDiagnosticsSnapshotBuilder,
         ILogger<DiagnosticReportingService> logger)
     {
         _appState = appState;
         _instanceRegistry = instanceRegistry;
+        _portDiagnosticsSnapshotBuilder = portDiagnosticsSnapshotBuilder;
         _logger = logger;
     }
 
@@ -54,12 +59,26 @@ public class DiagnosticReportingService
     {
         // 1. Gather System Info
         string sysInfoPath = Path.Combine(tempFolder, "system-info.txt");
-        File.WriteAllText(sysInfoPath, 
+        File.WriteAllText(sysInfoPath,
             $"OS: {Environment.OSVersion}\n" +
             $"64Bit: {Environment.Is64BitOperatingSystem}\n" +
             $".NET: {Environment.Version}\n" +
             $"AppRoot: {_appState.Settings.AppRootPath ?? "Not Set"}\n" +
             $"Timestamp: {DateTime.UtcNow:O} UTC\n");
+
+        // 1b. Gather port reliability diagnostics
+        string networkDir = Path.Combine(tempFolder, "network");
+        Directory.CreateDirectory(networkDir);
+        var portSnapshot = _portDiagnosticsSnapshotBuilder.Build();
+        File.WriteAllText(
+            Path.Combine(networkDir, "port-diagnostics.json"),
+            JsonSerializer.Serialize(
+                portSnapshot,
+                new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Converters = { new JsonStringEnumConverter() }
+                }));
 
         // 2. Gather App Logs
         string appLogsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PocketMC", "logs");
@@ -84,7 +103,7 @@ public class DiagnosticReportingService
                 var instanceDir = Path.Combine(outServers, instance.Id.ToString());
                 Directory.CreateDirectory(instanceDir);
 
-                string originalPath = _instanceRegistry.GetPath(instance.Id);
+                string? originalPath = _instanceRegistry.GetPath(instance.Id);
                 if (originalPath == null || !Directory.Exists(originalPath)) continue;
 
                 // Copy .pocket-mc.json
@@ -109,11 +128,11 @@ public class DiagnosticReportingService
 
                     string sessionLog = Path.Combine(logsDir, "pocketmc-session.log");
                     if (File.Exists(sessionLog)) File.Copy(sessionLog, Path.Combine(outLogs, "pocketmc-session.log"));
-                    
+
                     string latestLog = Path.Combine(logsDir, "latest.log");
                     if (File.Exists(latestLog)) File.Copy(latestLog, Path.Combine(outLogs, "latest.log"));
                 }
-                
+
                 // Copy crash reports
                 string crashDir = Path.Combine(originalPath, "crash-reports");
                 if (Directory.Exists(crashDir))

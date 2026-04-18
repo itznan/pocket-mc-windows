@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Features.Mods;
 using PocketMC.Desktop.Features.Instances.Backups;
 using PocketMC.Desktop.Features.Intelligence;
+using PocketMC.Desktop.Features.Networking;
 
 namespace PocketMC.Desktop.Features.Settings
 {
@@ -26,6 +28,7 @@ namespace PocketMC.Desktop.Features.Settings
         private readonly InstanceManager _instanceManager;
         private readonly InstanceRegistry _registry;
         private readonly ServerConfigurationService _serverConfigurationService;
+        private readonly PortPreflightService _portPreflightService;
         private readonly IServerLifecycleService _lifecycleService;
         private readonly IDialogService _dialogService;
         private readonly IAppNavigationService _navigationService;
@@ -80,6 +83,7 @@ namespace PocketMC.Desktop.Features.Settings
             InstanceManager instanceManager,
             InstanceRegistry registry,
             ServerConfigurationService serverConfigurationService,
+            PortPreflightService portPreflightService,
             IServerLifecycleService lifecycleService,
             WorldManager worldManager,
             BackupService backupService,
@@ -95,6 +99,7 @@ namespace PocketMC.Desktop.Features.Settings
             _instanceManager = instanceManager;
             _registry = registry;
             _serverConfigurationService = serverConfigurationService;
+            _portPreflightService = portPreflightService;
             _lifecycleService = lifecycleService;
             _dialogService = dialogService;
             _navigationService = navigationService;
@@ -214,24 +219,41 @@ namespace PocketMC.Desktop.Features.Settings
             if (HasGeyser) PlayitBedrockAddress = "⏳ Resolving Bedrock tunnel...";
             try
             {
+                IReadOnlyList<PortCheckRequest> requests = BuildPortRequestsForSettings(port);
+                PortCheckRequest primaryRequest = requests.FirstOrDefault(IsPrimaryTunnelRequest)
+                    ?? new PortCheckRequest(port, GetDefaultProtocol(Metadata), instanceId: Metadata.Id, instanceName: Metadata.Name, instancePath: ServerDir);
+                PortCheckRequest? geyserRequest = requests.FirstOrDefault(IsGeyserBedrockRequest);
+
                 var result = await client.GetTunnelsAsync();
                 if (!result.Success)
                 {
-                    PlayitAddress = "⚠ Failed to reach Playit API.";
-                    if (HasGeyser) PlayitBedrockAddress = "⚠ Failed to reach Playit API.";
+                    string failureText = BuildPlayitFailureText(result);
+                    PlayitAddress = failureText;
+                    if (HasGeyser) PlayitBedrockAddress = failureText;
                     return;
                 }
-                var match = PlayitApiClient.FindTunnelForPort(result.Tunnels, port);
+                var match = PlayitApiClient.FindTunnelForRequest(result.Tunnels, primaryRequest);
                 PlayitAddress = match != null
                     ? match.PublicAddress
-                    : $"No tunnel found for port {port}. Please create a new tunnel.";
+                    : $"No {FormatProtocol(primaryRequest.Protocol)} tunnel found for port {primaryRequest.Port}. Please create one.";
                     
                 if (HasGeyser)
                 {
-                    var bedrockMatch = PlayitApiClient.FindTunnelForPort(result.Tunnels, 19132);
+                    geyserRequest ??= new PortCheckRequest(
+                        19132,
+                        PortProtocol.Udp,
+                        PortIpMode.IPv4,
+                        instanceId: Metadata.Id,
+                        instanceName: Metadata.Name,
+                        instancePath: ServerDir,
+                        bindingRole: PortBindingRole.GeyserBedrock,
+                        engine: PortEngine.Geyser,
+                        displayName: "Geyser Bedrock");
+
+                    var bedrockMatch = PlayitApiClient.FindTunnelForRequest(result.Tunnels, geyserRequest);
                     PlayitBedrockAddress = bedrockMatch != null
                         ? bedrockMatch.PublicAddress
-                        : "No Bedrock tunnel found for port 19132. Please create one.";
+                        : $"No Bedrock UDP tunnel found for port {geyserRequest.Port}. Please create one.";
                 }
             }
             catch
@@ -239,6 +261,86 @@ namespace PocketMC.Desktop.Features.Settings
                 PlayitAddress = "⚠ Connection failed. Check your internet.";
                 if (HasGeyser) PlayitBedrockAddress = "⚠ Connection failed. Check your internet.";
             }
+        }
+
+        private IReadOnlyList<PortCheckRequest> BuildPortRequestsForSettings(int currentPrimaryPort)
+        {
+            try
+            {
+                var requests = _portPreflightService.BuildRequests(Metadata, ServerDir).ToArray();
+                PortCheckRequest? primary = requests.FirstOrDefault(IsPrimaryTunnelRequest);
+                if (primary == null || primary.Port == currentPrimaryPort)
+                {
+                    return requests;
+                }
+
+                return requests
+                    .Select(request => ReferenceEquals(request, primary)
+                        ? new PortCheckRequest(
+                            currentPrimaryPort,
+                            request.Protocol,
+                            request.IpMode,
+                            request.BindAddress,
+                            request.InstanceId,
+                            request.InstanceName,
+                            request.InstancePath,
+                            request.CheckTunnelAvailability,
+                            request.CheckPublicReachability,
+                            request.BindingRole,
+                            request.Engine,
+                            request.DisplayName)
+                        : request)
+                    .ToArray();
+            }
+            catch
+            {
+                return Array.Empty<PortCheckRequest>();
+            }
+        }
+
+        private static bool IsPrimaryTunnelRequest(PortCheckRequest request)
+        {
+            return request.BindingRole != PortBindingRole.GeyserBedrock &&
+                   request.IpMode != PortIpMode.IPv6;
+        }
+
+        private static bool IsGeyserBedrockRequest(PortCheckRequest request)
+        {
+            return request.BindingRole == PortBindingRole.GeyserBedrock ||
+                   request.Engine == PortEngine.Geyser;
+        }
+
+        private static PortProtocol GetDefaultProtocol(InstanceMetadata metadata)
+        {
+            return metadata.ServerType?.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase) == true ||
+                   metadata.ServerType?.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase) == true
+                ? PortProtocol.Udp
+                : PortProtocol.Tcp;
+        }
+
+        private static string BuildPlayitFailureText(TunnelListResult result)
+        {
+            if (result.RequiresClaim)
+            {
+                return "⚠ Finish Playit claim.";
+            }
+
+            if (result.IsTokenInvalid)
+            {
+                return "⚠ Reconnect Playit.";
+            }
+
+            return "⚠ Failed to reach Playit API.";
+        }
+
+        private static string FormatProtocol(PortProtocol protocol)
+        {
+            return protocol switch
+            {
+                PortProtocol.Udp => "UDP",
+                PortProtocol.TcpAndUdp => "TCP/UDP",
+                _ => "TCP"
+            };
         }
 
         private void SaveConfigurations()

@@ -11,6 +11,7 @@ using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
 using PocketMC.Desktop.Features.Tunnel;
 using PocketMC.Desktop.Infrastructure;
+using PocketMC.Desktop.Features.Networking;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {
@@ -21,6 +22,7 @@ namespace PocketMC.Desktop.Features.Tunnel
         private readonly WindowsToastNotificationService _toastNotificationService;
         private readonly int _serverPort;
         private readonly bool _isBedrockTunnel;
+        private readonly PortProtocol _protocol;
         private CancellationTokenSource? _pollingCts;
         private int _closeRequested;
 
@@ -32,7 +34,9 @@ namespace PocketMC.Desktop.Features.Tunnel
             TunnelService tunnelService,
             WindowsToastNotificationService toastNotificationService,
             int serverPort,
-            bool isBedrockTunnel = false)
+            bool isBedrockTunnel = false,
+            PortProtocol protocol = PortProtocol.Tcp,
+            string? portPurpose = null)
         {
             InitializeComponent();
             _navigationService = navigationService;
@@ -40,6 +44,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             _toastNotificationService = toastNotificationService;
             _serverPort = serverPort;
             _isBedrockTunnel = isBedrockTunnel;
+            _protocol = protocol;
 
             PortValueRun.Text = serverPort.ToString();
 
@@ -48,6 +53,10 @@ namespace PocketMC.Desktop.Features.Tunnel
             {
                 TunnelTypeStep.Text = "Select tunnel type: Minecraft Bedrock.";
                 PortStepNote.Text = $" — Bedrock clients connect on this UDP port.";
+            }
+            else if (!string.IsNullOrWhiteSpace(portPurpose))
+            {
+                TunnelTypeStep.Text = $"Select tunnel type for {portPurpose}.";
             }
 
             _pollingCts = new CancellationTokenSource();
@@ -60,9 +69,10 @@ namespace PocketMC.Desktop.Features.Tunnel
         {
             try
             {
-                string? address = await _tunnelService.PollForNewTunnelAsync(_serverPort, token);
+                TunnelResolutionResult result = await _tunnelService.PollForNewTunnelResultAsync(new PortCheckRequest(_serverPort, _protocol), token);
+                string? address = result.PublicAddress;
 
-                if (address != null)
+                if (result.Status == TunnelResolutionResult.TunnelStatus.Found && address != null)
                 {
                     ResolvedAddress = address;
                     OnTunnelResolved?.Invoke(address);
@@ -75,9 +85,13 @@ namespace PocketMC.Desktop.Features.Tunnel
                 }
                 else
                 {
+                    string status = result.FailureCode == PortFailureCode.PublicReachabilityFailure
+                        ? "Timed out waiting for a public tunnel address."
+                        : result.ErrorMessage ?? "Timed out waiting for tunnel.";
+
                     await Dispatcher.InvokeAsync(() =>
                     {
-                        StatusText.Text = "Timed out waiting for tunnel.";
+                        StatusText.Text = status;
                     });
                 }
             }

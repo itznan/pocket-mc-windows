@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Infrastructure.FileSystem;
 
@@ -49,12 +48,10 @@ public sealed class ServerConfigurationService
     };
 
     private readonly InstanceManager _instanceManager;
-    private readonly InstanceRegistry _registry;
 
-    public ServerConfigurationService(InstanceManager instanceManager, InstanceRegistry registry)
+    public ServerConfigurationService(InstanceManager instanceManager)
     {
         _instanceManager = instanceManager;
-        _registry = registry;
     }
 
     public ServerConfiguration Load(InstanceMetadata metadata, string serverDir)
@@ -172,34 +169,6 @@ public sealed class ServerConfigurationService
         }
 
         ServerPropertiesParser.Write(propsFile, props);
-    }
-
-    public int GetActivePortForInstance(Guid instanceId)
-    {
-        var path = _registry.GetPath(instanceId);
-
-        int defaultPort = 25565;
-        if (path != null)
-        {
-            string metaFile = Path.Combine(path, ".pocket-mc.json");
-            if (File.Exists(metaFile))
-            {
-                try
-                {
-                    var meta = JsonSerializer.Deserialize<InstanceMetadata>(File.ReadAllText(metaFile));
-                    bool isBedrock = meta?.ServerType?.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase) == true ||
-                                     meta?.ServerType?.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase) == true;
-                    if (isBedrock) defaultPort = 19132;
-                }
-                catch { }
-            }
-        }
-
-        if (path != null && TryGetProperty(path, "server-port", out var portStr) && int.TryParse(portStr, out int port))
-        {
-            return port;
-        }
-        return defaultPort;
     }
 
     public bool TryGetProperty(string serverDir, string key, out string? value)

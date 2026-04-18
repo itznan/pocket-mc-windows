@@ -24,7 +24,10 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     private string? _tunnelAddress;
     private string? _bedrockTunnelAddress;
     private string? _bedrockIpDisplayTextOverride;
+    private int _bedrockLocalPort = 19132;
     private string _ipDisplayText = "Will Appear Here!";
+    private string? _portIssueText;
+    private string? _portIssueTooltip;
 
     public InstanceCardViewModel(InstanceMetadata metadata, ServerProcessManager serverProcessManager, IServerLifecycleService lifecycleService)
     {
@@ -53,6 +56,10 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     public string ServerType => _metadata.ServerType;
     public int MaxPlayers => _metadata.MaxPlayers;
     public bool HasTunnelAddress => !string.IsNullOrEmpty(_tunnelAddress);
+    public bool HasPortIssue => !string.IsNullOrWhiteSpace(_portIssueText);
+    public Visibility PortIssueVisibility => HasPortIssue ? Visibility.Visible : Visibility.Collapsed;
+    public string? PortIssueText => _portIssueText;
+    public string? PortIssueTooltip => _portIssueTooltip;
 
     /// <summary>True for native Bedrock servers (BDS, Pocketmine).</summary>
     public bool IsBedrockServer => 
@@ -71,7 +78,9 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     /// <summary>Label prefix for the secondary IP row.</summary>
     public string BedrockIpLabel => "Bedrock (Geyser):";
 
-    /// <summary>Text for the Bedrock IP row (tunnel address + :19132, or local note).</summary>
+    public int BedrockLocalPort => _bedrockLocalPort;
+
+    /// <summary>Text for the Bedrock IP row (tunnel address, or local Geyser port note).</summary>
     public string BedrockIpDisplayText
     {
         get
@@ -86,7 +95,7 @@ public class InstanceCardViewModel : INotifyPropertyChanged
             {
                 return _bedrockTunnelAddress;
             }
-            return "127.0.0.1:19132 (local)";
+            return $"127.0.0.1:{_bedrockLocalPort} (local)";
         }
         set
         {
@@ -161,6 +170,43 @@ public class InstanceCardViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(StoppedControlsVisibility));
             OnPropertyChanged(nameof(StopButtonText));
         }
+    }
+
+    public void SetPortIssue(string badgeText, string tooltip)
+    {
+        _portIssueText = badgeText;
+        _portIssueTooltip = tooltip;
+        OnPropertyChanged(nameof(HasPortIssue));
+        OnPropertyChanged(nameof(PortIssueVisibility));
+        OnPropertyChanged(nameof(PortIssueText));
+        OnPropertyChanged(nameof(PortIssueTooltip));
+    }
+
+    public void ClearPortIssue()
+    {
+        if (_portIssueText == null && _portIssueTooltip == null)
+        {
+            return;
+        }
+
+        _portIssueText = null;
+        _portIssueTooltip = null;
+        OnPropertyChanged(nameof(HasPortIssue));
+        OnPropertyChanged(nameof(PortIssueVisibility));
+        OnPropertyChanged(nameof(PortIssueText));
+        OnPropertyChanged(nameof(PortIssueTooltip));
+    }
+
+    public void SetBedrockLocalPort(int port)
+    {
+        if (port <= 0 || port > 65535 || _bedrockLocalPort == port)
+        {
+            return;
+        }
+
+        _bedrockLocalPort = port;
+        OnPropertyChanged(nameof(BedrockLocalPort));
+        OnPropertyChanged(nameof(BedrockIpDisplayText));
     }
 
     public void UpdateCountdown(int secondsLeft)

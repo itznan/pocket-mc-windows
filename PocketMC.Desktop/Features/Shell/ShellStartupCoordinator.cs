@@ -20,7 +20,7 @@ namespace PocketMC.Desktop.Features.Shell
         private readonly SettingsManager _settingsManager;
         private readonly ApplicationState _applicationState;
         private readonly BackupSchedulerService _backupScheduler;
-        private readonly ServerProcessManager _serverProcessManager;
+        private readonly IServerLifecycleService _serverLifecycleService;
         private readonly JavaProvisioningService _javaProvisioningService;
         private readonly PlayitAgentService _playitAgentService;
         private readonly ResourceMonitorService _resourceMonitorService;
@@ -35,7 +35,7 @@ namespace PocketMC.Desktop.Features.Shell
             SettingsManager settingsManager,
             ApplicationState applicationState,
             BackupSchedulerService backupScheduler,
-            ServerProcessManager serverProcessManager,
+            IServerLifecycleService serverLifecycleService,
             JavaProvisioningService javaProvisioningService,
             PlayitAgentService playitAgentService,
             ResourceMonitorService resourceMonitorService,
@@ -45,7 +45,7 @@ namespace PocketMC.Desktop.Features.Shell
             _settingsManager = settingsManager;
             _applicationState = applicationState;
             _backupScheduler = backupScheduler;
-            _serverProcessManager = serverProcessManager;
+            _serverLifecycleService = serverLifecycleService;
             _javaProvisioningService = javaProvisioningService;
             _playitAgentService = playitAgentService;
             _resourceMonitorService = resourceMonitorService;
@@ -112,7 +112,9 @@ namespace PocketMC.Desktop.Features.Shell
             _playitAgentService.OnTunnelRunning -= OnPlayitTunnelRunning;
             _backupScheduler.Stop();
             _healthMonitor.StopMonitoring();
-            _serverProcessManager.KillAll();
+            // Go through the lifecycle layer so shutdown also releases port leases and
+            // clears cached tunnel state instead of only killing the OS processes.
+            _serverLifecycleService.KillAll();
             _host = null;
             _isDisposed = true;
         }

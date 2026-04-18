@@ -14,6 +14,7 @@ using PocketMC.Desktop.Features.Instances.Providers;
 using PocketMC.Desktop.Features.Java;
 using PocketMC.Desktop.Features.Marketplace;
 using PocketMC.Desktop.Features.Mods;
+using PocketMC.Desktop.Features.Networking;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Features.Setup;
 using PocketMC.Desktop.Features.Shell;
@@ -80,8 +81,15 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<JavaProvisioningService>();
 
             services.AddSingleton<ServerProcessManager>();
-            services.AddSingleton<IServerLifecycleService, ServerLifecycleService>();
+            services.AddSingleton<ServerLifecycleService>();
+            services.AddSingleton<IServerLifecycleService>(
+                provider => provider.GetRequiredService<ServerLifecycleService>());
             services.AddSingleton<ServerLaunchConfigurator>();
+            services.AddSingleton<PortPreflightService>();
+            services.AddSingleton<PortProbeService>();
+            services.AddSingleton<PortLeaseRegistry>();
+            services.AddSingleton<PortRecoveryService>();
+            services.AddSingleton<PortFailureMessageService>();
 
             services.AddSingleton<IResourceMonitorService, ResourceMonitorService>();
             services.AddSingleton(provider => (ResourceMonitorService)provider.GetRequiredService<IResourceMonitorService>());
@@ -93,6 +101,7 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<InstanceManager>();
             services.AddSingleton<ServerConfigurationService>();
             services.AddSingleton<WorldManager>();
+            services.AddSingleton<PocketMC.Desktop.Features.Diagnostics.PortDiagnosticsSnapshotBuilder>();
             services.AddSingleton<PocketMC.Desktop.Features.Diagnostics.DiagnosticReportingService>();
             services.AddSingleton<PocketMC.Desktop.Features.Diagnostics.DependencyHealthMonitor>();
             
@@ -120,7 +129,9 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<PlayitApiClient>();
             services.AddSingleton<PlayitAgentService>();
             services.AddSingleton<InstanceTunnelOrchestrator>();
-            services.AddTransient<TunnelService>();
+            // Tunnel resolution is orchestrated from singleton services and keeps no
+            // per-request state, so it should share the same app-wide lifetime.
+            services.AddSingleton<TunnelService>();
             return services;
         }
 

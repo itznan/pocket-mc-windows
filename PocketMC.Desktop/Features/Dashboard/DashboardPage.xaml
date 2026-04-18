@@ -4,30 +4,31 @@
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
       Title="Dashboard">
-    
+
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Page.Resources>
-    
+
     <Grid Margin="24" AllowDrop="True" Drop="Page_Drop" Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <StackPanel Grid.Row="0">
             <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
                 <ui:TextBlock FontTypography="Title" Text="Instances" Foreground="White" Margin="0,0,16,0" VerticalAlignment="Center"/>
                 <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Command="{Binding DataContext.NewInstanceCommand, RelativeSource={RelativeSource AncestorType=Page}}" Cursor="Hand" Margin="0,0,8,0"/>
             </StackPanel>
         </StackPanel>
-        
-        <ScrollViewer x:Name="DashScroller" 
+
+        <ScrollViewer x:Name="DashScroller"
                       Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto" 
+                      VerticalScrollBarVisibility="Auto"
                       Background="Transparent"
                       CanContentScroll="False"
-                      Padding="0">
+                      Padding="0"
+                      PreviewMouseWheel="DashScroller_PreviewMouseWheel">
             <StackPanel x:Name="MainContentStack" Background="Transparent">
                 <ItemsControl x:Name="InstanceGrid" ItemsSource="{Binding Instances}">
                     <ItemsControl.ItemsPanel>
@@ -53,8 +54,8 @@
                                 </Border.Style>
                                 <ui:Card Cursor="Hand" Padding="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                                     <ui:Card.InputBindings>
-                                        <MouseBinding MouseAction="LeftClick" 
-                                                      Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" 
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                       CommandParameter="{Binding}"/>
                                     </ui:Card.InputBindings>
                                     <Grid Margin="16">
@@ -68,14 +69,14 @@
                                             <RowDefinition Height="*"/>    <!-- Row 6: Spacer -->
                                             <RowDefinition Height="Auto"/> <!-- Row 7: Action Buttons -->
                                         </Grid.RowDefinitions>
-                                
+
                                 <!-- Title row (Row 0) -->
                                 <Grid Grid.Row="0" Margin="0,0,0,4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    
+
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                         <ui:TextBlock FontTypography="Subtitle" Text="{Binding Name}" MaxWidth="150" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
                                         <Border Background="#33FFFFFF" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
@@ -84,9 +85,14 @@
                                         <Border Background="#3389B4FA" CornerRadius="4" Padding="6,2" Margin="4,0,0,0" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding ServerType, FallbackValue='Vanilla'}" FontSize="10" Foreground="#89B4FA" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                         </Border>
+                                        <Border Background="#33F38BA8" CornerRadius="4" Padding="6,2" Margin="4,0,0,0" VerticalAlignment="Center"
+                                                Visibility="{Binding PortIssueVisibility}"
+                                                ToolTip="{Binding PortIssueTooltip}">
+                                            <TextBlock Text="{Binding PortIssueText}" FontSize="10" Foreground="#F38BA8" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </Border>
                                     </StackPanel>
-                                    
-                                    <ui:Button Grid.Column="1" Appearance="Transparent" Icon="{ui:SymbolIcon MoreVertical24}" 
+
+                                    <ui:Button Grid.Column="1" Appearance="Transparent" Icon="{ui:SymbolIcon MoreVertical24}"
                                                Click="BtnMoreOptions_Click" Cursor="Hand" Padding="6,4" Margin="0,-6,-6,0" VerticalAlignment="Top"
                                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                         <ui:Button.ContextMenu>
@@ -99,14 +105,14 @@
                                         </ui:Button.ContextMenu>
                                     </ui:Button>
                                 </Grid>
-                                
+
                                 <!-- Description (Row 1) -->
-                                <ui:TextBlock Grid.Row="1" FontTypography="Caption" Text="{Binding Description}" 
+                                <ui:TextBlock Grid.Row="1" FontTypography="Caption" Text="{Binding Description}"
                                                Foreground="Silver" MinHeight="0"
                                                TextWrapping="Wrap" Margin="0,0,0,8" TextTrimming="CharacterEllipsis"/>
-                                              
+
                                 <!-- Status (Row 2) -->
-                                <TextBlock Grid.Row="2" Text="{Binding StatusText}" 
+                                <TextBlock Grid.Row="2" Text="{Binding StatusText}"
                                            Foreground="{Binding StatusBrush}" FontSize="11" FontWeight="SemiBold"
                                            Margin="0,0,0,6"/>
 
@@ -197,7 +203,7 @@
                                                    Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                         <ui:Button Icon="{ui:SymbolIcon Folder24}" Command="{Binding DataContext.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Cursor="Hand"/>
                                     </StackPanel>
-                                    
+
                                     <!-- RUNNING state -->
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Visibility="{Binding RunningControlsVisibility}">
                                         <ui:Button Content="{Binding StopButtonText}" Appearance="Danger" Margin="0,0,4,0"
@@ -228,13 +234,13 @@
                         </Style>
                     </StackPanel.Style>
                     <ui:SymbolIcon Symbol="ServerPlay20" FontSize="48" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,16"/>
-                    <TextBlock Text="No servers detected" 
+                    <TextBlock Text="No servers detected"
                                FontWeight="SemiBold"
                                FontSize="18"
                                Foreground="White"
                                HorizontalAlignment="Center"/>
-                    <TextBlock Text="Click 'New Instance' above to create your first Minecraft environment." 
-                               Foreground="Silver" 
+                    <TextBlock Text="Click 'New Instance' above to create your first Minecraft environment."
+                               Foreground="Silver"
                                Margin="0,8,0,0"
                                HorizontalAlignment="Center"
                                TextWrapping="Wrap"

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,10 +9,9 @@ using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Features.Shell.Interfaces;
 using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Shell;
-using PocketMC.Desktop.Features.Instances.Services;
-using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Dashboard;
-using PocketMC.Desktop.Features.Tunnel;
+using PocketMC.Desktop.Features.Instances.Services;
+using PocketMC.Desktop.Features.Networking;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {
@@ -25,8 +25,9 @@ namespace PocketMC.Desktop.Features.Tunnel
         private readonly TunnelService _tunnelService;
         private readonly PlayitAgentService _playitAgentService;
         private readonly ApplicationState _applicationState;
-        private readonly ServerConfigurationService _serverConfigurationService;
-        private readonly InstanceManager _instanceManager;
+        private readonly PortPreflightService _portPreflightService;
+        private readonly PortFailureMessageService _portFailureMessageService;
+        private readonly PortRecoveryService _portRecoveryService;
         private readonly InstanceRegistry _registry;
         private readonly IDialogService _dialogService;
         private readonly IAppNavigationService _navigationService;
@@ -41,8 +42,9 @@ namespace PocketMC.Desktop.Features.Tunnel
             TunnelService tunnelService,
             PlayitAgentService playitAgentService,
             ApplicationState applicationState,
-            ServerConfigurationService serverConfigurationService,
-            InstanceManager instanceManager,
+            PortPreflightService portPreflightService,
+            PortFailureMessageService portFailureMessageService,
+            PortRecoveryService portRecoveryService,
             InstanceRegistry registry,
             IDialogService dialogService,
             IAppNavigationService navigationService,
@@ -53,8 +55,9 @@ namespace PocketMC.Desktop.Features.Tunnel
             _tunnelService = tunnelService;
             _playitAgentService = playitAgentService;
             _applicationState = applicationState;
-            _serverConfigurationService = serverConfigurationService;
-            _instanceManager = instanceManager;
+            _portPreflightService = portPreflightService;
+            _portFailureMessageService = portFailureMessageService;
+            _portRecoveryService = portRecoveryService;
             _registry = registry;
             _dialogService = dialogService;
             _navigationService = navigationService;
@@ -80,31 +83,31 @@ namespace PocketMC.Desktop.Features.Tunnel
 
             try
             {
-                if (!TryGetServerPort(vm.Id, out int mainPort))
+                IReadOnlyList<PortCheckRequest> requests = BuildTunnelRequests(vm);
+                if (requests.Count == 0)
                 {
-                    _logger.LogDebug("Skipping tunnel resolution for {InstanceName} because the server port could not be read.", vm.Name);
+                    _logger.LogDebug("Skipping tunnel resolution for {InstanceName} because no tunnel-relevant ports could be resolved.", vm.Name);
                     return;
                 }
 
                 _dispatcher.Invoke(() => { vm.TunnelAddress = null; vm.BedrockTunnelAddress = null; });
                 EnsurePlayitAgentRunning();
 
-                List<int> portsToResolve = new List<int> { mainPort };
-                if (vm.HasGeyser && mainPort != 19132)
+                foreach (PortCheckRequest request in requests)
                 {
-                    portsToResolve.Add(19132);
-                }
+                    if (IsGeyserBedrockRequest(request))
+                    {
+                        _dispatcher.Invoke(() => vm.SetBedrockLocalPort(request.Port));
+                    }
 
-                foreach (int port in portsToResolve)
-                {
-                    bool isBedrockTunnel = (port == 19132);
-                    TunnelResolutionResult resolution = await ResolveTunnelWithWarmupAsync(port);
+                    bool isBedrockTunnel = IsBedrockTunnelRequest(request);
+                    TunnelResolutionResult resolution = await ResolveTunnelWithWarmupAsync(request);
                     
                     if (resolution.Status == TunnelResolutionResult.TunnelStatus.Found)
                     {
                         if (!string.IsNullOrWhiteSpace(resolution.PublicAddress))
                         {
-                            SetTunnelAddress(vm, port, resolution.PublicAddress);
+                            SetTunnelAddress(vm, request, resolution.PublicAddress);
                         }
                         continue;
                     }
@@ -115,13 +118,18 @@ namespace PocketMC.Desktop.Features.Tunnel
                         _dispatcher.Invoke(() =>
                         {
                             // Create the guide page, passing port and isBedrockTunnel flag
-                            var guidePage = ActivatorUtilities.CreateInstance<TunnelCreationGuidePage>(_serviceProvider, port, isBedrockTunnel);
+                            var guidePage = ActivatorUtilities.CreateInstance<TunnelCreationGuidePage>(
+                                _serviceProvider,
+                                request.Port,
+                                isBedrockTunnel,
+                                request.Protocol,
+                                request.DisplayName);
                             
                             guidePage.OnTunnelResolved += address =>
                             {
                                 if (!string.IsNullOrWhiteSpace(address))
                                 {
-                                    SetTunnelAddress(vm, port, address);
+                                    SetTunnelAddress(vm, request, address);
                                 }
                                 tcs.TrySetResult(true);
                             };
@@ -142,21 +150,23 @@ namespace PocketMC.Desktop.Features.Tunnel
 
                     if (resolution.Status == TunnelResolutionResult.TunnelStatus.LimitReached)
                     {
-                        _dispatcher.Invoke(() =>
-                            _dialogService.ShowMessage(
-                                "Tunnel Limit Reached",
-                                "Your Playit account already has 4 tunnels. Delete one in Playit or change this server's port, then try again.",
-                                DialogType.Warning));
+                        ShowTunnelFailure(vm.Name, request, resolution);
                         break;
                     }
                     else if (resolution.Status == TunnelResolutionResult.TunnelStatus.AgentOffline)
                     {
+                        PortCheckResult? result = resolution.ToPortCheckResult(request);
+                        if (result != null)
+                        {
+                            _portRecoveryService.Recommend(result);
+                        }
+
                         _logger.LogInformation("Playit agent is not ready yet for instance {InstanceName}.", vm.Name);
                         break;
                     }
                     else if (resolution.Status == TunnelResolutionResult.TunnelStatus.Error)
                     {
-                        HandleResolutionError(vm.Name, resolution);
+                        HandleResolutionError(vm.Name, request, resolution);
                     }
                 }
             }
@@ -173,29 +183,29 @@ namespace PocketMC.Desktop.Features.Tunnel
             }
         }
 
-        private void SetTunnelAddress(InstanceCardViewModel vm, int port, string address)
+        private void SetTunnelAddress(InstanceCardViewModel vm, PortCheckRequest request, string address)
         {
-            _applicationState.SetTunnelAddress(vm.Id, address);
             _dispatcher.Invoke(() =>
             {
-                if (port == 19132 && vm.HasGeyser && vm.ServerType != "Bedrock")
+                if (IsGeyserBedrockRequest(request))
                 {
                     vm.BedrockTunnelAddress = address;
                 }
                 else
                 {
+                    _applicationState.SetTunnelAddress(vm.Id, address);
                     vm.TunnelAddress = address;
                 }
             });
         }
 
-        private async Task<TunnelResolutionResult> ResolveTunnelWithWarmupAsync(int serverPort)
+        private async Task<TunnelResolutionResult> ResolveTunnelWithWarmupAsync(PortCheckRequest request)
         {
             TunnelResolutionResult? lastResult = null;
 
             for (int attempt = 0; attempt < 4; attempt++)
             {
-                lastResult = await _tunnelService.ResolveTunnelAsync(serverPort);
+                lastResult = await _tunnelService.ResolveTunnelAsync(request);
                 bool shouldRetry =
                     attempt < 3 &&
                     (lastResult.Status == TunnelResolutionResult.TunnelStatus.AgentOffline ||
@@ -216,24 +226,69 @@ namespace PocketMC.Desktop.Features.Tunnel
             };
         }
 
-        private void HandleResolutionError(string instanceName, TunnelResolutionResult resolution)
+        private void HandleResolutionError(string instanceName, PortCheckRequest request, TunnelResolutionResult resolution)
         {
             if (resolution.RequiresClaim)
             {
+                PortCheckResult? result = resolution.ToPortCheckResult(request);
+                if (result != null)
+                {
+                    _portRecoveryService.Recommend(result);
+                }
+
                 _logger.LogInformation("Playit claim is still pending for instance {InstanceName}.", instanceName);
             }
             else if (resolution.IsTokenInvalid)
             {
-                _dispatcher.Invoke(() =>
-                    _dialogService.ShowMessage(
-                        "Playit Reconnect Required",
-                        "PocketMC detected that your Playit agent needs to be linked again. Open the Tunnel page and click Reconnect.",
-                        DialogType.Warning));
+                ShowTunnelFailure(instanceName, request, resolution);
             }
             else if (!string.IsNullOrWhiteSpace(resolution.ErrorMessage))
             {
-                _logger.LogWarning("Playit tunnel resolution failed for {InstanceName}: {Message}", instanceName, resolution.ErrorMessage);
+                PortCheckResult? result = resolution.ToPortCheckResult(request);
+                if (result != null)
+                {
+                    _portRecoveryService.Recommend(result);
+                }
+
+                _logger.LogWarning(
+                    "Playit tunnel resolution failed for {InstanceName}: Code={FailureCode}, Port={Port}, Protocol={Protocol}, Engine={Engine}, Message={Message}",
+                    instanceName,
+                    result?.FailureCode ?? PortFailureCode.PublicReachabilityFailure,
+                    request.Port,
+                    request.Protocol,
+                    request.Engine,
+                    resolution.ErrorMessage);
             }
+        }
+
+        private void ShowTunnelFailure(string instanceName, PortCheckRequest request, TunnelResolutionResult resolution)
+        {
+            PortCheckResult? result = resolution.ToPortCheckResult(request);
+            if (result == null)
+            {
+                return;
+            }
+
+            PortRecoveryRecommendation recommendation = _portRecoveryService.Recommend(result);
+            result = new PortCheckResult(
+                result.Request,
+                result.IsSuccessful,
+                result.CanBindLocally,
+                result.FailureCode,
+                result.FailureMessage,
+                result.Lease,
+                result.Conflicts,
+                new[] { recommendation },
+                result.CheckedAtUtc);
+
+            var exception = new PortReliabilityException(new[] { result });
+            PortFailureDisplayInfo display = _portFailureMessageService.CreateDisplayInfo(exception, instanceName);
+
+            _dispatcher.Invoke(() =>
+                _dialogService.ShowMessage(
+                    display.Title,
+                    display.Message,
+                    DialogType.Warning));
         }
 
         private void EnsurePlayitAgentRunning()
@@ -243,21 +298,55 @@ namespace PocketMC.Desktop.Features.Tunnel
             _playitAgentService.Start();
         }
 
-        private bool TryGetServerPort(Guid instanceId, out int serverPort)
+        private IReadOnlyList<PortCheckRequest> BuildTunnelRequests(InstanceCardViewModel vm)
         {
-            serverPort = 25565; // Default Minecraft port
-            string? instancePath = _registry.GetPath(instanceId);
-            if (string.IsNullOrWhiteSpace(instancePath)) return false;
-
-            if (_serverConfigurationService.TryGetProperty(instancePath, "server-port", out string? portString) &&
-                int.TryParse(portString, out int parsedPort))
+            InstanceMetadata? metadata = _registry.GetById(vm.Id);
+            if (metadata == null)
             {
-                serverPort = parsedPort;
-                return true;
+                return Array.Empty<PortCheckRequest>();
             }
 
-            // Return true even if missing, as we'll use the default 25565
-            return true;
+            string? instancePath = _registry.GetPath(vm.Id);
+            IReadOnlyList<PortCheckRequest> requests;
+            try
+            {
+                requests = _portPreflightService.BuildRequests(metadata, instancePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not build tunnel port requests for {InstanceName}.", vm.Name);
+                return Array.Empty<PortCheckRequest>();
+            }
+
+            return requests
+                .Where(IsTunnelRelevantRequest)
+                .GroupBy(request => new
+                {
+                    request.Port,
+                    request.Protocol,
+                    request.BindingRole,
+                    request.Engine
+                })
+                .Select(group => group.First())
+                .ToArray();
+        }
+
+        private static bool IsTunnelRelevantRequest(PortCheckRequest request)
+        {
+            return request.IpMode != PortIpMode.IPv6;
+        }
+
+        private static bool IsGeyserBedrockRequest(PortCheckRequest request)
+        {
+            return request.BindingRole == PortBindingRole.GeyserBedrock ||
+                   request.Engine == PortEngine.Geyser;
+        }
+
+        private static bool IsBedrockTunnelRequest(PortCheckRequest request)
+        {
+            return request.Protocol == PortProtocol.Udp ||
+                   request.BindingRole is PortBindingRole.BedrockServer or PortBindingRole.PocketMineServer or PortBindingRole.GeyserBedrock ||
+                   request.Engine is PortEngine.BedrockDedicated or PortEngine.PocketMine or PortEngine.Geyser;
         }
     }
 }

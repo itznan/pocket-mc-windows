@@ -102,17 +102,25 @@ namespace PocketMC.Desktop.Features.Dashboard
                 if (addressToCopy.Contains("local") || string.IsNullOrWhiteSpace(addressToCopy)) return;
 
                 System.Windows.Clipboard.SetText(addressToCopy);
-                
+
                 // Keep the property nulling clean so we can read the raw string for saving. Wait, we can just save it.
                 vm.BedrockIpDisplayText = "\u2713 Copied";
                 await System.Threading.Tasks.Task.Delay(1500);
                 if (vm.BedrockIpDisplayText == "\u2713 Copied")
                 {
-                    vm.BedrockIpDisplayText = null; // resets to computed property
+                    vm.BedrockIpDisplayText = null!; // resets to computed property
                 }
             }
         }
 
+        private void DashScroller_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (sender is ScrollViewer scv)
+            {
+                scv.ScrollToVerticalOffset(scv.VerticalOffset - e.Delta);
+                e.Handled = true;
+            }
+        }
 
     }
 }

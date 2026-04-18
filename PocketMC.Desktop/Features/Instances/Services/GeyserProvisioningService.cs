@@ -34,7 +34,7 @@ public class GeyserProvisioningService
     /// installed Geyser build and will break plugin startup.
     ///
     /// Connection info after first server run:
-    ///   - Bedrock clients connect on the SAME IP as Java, port 19132 (UDP)
+    ///   - Bedrock clients connect on the SAME IP as Java, port 19132 (UDP) unless Geyser config changes it
     ///   - Config lives in: plugins/Geyser-Spigot/config.yml (or mods/ equivalent)
     /// </summary>
     public async Task EnsureGeyserSetupAsync(
@@ -201,14 +201,14 @@ public class GeyserProvisioningService
             File.WriteAllText(guidePath,
                 "=== Bedrock Cross-Play (Geyser + Floodgate) ===\n\n" +
                 "Java players:   Connect with the Java IP on port 25565 (as usual).\n" +
-                "Bedrock players: Connect with the SAME IP on port 19132 (UDP).\n\n" +
+                "Bedrock players: Connect with the SAME IP on Geyser's Bedrock UDP port (default: 19132).\n\n" +
                 "First run:\n" +
                 "  1. Start the server once — Geyser will auto-generate its config.yml\n" +
                 $"     inside {targetDir}/Geyser-Spigot/config.yml\n" +
-                "  2. Restart the server. Geyser will then listen on port 19132.\n\n" +
+                "  2. Restart the server. Geyser will then listen on its configured Bedrock UDP port.\n\n" +
                 "Tunneling (Playit.gg):\n" +
                 "  - For your Java port tunnel, select: Minecraft Java\n" +
-                "  - For your Bedrock port tunnel (19132), select: Minecraft Bedrock\n" +
+                "  - For your Bedrock/Geyser UDP port tunnel, select: Minecraft Bedrock\n" +
                 "  Both tunnels are needed for full cross-play.\n");
         }
         catch (Exception ex)
