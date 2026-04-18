@@ -35,14 +35,29 @@ Supported server types: **Vanilla · Paper · Fabric · Forge · Bedrock (BDS) �
 
 ## Features
 
-- **Managed runtimes** — PocketMC downloads and isolates its own JRE and PHP. Nothing touches your system.
-- **Multi-instance** — Run multiple servers side-by-side with isolated folders and configs.
-- **Live metrics** — CPU, RAM, and player count per instance, updated in real time.
-- **Public tunneling** — Playit.gg integration with guided first-time setup. Public address shown as a copyable link on the dashboard.
-- **Console** — Colorized logs, search, filtering, crash visibility, and command input in one panel.
-- **Plugins, mods, and worlds** — Browse and install from supported sources. Import worlds from ZIP. Poggit integration for PocketMine plugins.
-- **Backups** — Manual and scheduled backups with restore workflows and retention control.
-- **AI session summaries** — Optional structured summaries of server sessions via external AI providers.
+### 🎮 Server Management
+
+- **Multi-Protocol Support** — Run Minecraft Java, native Bedrock Edition (BDS), and PocketMine-MP instances side-by-side. Includes one-click installation for 45+ Bedrock versions via community manifests.
+- **Managed Runtimes** — PocketMC automatically provisions isolated JRE and PHP 8.x runtimes. Nothing touches your system Java/PHP installation.
+- **Add-on & Plugin Browser** — Native support for Bedrock `.mcpack`/`.mcaddon` and Poggit (PocketMine) integration. Browse and install Java plugins from Modrinth/CurseForge.
+- **Public Tunneling** — Integrated Playit.gg with guided setup. Public addresses are shown as copyable links on the dashboard.
+- **Instance Isolation** — Each server runs in its own folder with independent configs, runtimes, and world files.
+
+### 🔭 Observability & Intel
+
+- **Live Metrics** — Real-time CPU, RAM, and player count tracking per instance.
+- **Dependency Health Dashboard** — Live status monitoring for Adoptium, Playit.gg, and Modrinth microservices directly in the settings.
+- **Modern Console** — Colorized logs with multi-keyword search, Regex filtering, command history, and intelligent command auto-suggestions.
+- **AI Session Summaries** — Generate structured summaries of your server sessions using Google Gemini, OpenAI, Anthropic Claude, Mistral AI, or Groq.
+- **Disaster Recovery** — Automated backups with optional off-site replication to Google Drive/Dropbox sync directories and one-click support bundle export.
+
+### 🛡️ Technical Excellence
+
+- **RCON Client Engine** — Standard I/O is deprecated in favor of a robust managed RCON client, eliminating synchronization deadlocks on high-load servers.
+- **Artifact Integrity** — Deep SHA1/SHA256 verification for all downloads (Playit daemon, server binaries) ensures your local files are never corrupted or tampered with.
+- **Graceful Lifecycle** — A custom 15-second shutdown loop ensures all players are kicked and worlds are saved correctly before the app exits.
+- **PII Scrubbing** — Automated RegEx pipelines scrub personal data (IPv4, emails) from console logs before they are processed by AI or exported.
+- **UWP Loopback Automation** — One-click "Fix Bedrock LAN" tool to handle UWP network isolation, allowing local connections to Bedrock servers.
 
 ---
 
