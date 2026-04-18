@@ -1,6 +1,23 @@
 # Changelog
 
-This file summarizes the PocketMC Desktop release line from `v1.0.0` to `v1.4.2`.
+This file summarizes the PocketMC Desktop release line from `v1.0.0` to `v1.4.3`.
+
+## v1.4.3 - Port Engine & Pipeline Enhancements
+
+This release introduces a new port reliability engine to improve server startup stability, fixes internal handle leaks, and streamlines the GitHub Actions release workflow.
+
+### 🔌 Port Reliability Engine
+
+- **Robust Port Resolution:** Added a new port reliability engine and comprehensive tests to prevent port binding conflicts and improve server startup resilience.
+
+### 🐛 Bug Fixes & Stability
+
+- **Log Handle Leaks:** Fixed an issue where `_sessionLogWriter` would leak file handles if server configuration or startup failed. It is now properly disposed and nulled during cleanup.
+
+### 📦 Infrastructure & Documentation
+
+- **Automated Deployments:** Enhanced the GitHub Actions CI workflow with automated cleanup of old packages and integrated GitHub Release creation.
+- **Documentation:** Updated the README and replaced console screenshots to accurately reflect the modernized UI.
 
 ## v1.4.2 - UI Modernization & Observatory Hardening
 
