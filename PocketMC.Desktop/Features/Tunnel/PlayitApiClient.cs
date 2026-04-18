@@ -23,12 +23,12 @@ namespace PocketMC.Desktop.Features.Tunnel
     public class PlayitApiData { [JsonPropertyName("tunnels")] public List<PlayitTunnelConfig> Tunnels { get; set; } = new(); }
     public class PlayitTunnelConfig { [JsonPropertyName("id")] public string Id { get; set; } = string.Empty; [JsonPropertyName("name")] public string? Name { get; set; } [JsonPropertyName("tunnel_type")] public string? TunnelType { get; set; } [JsonPropertyName("alloc")] public PlayitAllocWrapper? Alloc { get; set; } [JsonPropertyName("origin")] public PlayitOriginWrapper? Origin { get; set; } }
     public class PlayitAllocWrapper { [JsonPropertyName("status")] public string Status { get; set; } = string.Empty; [JsonPropertyName("data")] public PlayitAllocData? Data { get; set; } }
-    public class PlayitAllocData { [JsonPropertyName("ip_hostname")] public string IpHostname { get; set; } = string.Empty; [JsonPropertyName("port_start")] public int PortStart { get; set; } [JsonPropertyName("assigned_srv")] public string? AssignedSrv { get; set; } }
+    public class PlayitAllocData { [JsonPropertyName("ip_hostname")] public string IpHostname { get; set; } = string.Empty; [JsonPropertyName("port_start")] public int PortStart { get; set; } [JsonPropertyName("assigned_srv")] public string? AssignedSrv { get; set; } [JsonPropertyName("remote_ip")] public string? RemoteIp { get; set; } [JsonPropertyName("static_ip4")] public string? StaticIp4 { get; set; } }
     public class PlayitOriginWrapper { [JsonPropertyName("type")] public string Type { get; set; } = string.Empty; [JsonPropertyName("data")] public PlayitOriginData? Data { get; set; } }
     public class PlayitOriginData { [JsonPropertyName("local_port")] public int LocalPort { get; set; } }
 
     // --- Custom UI Models ---
-    public class TunnelData { public string Id { get; set; } = string.Empty; public string? Name { get; set; } public int Port { get; set; } public string PublicAddress { get; set; } = string.Empty; public string? TunnelType { get; set; } public PortProtocol? Protocol { get; set; } }
+    public class TunnelData { public string Id { get; set; } = string.Empty; public string? Name { get; set; } public int Port { get; set; } public string PublicAddress { get; set; } = string.Empty; public string? NumericAddress { get; set; } public string? TunnelType { get; set; } public PortProtocol? Protocol { get; set; } }
     public class TunnelListResult { public bool Success { get; set; } public List<TunnelData> Tunnels { get; set; } = new(); public string? ErrorMessage { get; set; } public bool IsTokenInvalid { get; set; } public bool RequiresClaim { get; set; } }
 
     /// <summary>
@@ -87,7 +87,9 @@ namespace PocketMC.Desktop.Features.Tunnel
                     {
                         if (pt.Alloc?.Data == null || pt.Origin?.Data == null) continue;
                         string publicAddress = !string.IsNullOrEmpty(pt.Alloc.Data.AssignedSrv) ? pt.Alloc.Data.AssignedSrv : $"{pt.Alloc.Data.IpHostname}:{pt.Alloc.Data.PortStart}";
-                        normalizedTunnels.Add(new TunnelData { Id = pt.Id, Name = pt.Name, Port = pt.Origin.Data.LocalPort, PublicAddress = publicAddress, TunnelType = pt.TunnelType, Protocol = InferProtocol(pt.TunnelType) });
+                        string? ip = !string.IsNullOrEmpty(pt.Alloc.Data.RemoteIp) ? pt.Alloc.Data.RemoteIp : (!string.IsNullOrEmpty(pt.Alloc.Data.StaticIp4) ? pt.Alloc.Data.StaticIp4 : null);
+                        string? numericAddress = ip != null ? $"{ip}:{pt.Alloc.Data.PortStart}" : null;
+                        normalizedTunnels.Add(new TunnelData { Id = pt.Id, Name = pt.Name, Port = pt.Origin.Data.LocalPort, PublicAddress = publicAddress, NumericAddress = numericAddress, TunnelType = pt.TunnelType, Protocol = InferProtocol(pt.TunnelType) });
                     }
                 }
                 return new TunnelListResult { Success = true, Tunnels = normalizedTunnels };

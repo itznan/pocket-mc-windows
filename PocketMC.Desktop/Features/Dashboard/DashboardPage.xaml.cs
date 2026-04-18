@@ -81,7 +81,9 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             if (sender is FrameworkElement fe && fe.DataContext is InstanceCardViewModel vm && vm.HasTunnelAddress)
             {
-                System.Windows.Clipboard.SetText(vm.TunnelAddress!);
+                // Prioritize hostname address as requested
+                string addressToCopy = vm.TunnelAddress!;
+                System.Windows.Clipboard.SetText(addressToCopy);
                 string original = vm.IpDisplayText;
                 vm.IpDisplayText = "\u2713 Copied";
                 await System.Threading.Tasks.Task.Delay(1500);
@@ -97,8 +99,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             if (sender is FrameworkElement fe && fe.DataContext is InstanceCardViewModel vm)
             {
-                // the BedrockIpDisplayText is the accurate computed string!
-                string addressToCopy = vm.BedrockIpDisplayText;
+                string addressToCopy = vm.HasBedrockNumericTunnelAddress ? vm.BedrockNumericTunnelAddress! : (vm.HasGeyser && !string.IsNullOrEmpty(vm.BedrockTunnelAddress) ? vm.BedrockTunnelAddress : vm.BedrockIpDisplayText);
                 if (addressToCopy.Contains("local") || string.IsNullOrWhiteSpace(addressToCopy)) return;
 
                 System.Windows.Clipboard.SetText(addressToCopy);

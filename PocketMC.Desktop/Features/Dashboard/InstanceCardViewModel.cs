@@ -22,19 +22,26 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     private string _ramText = "· · ·";
     private string _playerStatus = "· · ·";
     private string? _tunnelAddress;
+    private string? _numericTunnelAddress;
     private string? _bedrockTunnelAddress;
+    private string? _bedrockNumericTunnelAddress;
     private string? _bedrockIpDisplayTextOverride;
     private int _bedrockLocalPort;
     private string _ipDisplayText = "Will Appear Here!";
     private string? _portIssueText;
     private string? _portIssueTooltip;
 
-    public InstanceCardViewModel(InstanceMetadata metadata, ServerProcessManager serverProcessManager, IServerLifecycleService lifecycleService)
+    public InstanceCardViewModel(InstanceMetadata metadata, ServerProcessManager serverProcessManager, IServerLifecycleService lifecycleService, PocketMC.Desktop.Features.Shell.ApplicationState appState)
     {
         _metadata = metadata;
         _serverProcessManager = serverProcessManager;
         _lifecycleService = lifecycleService;
         _bedrockLocalPort = metadata.GeyserBedrockPort ?? 19132;
+
+        _tunnelAddress = appState.GetTunnelAddress(metadata.Id);
+        _numericTunnelAddress = appState.GetNumericTunnelAddress(metadata.Id);
+        _bedrockTunnelAddress = appState.GetBedrockTunnelAddress(metadata.Id);
+        _bedrockNumericTunnelAddress = appState.GetBedrockNumericTunnelAddress(metadata.Id);
 
         if (_serverProcessManager.IsRunning(metadata.Id))
         {
@@ -128,6 +135,32 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     public string RamText { get => _ramText; set { if (_ramText != value) { _ramText = value; OnPropertyChanged(nameof(RamText)); } } }
     public string PlayerStatus { get => _playerStatus; set { if (_playerStatus != value) { _playerStatus = value; OnPropertyChanged(nameof(PlayerStatus)); } } }
     public string IpDisplayText { get => _ipDisplayText; set { if (_ipDisplayText != value) { _ipDisplayText = value; OnPropertyChanged(nameof(IpDisplayText)); } } }
+
+    public string? NumericTunnelAddress
+    {
+        get => _numericTunnelAddress;
+        set
+        {
+            if (SetProperty(ref _numericTunnelAddress, value))
+            {
+                OnPropertyChanged(nameof(HasNumericTunnelAddress));
+            }
+        }
+    }
+    public bool HasNumericTunnelAddress => !string.IsNullOrEmpty(_numericTunnelAddress);
+
+    public string? BedrockNumericTunnelAddress
+    {
+        get => _bedrockNumericTunnelAddress;
+        set
+        {
+            if (SetProperty(ref _bedrockNumericTunnelAddress, value))
+            {
+                OnPropertyChanged(nameof(HasBedrockNumericTunnelAddress));
+            }
+        }
+    }
+    public bool HasBedrockNumericTunnelAddress => !string.IsNullOrEmpty(_bedrockNumericTunnelAddress);
 
     public string? TunnelAddress
     {

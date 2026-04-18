@@ -29,6 +29,7 @@ namespace PocketMC.Desktop.Features.Tunnel
 
         public TunnelStatus Status { get; set; }
         public string? PublicAddress { get; set; }
+        public string? NumericAddress { get; set; }
         public string? ErrorMessage { get; set; }
         public bool IsTokenInvalid { get; set; }
         public bool RequiresClaim { get; set; }
@@ -139,7 +140,8 @@ namespace PocketMC.Desktop.Features.Tunnel
                 return new TunnelResolutionResult
                 {
                     Status = TunnelResolutionResult.TunnelStatus.Found,
-                    PublicAddress = matching.PublicAddress
+                    PublicAddress = matching.PublicAddress,
+                    NumericAddress = matching.NumericAddress
                 };
             }
 
@@ -207,7 +209,8 @@ namespace PocketMC.Desktop.Features.Tunnel
                         return new TunnelResolutionResult
                         {
                             Status = TunnelResolutionResult.TunnelStatus.Found,
-                            PublicAddress = matching.PublicAddress
+                            PublicAddress = matching.PublicAddress,
+                            NumericAddress = matching.NumericAddress
                         };
                     }
 

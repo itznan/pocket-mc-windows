@@ -126,8 +126,9 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="IP : " FontSize="11" Foreground="#88FFFFFF" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding IpDisplayText}" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding TunnelAddress}" FontSize="11" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
                                         <ui:Button Grid.Column="2" Appearance="Transparent" Padding="4,2" Margin="4,0,0,0"
                                                    Icon="{ui:SymbolIcon Copy16}" Cursor="Hand"
                                                    Click="BtnCopyIp_Click"
@@ -146,8 +147,9 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{Binding BedrockIpLabel}" FontSize="11" Foreground="#F9A825" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding BedrockIpDisplayText}" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="#FFD54F" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding BedrockNumericTunnelAddress}" FontSize="11" FontWeight="SemiBold" Foreground="#FFD54F" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
                                         <ui:Button Grid.Column="2" Appearance="Transparent" Padding="4,2" Margin="4,0,0,0"
                                                    Icon="{ui:SymbolIcon Copy16}" Cursor="Hand"
                                                    Click="BtnCopyBedrockIp_Click"

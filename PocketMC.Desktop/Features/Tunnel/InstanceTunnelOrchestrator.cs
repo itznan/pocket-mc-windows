@@ -102,12 +102,12 @@ namespace PocketMC.Desktop.Features.Tunnel
 
                     bool isBedrockTunnel = IsBedrockTunnelRequest(request);
                     TunnelResolutionResult resolution = await ResolveTunnelWithWarmupAsync(request);
-                    
+
                     if (resolution.Status == TunnelResolutionResult.TunnelStatus.Found)
                     {
                         if (!string.IsNullOrWhiteSpace(resolution.PublicAddress))
                         {
-                            SetTunnelAddress(vm, request, resolution.PublicAddress);
+                            SetTunnelAddress(vm, request, resolution.PublicAddress, resolution.NumericAddress);
                         }
                         continue;
                     }
@@ -124,12 +124,12 @@ namespace PocketMC.Desktop.Features.Tunnel
                                 isBedrockTunnel,
                                 request.Protocol,
                                 request.DisplayName);
-                            
+
                             guidePage.OnTunnelResolved += address =>
                             {
                                 if (!string.IsNullOrWhiteSpace(address))
                                 {
-                                    SetTunnelAddress(vm, request, address);
+                                    SetTunnelAddress(vm, request, address, null);
                                 }
                                 tcs.TrySetResult(true);
                             };
@@ -183,18 +183,29 @@ namespace PocketMC.Desktop.Features.Tunnel
             }
         }
 
-        private void SetTunnelAddress(InstanceCardViewModel vm, PortCheckRequest request, string address)
+        private void SetTunnelAddress(InstanceCardViewModel vm, PortCheckRequest request, string address, string? numericAddress)
         {
             _dispatcher.Invoke(() =>
             {
                 if (IsGeyserBedrockRequest(request))
                 {
+                    _applicationState.SetBedrockTunnelAddress(vm.Id, address);
                     vm.BedrockTunnelAddress = address;
+                    vm.BedrockNumericTunnelAddress = numericAddress;
+                    if (numericAddress != null)
+                    {
+                        _applicationState.SetBedrockNumericTunnelAddress(vm.Id, numericAddress);
+                    }
                 }
                 else
                 {
                     _applicationState.SetTunnelAddress(vm.Id, address);
                     vm.TunnelAddress = address;
+                    vm.NumericTunnelAddress = numericAddress;
+                    if (numericAddress != null)
+                    {
+                        _applicationState.SetNumericTunnelAddress(vm.Id, numericAddress);
+                    }
                 }
             });
         }
