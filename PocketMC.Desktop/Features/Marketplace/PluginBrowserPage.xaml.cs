@@ -36,6 +36,7 @@ namespace PocketMC.Desktop.Features.Marketplace
         private readonly bool _isModpackMode;
         private readonly Action? _onCompleted;
         private readonly string _serverType;
+        private readonly string _loader;
         private readonly ObservableCollection<ModrinthHit> _results = new();
         private int _currentOffset = 0;
         private System.Threading.CancellationTokenSource? _searchCts;
@@ -66,6 +67,7 @@ namespace PocketMC.Desktop.Features.Marketplace
             _isModpackMode = projectType.Contains("modpack");
             _onCompleted = onCompleted;
             _serverType = serverType;
+            _loader = ResolveLoader(serverType);
 
             ListResults.ItemsSource = _results;
             bool isBedrock = _serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase);
@@ -87,9 +89,37 @@ namespace PocketMC.Desktop.Features.Marketplace
             else if (isBedrock) TxtSearch.PlaceholderText = "Search Bedrock Add-Ons...";
             else if (isPocketmine && _projectType.Contains("plugin")) TxtSearch.PlaceholderText = "Search Pocketmine plugins (*.phar)...";
             else if (_projectType.Contains("plugin")) TxtSearch.PlaceholderText = "Search Spigot/Paper plugins...";
-            else TxtSearch.PlaceholderText = "Search Forge/Fabric mods...";
+            else if (_projectType.Contains("mod"))
+            {
+                string loaderLabel = string.IsNullOrWhiteSpace(_loader) ? "mods" : $"{ToDisplayLoader(_loader)} mods";
+                TxtSearch.PlaceholderText = $"Search {loaderLabel}...";
+            }
+            else TxtSearch.PlaceholderText = "Search mods...";
 
             Loaded += async (s, e) => await RefreshResultsAsync();
+        }
+
+        private static string ResolveLoader(string serverType)
+        {
+            if (serverType.Contains("NeoForge", StringComparison.OrdinalIgnoreCase))
+                return "neoforge";
+            if (serverType.Contains("Fabric", StringComparison.OrdinalIgnoreCase))
+                return "fabric";
+            if (serverType.Contains("Forge", StringComparison.OrdinalIgnoreCase))
+                return "forge";
+            return "";
+        }
+
+        private static string ToDisplayLoader(string loader)
+        {
+            return loader.ToLowerInvariant() switch
+            {
+                "neoforge" => "NeoForge",
+                "fabric" => "Fabric",
+                "forge" => "Forge",
+                "quilt" => "Quilt",
+                _ => loader
+            };
         }
 
         private void BtnBack_Click(object sender, RoutedEventArgs e)
@@ -134,7 +164,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                 if (isCurseForge)
                 {
                     // Standard CurseForge uses 432 for Java. If it's bedrock, we override type to '6945' inside the CurseForgeService search...
-                    hits = await _curseForge.SearchAsync(isBedrock ? "6945" : _projectType, mcVersionArg, query, _currentOffset);
+                    hits = await _curseForge.SearchAsync(isBedrock ? "6945" : _projectType, mcVersionArg, _loader, query, _currentOffset);
                 }
                 else if (isPoggit)
                 {
@@ -142,7 +172,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                 }
                 else
                 {
-                    hits = await _modrinth.SearchAsync(_projectType, mcVersionArg, sort, query, _currentOffset);
+                    hits = await _modrinth.SearchAsync(_projectType, mcVersionArg, _loader, sort, query, _currentOffset);
                 }
 
                 foreach (var hit in hits)
@@ -206,7 +236,7 @@ namespace PocketMC.Desktop.Features.Marketplace
 
                 if (isCurseForge)
                 {
-                    version = await _curseForge.GetLatestVersionAsync(slug, mcVersionArg);
+                    version = await _curseForge.GetLatestVersionAsync(slug, mcVersionArg, _loader);
                 }
                 else if (isPoggit)
                 {
@@ -214,12 +244,13 @@ namespace PocketMC.Desktop.Features.Marketplace
                 }
                 else
                 {
-                    version = await _modrinth.GetLatestVersionAsync(slug, mcVersionArg);
+                    version = await _modrinth.GetLatestVersionAsync(slug, mcVersionArg, _loader);
                 }
 
                 if (version == null || version.Files.Count == 0)
                 {
-                    System.Windows.MessageBox.Show($"No compatible version found on {(isCurseForge ? "CurseForge" : (isPoggit ? "Poggit" : "Modrinth"))}.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    string loaderLabel = string.IsNullOrWhiteSpace(_loader) ? "mod loader" : ToDisplayLoader(_loader);
+                    System.Windows.MessageBox.Show($"No compatible {loaderLabel} version found for Minecraft {_mcVersion}.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
                     btn.IsEnabled = true;
                     btn.Content = "Install";
                     return;

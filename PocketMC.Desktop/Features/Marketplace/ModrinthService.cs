@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
@@ -64,7 +65,7 @@ namespace PocketMC.Desktop.Features.Marketplace
             _httpClient = httpClient;
         }
 
-        public async Task<List<ModrinthHit>> SearchAsync(string type, string mcVersion, string sort = "relevance", string query = "", int offset = 0)
+        public async Task<List<ModrinthHit>> SearchAsync(string type, string mcVersion, string loader, string sort = "relevance", string query = "", int offset = 0)
         {
             try
             {
@@ -73,6 +74,10 @@ namespace PocketMC.Desktop.Features.Marketplace
                 if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
                 {
                     facetsStr += $",[\"versions:{mcVersion}\"]";
+                }
+                if (type == "project_type:mod" && !string.IsNullOrWhiteSpace(loader))
+                {
+                    facetsStr += $",[\"categories:{loader}\"]";
                 }
                 string facets = $"[{facetsStr}]";
 
@@ -101,7 +106,7 @@ namespace PocketMC.Desktop.Features.Marketplace
 
                 if (!string.IsNullOrEmpty(loader))
                 {
-                    queryParams.Add($"loaders=[\"{loader}\"]");
+                    queryParams.Add($"loaders={Uri.EscapeDataString(JsonSerializer.Serialize(new[] { loader }))}");
                 }
 
                 if (queryParams.Count > 0)
