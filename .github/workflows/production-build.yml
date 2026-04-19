@@ -1,4 +1,4 @@
-name: Production Build
+Name: Production Build
 
 on:
   push:
@@ -42,7 +42,27 @@ jobs:
       - name: Run Tests
         run: dotnet test PocketMC.Desktop.sln --no-build
 
+      # 🧠 Check version via GitHub API (Instant)
+      - name: Compare with Latest Release Tag
+        id: check_version
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch the latest release tag silently
+          $latestTag = gh release view --json tagName --jq .tagName 2>$null
+          
+          if ($latestTag -eq "v${{ env.VERSION }}") {
+            Write-Host "Version v${{ env.VERSION }} is already released. Skipping deployment."
+            echo "is_new=false" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "New version detected: v${{ env.VERSION }} (Previous: $latestTag)."
+            echo "is_new=true" >> $env:GITHUB_OUTPUT
+          }
+
+      # 🚀 Gate all heavy operations behind the version check
       - name: Publish Multi-DLL
+        if: steps.check_version.outputs.is_new == 'true'
         run: |+
           dotnet publish PocketMC.Desktop/PocketMC.Desktop.csproj `
             -c Release `
@@ -50,60 +70,33 @@ jobs:
             --self-contained false `
             -o publish
             
+      # 📦 Required for Velopack Delta Updates
       - name: Download previous release assets
+        if: steps.check_version.outputs.is_new == 'true'
         uses: robinraju/release-downloader@v1
         with:
           repository: PocketMC/pocket-mc-windows
           latest: true
-          fileName: "*"
+          fileName: "*.nupkg" # Only grab what Velopack actually needs for deltas
           out-file-path: Releases
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🔍 Extract previous version
-      - name: Get previous version
-        id: prev
-        shell: pwsh
-        run: |
-          if (Test-Path "Releases") {
-            $file = Get-ChildItem Releases -Filter "*.nupkg" | Select-Object -First 1
-            if ($file -and $file.Name -match "\d+\.\d+\.\d+") {
-              echo "version=$($Matches[0])" >> $env:GITHUB_OUTPUT
-              exit 0
-            }
-          }
-          echo "version=none" >> $env:GITHUB_OUTPUT
-
-      # 🧠 Compare versions
-      - name: Compare versions
-        id: compare
-        shell: pwsh
-        run: |
-          if ("${{ steps.prev.outputs.version }}" -eq "${{ env.VERSION }}") {
-            echo "skip=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "skip=false" >> $env:GITHUB_OUTPUT
-          }
-
-      # 🚀 Pack only if version changed
       - name: Pack with Velopack
-        if: steps.compare.outputs.skip == 'false'
+        if: steps.check_version.outputs.is_new == 'true'
         run: >
-          vpk pack  --packId ${{ env.APP_ID }}  --packVersion ${{ env.VERSION }}
-          --packDir publish  --mainExe PocketMC.Desktop.exe  --framework
-          net8.0  --runtime ${{ env.RUNTIME }}  --outputDir Releases
+          vpk pack --packId ${{ env.APP_ID }} --packVersion ${{ env.VERSION }}
+          --packDir publish --mainExe PocketMC.Desktop.exe --framework
+          net8.0 --runtime ${{ env.RUNTIME }} --outputDir Releases
 
-      # 📦 Upload only if packaged
       - name: Upload Release Artifacts
-        if: steps.compare.outputs.skip == 'false'
+        if: steps.check_version.outputs.is_new == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: PocketMC-Release-${{ env.VERSION }}
           path: Releases/
       
-
-          # 🚀 Create GitHub Release and upload assets
       - name: Create GitHub Release
-        if: steps.compare.outputs.skip == 'false'
+        if: steps.check_version.outputs.is_new == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.VERSION }}
