@@ -125,7 +125,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                     var relaxedVersions = await _httpClient.GetFromJsonAsync<List<ModrinthVersion>>(relaxedUrl) ?? new();
                     var loaderMatch = relaxedVersions.Find(v => v.Loaders.Any(l => l.Equals(loader, StringComparison.OrdinalIgnoreCase)));
                     if (loaderMatch != null) return loaderMatch;
-                    return relaxedVersions.Count > 0 ? relaxedVersions[0] : null;
+                    return null;
                 }
 
                 return null;
