@@ -1,4 +1,4 @@
-Name: Production Build
+name: Production Build
 
 on:
   push:
