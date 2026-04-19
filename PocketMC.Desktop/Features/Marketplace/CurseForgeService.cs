@@ -63,6 +63,29 @@ namespace PocketMC.Desktop.Features.Marketplace
                 }
             }
 
+            var sortableVersions = fileNode["sortableGameVersions"]?.AsArray();
+            if (sortableVersions != null)
+            {
+                foreach (var sortable in sortableVersions)
+                {
+                    var value = sortable?["gameVersionName"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+                    if (value.Equals(normalizedLoader, StringComparison.OrdinalIgnoreCase) ||
+                        value.Contains($"-{normalizedLoader}", StringComparison.OrdinalIgnoreCase) ||
+                        value.Contains($"{normalizedLoader}-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            var fileName = fileNode["fileName"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(fileName) &&
+                fileName.Contains(normalizedLoader, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
             return false;
         }
 
@@ -230,6 +253,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                     }
                 }
 
+                latestFile ??= files[0];
                 if (latestFile == null) return null;
 
                 long fileId = 0;

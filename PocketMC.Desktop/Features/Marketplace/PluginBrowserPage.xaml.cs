@@ -249,8 +249,16 @@ namespace PocketMC.Desktop.Features.Marketplace
 
                 if (version == null || version.Files.Count == 0)
                 {
-                    string loaderLabel = string.IsNullOrWhiteSpace(_loader) ? "mod loader" : ToDisplayLoader(_loader);
-                    System.Windows.MessageBox.Show($"No compatible {loaderLabel} version found for Minecraft {_mcVersion}.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    bool isModProject = _projectType.Contains("mod", StringComparison.OrdinalIgnoreCase);
+                    if (isModProject && !string.IsNullOrWhiteSpace(_loader) && !isPoggit)
+                    {
+                        string loaderLabel = ToDisplayLoader(_loader);
+                        System.Windows.MessageBox.Show($"No compatible {loaderLabel} version found for Minecraft {_mcVersion}.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else
+                    {
+                        System.Windows.MessageBox.Show($"No compatible version found for Minecraft {_mcVersion}.", "Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
                     btn.IsEnabled = true;
                     btn.Content = "Install";
                     return;
