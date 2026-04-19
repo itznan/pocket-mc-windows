@@ -297,7 +297,7 @@ namespace PocketMC.Desktop.Features.Console
             {
                 TxtCrashLog.Text = crashContext;
                 CrashBanner.Visibility = Visibility.Visible;
-                
+
                 // Reset scroll to top
                 var scroll = FindDescendant<ScrollViewer>(CrashBanner);
                 scroll?.ScrollToHome();
@@ -780,29 +780,6 @@ namespace PocketMC.Desktop.Features.Console
             _logScrollViewer ??= FindDescendant<ScrollViewer>(LogView);
         }
 
-        private void LogView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            EnsureLogScrollViewer();
-            if (_logScrollViewer == null)
-            {
-                return;
-            }
-
-            double newOffset = _logScrollViewer.VerticalOffset - (e.Delta / 3.0);
-            _logScrollViewer.ScrollToVerticalOffset(newOffset);
-            e.Handled = true;
-        }
-
-        private void AiResultScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            if (sender is ScrollViewer scroller)
-            {
-                double newOffset = scroller.VerticalOffset - (e.Delta / 2.0);
-                scroller.ScrollToVerticalOffset(newOffset);
-                e.Handled = true;
-            }
-        }
-
         private void BtnCloseAiPanel_Click(object sender, RoutedEventArgs e)
         {
             ToggleAiPanel(false);
@@ -844,12 +821,12 @@ namespace PocketMC.Desktop.Features.Console
                 }
 
                 var provider = AiApiClient.ParseProvider(_applicationState.Settings.AiProvider);
-                
+
                 // Gather context: 5 lines before, 25 lines after
                 int targetIdx = Logs.IndexOf(line);
                 int start = Math.Max(0, targetIdx - 5);
                 int end = Math.Min(Logs.Count - 1, targetIdx + 25);
-                
+
                 var contextBuilder = new StringBuilder();
                 for (int i = start; i <= end; i++)
                 {
@@ -902,7 +879,7 @@ Logs:
                 }
 
                 var provider = AiApiClient.ParseProvider(_applicationState.Settings.AiProvider);
-                
+
                 var result = await _summarizationService.SummarizeAsync(
                     _serverProcess.WorkingDirectory,
                     _metadata.Name,
@@ -935,7 +912,7 @@ Logs:
             {
                 var usage = e.Metrics.RamUsageMb;
                 var max = _metadata.MaxRamMb;
-                
+
                 if (max > 0 && usage > max * 0.8)
                 {
                     ResourceWarningBar.Visibility = Visibility.Visible;
@@ -955,18 +932,18 @@ Logs:
                 if (proc != null && !proc.HasExited)
                 {
                     proc.PriorityClass = ProcessPriorityClass.High;
-                    
+
                     // Best effort: trigger Java GC via console command
                     await _serverProcess.WriteInputAsync("gc");
                     await _serverProcess.WriteInputAsync("spark gc"); // if spark profiler is present
-                    
+
                     ResourceWarningBar.Title = "Optimization Applied";
                     ResourceWarningBar.Message = "Process priority set to High and GC sweep requested.";
                     ResourceWarningBar.Severity = InfoBarSeverity.Success;
-                    
+
                     await System.Threading.Tasks.Task.Delay(3000);
                     ResourceWarningBar.Visibility = Visibility.Collapsed;
-                    
+
                     // Reset for next warning
                     ResourceWarningBar.Title = "High Resource Usage";
                     ResourceWarningBar.Message = "Your server is using over 80% of its assigned RAM. Performance may be impacted.";

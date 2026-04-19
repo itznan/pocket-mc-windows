@@ -214,6 +214,7 @@ namespace PocketMC.Desktop.Features.Dashboard
             var prompt = await _dialogService.ShowDialogAsync("Delete Server", $"Are you sure you want to completely erase the {vm.Name} server?", DialogType.Warning, false);
             if (prompt == DialogResult.Yes)
             {
+                await _lifecycleService.ReleaseInstanceAsync(vm.Id);
                 await _instanceManager.DeleteInstanceAsync(vm.Id);
             }
         }

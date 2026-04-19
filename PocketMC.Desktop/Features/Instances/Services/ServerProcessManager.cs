@@ -116,6 +116,18 @@ public class ServerProcessManager
         return historical;
     }
 
+    public void ReleaseInstance(Guid instanceId)
+    {
+        if (_activeProcesses.TryRemove(instanceId, out var active))
+        {
+            active.Dispose();
+        }
+        if (_historicalProcesses.TryRemove(instanceId, out var historical))
+        {
+            historical.Dispose();
+        }
+    }
+
     public void KillAll()
     {
         foreach (var kvp in _activeProcesses)

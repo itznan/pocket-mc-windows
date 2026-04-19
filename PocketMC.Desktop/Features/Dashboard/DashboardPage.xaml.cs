@@ -81,7 +81,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             if (sender is FrameworkElement fe && fe.DataContext is InstanceCardViewModel vm && vm.HasTunnelAddress)
             {
-                System.Windows.Clipboard.SetText(vm.TunnelAddress!);
+                await TrySetClipboardText(vm.TunnelAddress!);
                 await ShowCopiedFeedback(fe);
             }
         }
@@ -90,16 +90,45 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             if (sender is FrameworkElement fe && fe.DataContext is InstanceCardViewModel vm && vm.HasNumericTunnelAddress)
             {
-                System.Windows.Clipboard.SetText(vm.NumericTunnelAddress!);
+                await TrySetClipboardText(vm.NumericTunnelAddress!);
                 await ShowCopiedFeedback(fe);
+            }
+        }
+
+        private async void BtnCopyBedrockNumericIp_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is InstanceCardViewModel vm && vm.HasBedrockNumericTunnelAddress)
+            {
+                await TrySetClipboardText(vm.BedrockNumericTunnelAddress!);
+                await ShowCopiedFeedback(fe);
+            }
+        }
+
+        private async Task TrySetClipboardText(string text)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                try
+                {
+                    System.Windows.Clipboard.SetText(text);
+                    return;
+                }
+                catch (System.Runtime.InteropServices.COMException ex) when ((uint)ex.ErrorCode == 0x800401D0)
+                {
+                    // Clipboard is locked by another process, wait and retry
+                    await Task.Delay(100);
+                }
+                catch (Exception)
+                {
+                    // Other clipboard failures are ignored to prevent crashes
+                    return;
+                }
             }
         }
 
         private async Task ShowCopiedFeedback(FrameworkElement element)
         {
-            // Simple visual feedback: temporarily change the icon if possible,
-            // or we can just rely on the existing label change if applied.
-            // For now, no complex feedback.
+            // Visual feedback placeholder
         }
 
         private async void BtnCopyBedrockIp_Click(object sender, RoutedEventArgs e)
@@ -109,9 +138,9 @@ namespace PocketMC.Desktop.Features.Dashboard
                 string addressToCopy = vm.HasBedrockNumericTunnelAddress ? vm.BedrockNumericTunnelAddress! : (vm.HasGeyser && !string.IsNullOrEmpty(vm.BedrockTunnelAddress) ? vm.BedrockTunnelAddress : vm.BedrockIpDisplayText);
                 if (addressToCopy.Contains("local") || string.IsNullOrWhiteSpace(addressToCopy)) return;
 
-                System.Windows.Clipboard.SetText(addressToCopy);
+                await TrySetClipboardText(addressToCopy);
 
-                // Keep the property nulling clean so we can read the raw string for saving. Wait, we can just save it.
+                // Keep the property nulling clean so we can read the raw string for saving
                 vm.BedrockIpDisplayText = "\u2713 Copied";
                 await System.Threading.Tasks.Task.Delay(1500);
                 if (vm.BedrockIpDisplayText == "\u2713 Copied")
@@ -120,7 +149,6 @@ namespace PocketMC.Desktop.Features.Dashboard
                 }
             }
         }
-
         private void DashScroller_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
         {
             if (sender is ScrollViewer scv)

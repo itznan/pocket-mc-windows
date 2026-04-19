@@ -5,14 +5,14 @@
       xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
       Title="Server Console"
       PreviewKeyDown="Page_PreviewKeyDown">
-    
+
     <Grid x:Name="PageRoot" Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Top bar: Console actions -->
         <Grid Grid.Row="0" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -39,9 +39,9 @@
                         Margin="0,0,4,0" MinWidth="160" VerticalAlignment="Center"
                         TextChanged="TxtLogSearch_TextChanged"/>
 
-            <ToggleButton Grid.Column="4" Content=".*" ToolTip="Use Regex" 
-                          IsChecked="{Binding IsRegexEnabled}" 
-                          VerticalAlignment="Center" Margin="0,0,12,0" 
+            <ToggleButton Grid.Column="4" Content=".*" ToolTip="Use Regex"
+                          IsChecked="{Binding IsRegexEnabled}"
+                          VerticalAlignment="Center" Margin="0,0,12,0"
                           Width="32" Height="32" Padding="0" Cursor="Hand"/>
 
             <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
@@ -63,7 +63,7 @@
                        Icon="{ui:SymbolIcon Sparkle24}" Click="BtnAiSummary_Click" Cursor="Hand"
                        ToolTip="Generate AI session summary"/>
         </Grid>
-        
+
         <!-- Console output area -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -79,13 +79,13 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <ui:InfoBar Grid.Row="0" x:Name="ResourceWarningBar" 
-                             Title="High Resource Usage" 
+                <ui:InfoBar Grid.Row="0" x:Name="ResourceWarningBar"
+                             Title="High Resource Usage"
                              Message="Your server is using over 80% of its assigned RAM. Performance may be impacted."
                              Severity="Warning" Margin="0,0,0,10"
-                             IsClosable="False" 
+                             IsClosable="False"
                              Visibility="Collapsed">
-                    <ui:Button Content="Optimize" Appearance="Primary" Click="BtnOptimize_Click" 
+                    <ui:Button Content="Optimize" Appearance="Primary" Click="BtnOptimize_Click"
                                Margin="0,0,12,0" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                 </ui:InfoBar>
 
@@ -95,7 +95,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        
+
                         <!-- Header with Actions -->
                         <Border Grid.Row="0" Background="#33FF4444" CornerRadius="7,7,0,0" Padding="12,8">
                             <Grid>
@@ -117,13 +117,12 @@
                 </Border>
 
                 <!-- Virtualized Log View -->
-                <ListView x:Name="LogView" Grid.Row="2" ItemsSource="{Binding FilteredLogs}" 
+                <ListView x:Name="LogView" Grid.Row="2" ItemsSource="{Binding FilteredLogs}"
                             Background="Transparent" BorderThickness="0"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                             VirtualizingStackPanel.IsVirtualizing="True"
-                            VirtualizingStackPanel.VirtualizationMode="Recycling"
-                            PreviewMouseWheel="LogView_PreviewMouseWheel">
+                            VirtualizingStackPanel.VirtualizationMode="Recycling">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid x:Name="LogItemGrid">
@@ -131,12 +130,12 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                
-                                <TextBlock Grid.Column="0" Text="{Binding Text}" Foreground="{Binding TextColor}" 
+
+                                <TextBlock Grid.Column="0" Text="{Binding Text}" Foreground="{Binding TextColor}"
                                            FontFamily="Consolas" FontSize="13" TextWrapping="Wrap"
                                            Padding="4,1"/>
 
-                                <ui:Button x:Name="BtnAnalyze" Grid.Column="1" 
+                                <ui:Button x:Name="BtnAnalyze" Grid.Column="1"
                                            Icon="{ui:SymbolIcon Sparkle16}"
                                            Appearance="Transparent" Padding="4,2" Margin="4,0"
                                            VerticalAlignment="Top" Cursor="Hand"
@@ -180,29 +179,27 @@
                     <Border Grid.Row="0" Background="#2D2D2D" CornerRadius="8,8,0,0" Padding="12,8">
                         <Grid>
                             <ui:TextBlock Text="AI Intelligence" FontTypography="Caption" Foreground="White" VerticalAlignment="Center"/>
-                            <ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon Dismiss24}" 
+                            <ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon Dismiss24}"
                                        HorizontalAlignment="Right" Click="BtnCloseAiPanel_Click" Padding="4"/>
                         </Grid>
                     </Border>
 
-                    <ScrollViewer Grid.Row="1" Padding="10,8" x:Name="AiResultScroller" 
+                    <ScrollViewer Grid.Row="1" Padding="10,8" x:Name="AiResultScroller"
                                   Background="Transparent"
-                                  VerticalScrollBarVisibility="Auto"
-                                  PreviewMouseWheel="AiResultScroller_PreviewMouseWheel">
-                        <StackPanel Background="Transparent">
-                            <ui:TextBlock x:Name="TxtAiStatus" Text="Ready to analyze..." Foreground="#888" 
+                                  VerticalScrollBarVisibility="Auto">                        <StackPanel Background="Transparent">
+                            <ui:TextBlock x:Name="TxtAiStatus" Text="Ready to analyze..." Foreground="#888"
                                            FontStyle="Italic" Margin="0,0,0,16" Visibility="Collapsed"/>
-                            <ui:ProgressRing x:Name="AiProgress" IsIndeterminate="True" Height="28" Width="28" 
+                            <ui:ProgressRing x:Name="AiProgress" IsIndeterminate="True" Height="28" Width="28"
                                               HorizontalAlignment="Center" Margin="0,30" Visibility="Collapsed"/>
-                            
-                            <markdig:MarkdownViewer x:Name="TxtAiResponse" 
+
+                            <markdig:MarkdownViewer x:Name="TxtAiResponse"
                                                     Background="Transparent"
                                                     Foreground="#D1D5DB"
                                                     Margin="0"
                                                     Padding="0">
                                 <markdig:MarkdownViewer.Resources>
                                     <!-- === AI Panel Markdown Styles (optimized for 420px panel) === -->
-                                    
+
                                     <!-- Base Document: LEFT-ALIGN to prevent ugly word spacing -->
                                     <Style x:Key="{x:Static markdig:Styles.DocumentStyleKey}" TargetType="{x:Type FlowDocument}">
                                         <Setter Property="Foreground" Value="#D1D5DB" />
@@ -218,7 +215,7 @@
                                         <Setter Property="Foreground" Value="#D1D5DB" />
                                         <Setter Property="TextAlignment" Value="Left" />
                                     </Style>
-                                    
+
                                     <!-- Headings: WHITE for visibility on dark bg -->
                                     <Style x:Key="{x:Static markdig:Styles.Heading1StyleKey}" TargetType="{x:Type Paragraph}">
                                         <Setter Property="Foreground" Value="#F9FAFB" />
@@ -227,7 +224,7 @@
                                         <Setter Property="Margin" Value="0,10,0,8" />
                                         <Setter Property="TextAlignment" Value="Left" />
                                     </Style>
-                                    
+
                                     <Style x:Key="{x:Static markdig:Styles.Heading2StyleKey}" TargetType="{x:Type Paragraph}">
                                         <Setter Property="Foreground" Value="#F3F4F6" />
                                         <Setter Property="FontSize" Value="13.5" />
@@ -235,7 +232,7 @@
                                         <Setter Property="Margin" Value="0,12,0,6" />
                                         <Setter Property="TextAlignment" Value="Left" />
                                     </Style>
-                                    
+
                                     <Style x:Key="{x:Static markdig:Styles.Heading3StyleKey}" TargetType="{x:Type Paragraph}">
                                         <Setter Property="Foreground" Value="#E5E7EB" />
                                         <Setter Property="FontSize" Value="12.5" />
@@ -251,17 +248,17 @@
                                         <Setter Property="Margin" Value="0,8,0,4" />
                                         <Setter Property="TextAlignment" Value="Left" />
                                     </Style>
-                                    
+
                                     <!-- Lists: minimal indentation for narrow panel -->
                                     <Style TargetType="{x:Type List}">
                                         <Setter Property="Margin" Value="6,0,0,6" />
                                         <Setter Property="Padding" Value="0" />
                                     </Style>
-                                    
+
                                     <Style TargetType="{x:Type ListItem}">
                                         <Setter Property="Margin" Value="0,0,0,3" />
                                     </Style>
-                                    
+
                                     <!-- Bullet dots -->
                                     <Style TargetType="{x:Type Ellipse}">
                                         <Setter Property="Fill" Value="#34D399" />
@@ -305,7 +302,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </markdig:MarkdownViewer.Resources>
-                                
+
                                 <markdig:MarkdownViewer.Style>
                                     <Style TargetType="markdig:MarkdownViewer">
                                         <Style.Triggers>
@@ -323,7 +320,7 @@
                     </ScrollViewer>
 
                     <Border Grid.Row="2" Background="#2D2D2D" CornerRadius="0,0,8,8" Padding="12,8">
-                        <ui:TextBlock Text="Powered by PocketMC Intelligence" FontTypography="Caption" 
+                        <ui:TextBlock Text="Powered by PocketMC Intelligence" FontTypography="Caption"
                                        Foreground="#666" HorizontalAlignment="Center"/>
                     </Border>
                 </Grid>
@@ -334,9 +331,9 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
-            <ui:AutoSuggestBox x:Name="TxtCommand" Grid.Column="0" PlaceholderText="Type a command..." 
-                               Margin="0,0,8,0" 
+
+            <ui:AutoSuggestBox x:Name="TxtCommand" Grid.Column="0" PlaceholderText="Type a command..."
+                               Margin="0,0,8,0"
                                TextChanged="TxtCommand_TextChanged"
                                SuggestionChosen="TxtCommand_SuggestionChosen"
                                QuerySubmitted="TxtCommand_QuerySubmitted"

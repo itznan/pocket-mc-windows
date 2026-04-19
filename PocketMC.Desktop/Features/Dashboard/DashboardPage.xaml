@@ -60,6 +60,8 @@
                                             <ContextMenu>
                                                 <MenuItem Header="Copy Crash Report" Command="{Binding PlacementTarget.Tag.CopyCrashReportCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
                                                 <MenuItem Header="Open Folder" Command="{Binding PlacementTarget.Tag.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                                                <Separator/>
+                                                <MenuItem Header="Delete Instance" Command="{Binding PlacementTarget.Tag.DeleteInstanceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
                                             </ContextMenu>
                                         </ui:Button.ContextMenu>
                                     </ui:Button>
@@ -84,45 +86,85 @@
                                 </Border>
 
                                 <!-- Connections -->
-                                <StackPanel Grid.Row="2" Margin="0,0,0,16" Visibility="{Binding HasTunnelAddress, Converter={StaticResource BoolToVis}}">
-                                    <Border Background="#1AFFFFFF" CornerRadius="6" Padding="10,8" Margin="0,0,0,4">
-                                        <Grid>
+                                <StackPanel Grid.Row="2" Margin="0,0,0,16" Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
+                                    <!-- Primary Connection (Java or Native Bedrock) -->
+                                    <Border Visibility="{Binding HasTunnelAddress, Converter={StaticResource BoolToVis}}"
+                                            Background="#1AFFFFFF" CornerRadius="6" Padding="10,8" Margin="0,0,0,4">                                        <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <ui:SymbolIcon Grid.Column="0" Symbol="Cube24" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <ui:SymbolIcon Grid.Column="0" Symbol="Desktop24" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1" Text="{Binding TunnelAddress}" FontSize="12" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                             <ui:Button Grid.Column="2" Appearance="Transparent" Icon="{ui:SymbolIcon Copy16}" Click="BtnCopyIp_Click"/>
                                         </Grid>
                                     </Border>
-                                    <Border Background="#1AFFFFFF" CornerRadius="6" Padding="10,8" Visibility="{Binding HasNumericTunnelAddress, Converter={StaticResource BoolToVis}}">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <ui:SymbolIcon Grid.Column="0" Symbol="NumberSymbol24" Foreground="#AAA" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding NumericTunnelAddress}" FontSize="12" Foreground="#AAA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                            <ui:Button Grid.Column="2" Appearance="Transparent" Icon="{ui:SymbolIcon Copy16}" Click="BtnCopyNumericIp_Click"/>
-                                        </Grid>
-                                    </Border>
+
+                                    <!-- Bedrock-specific Tunnels (Native Bedrock Numeric, or Geyser Hostname + Numeric) -->
+                                    <StackPanel Visibility="{Binding IsBedrockServer, Converter={StaticResource BoolToVis}}">
+                                        <!-- Native Bedrock Numeric IP -->
+                                        <Border Background="#1AFFFFFF" CornerRadius="6" Padding="10,8" Margin="0,0,0,4"
+                                                Visibility="{Binding HasNumericTunnelAddress, Converter={StaticResource BoolToVis}}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ui:SymbolIcon Grid.Column="0" Symbol="NumberSymbol24" Foreground="#AAA" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding NumericTunnelAddress}" FontSize="12" Foreground="#AAA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <ui:Button Grid.Column="2" Appearance="Transparent" Icon="{ui:SymbolIcon Copy16}" Click="BtnCopyNumericIp_Click"/>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <StackPanel Visibility="{Binding ShowBedrockIp, Converter={StaticResource BoolToVis}}">
+                                        <!-- Geyser Bedrock Hostname -->
+                                        <Border Background="#1AFFFFFF" CornerRadius="6" Padding="10,8" Margin="0,0,0,4">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ui:SymbolIcon Grid.Column="0" Symbol="Cube24" Foreground="#FFD54F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Bedrock" FontSize="10" Foreground="#FFD54F" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding BedrockTunnelAddress}" FontSize="12" Foreground="#FFD54F" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                                <ui:Button Grid.Column="2" Appearance="Transparent" Icon="{ui:SymbolIcon Copy16}" Click="BtnCopyBedrockIp_Click"/>
+                                            </Grid>
+                                        </Border>
+                                        <!-- Geyser Bedrock Numeric -->
+                                        <Border Background="#1AFFFFFF" CornerRadius="6" Padding="10,8" Visibility="{Binding HasBedrockNumericTunnelAddress, Converter={StaticResource BoolToVis}}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ui:SymbolIcon Grid.Column="0" Symbol="NumberSymbol24" Foreground="#FFD54FAA" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding BedrockNumericTunnelAddress}" FontSize="12" Foreground="#FFD54FAA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <ui:Button Grid.Column="2" Appearance="Transparent" Icon="{ui:SymbolIcon Copy16}" Click="BtnCopyBedrockNumericIp_Click"/>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <!-- Actions -->
                                 <Grid Grid.Row="3">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Visibility="{Binding StoppedControlsVisibility}">
-                                        <ui:Button Content="Start" Appearance="Primary" Icon="{ui:SymbolIcon Play24}" Command="{Binding DataContext.StartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2"/>
-                                        <ui:Button Content="Logs" Appearance="Secondary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2"/>
-                                        <ui:Button Content="Settings" Appearance="Secondary" Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Visibility="{Binding RunningControlsVisibility}">
-                                        <ui:Button Content="{Binding StopButtonText}" Appearance="Danger" Icon="{ui:SymbolIcon Stop24}" Command="{Binding DataContext.StopServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2"/>
-                                        <ui:Button Content="Restart" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowClockwise24}" Command="{Binding DataContext.RestartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2"/>
-                                        <ui:Button Content="Console" Appearance="Primary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2"/>
-                                    </StackPanel>
+                                    <UniformGrid Columns="2" Visibility="{Binding StoppedControlsVisibility}">
+                                        <ui:Button Content="Start" Appearance="Primary" Icon="{ui:SymbolIcon Play24}" Command="{Binding DataContext.StartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="Logs" Appearance="Secondary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="Settings" Appearance="Secondary" Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                    </UniformGrid>
+                                    <UniformGrid Columns="2" Visibility="{Binding RunningControlsVisibility}">
+                                        <ui:Button Content="{Binding StopButtonText}" Appearance="Danger" Icon="{ui:SymbolIcon Stop24}" Command="{Binding DataContext.StopServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="Restart" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowClockwise24}" Command="{Binding DataContext.RestartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="Console" Appearance="Primary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="Settings" Appearance="Secondary" Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                    </UniformGrid>
                                 </Grid>
                             </Grid>
                         </ui:Card>

@@ -197,6 +197,18 @@ public class ServerLifecycleService : IServerLifecycleService, IDisposable
         CancelRestartDelay(instanceId, notifyStateChange: true);
     }
 
+    public async Task ReleaseInstanceAsync(Guid instanceId)
+    {
+        if (_processManager.IsRunning(instanceId))
+        {
+            await StopAsync(instanceId);
+        }
+
+        CancelRestartDelay(instanceId, notifyStateChange: false);
+        _processManager.ReleaseInstance(instanceId);
+        CleanupInstanceNetworking(instanceId);
+    }
+
     public ServerProcess? GetProcess(Guid instanceId) => _processManager.GetProcess(instanceId);
 
     /// <summary>

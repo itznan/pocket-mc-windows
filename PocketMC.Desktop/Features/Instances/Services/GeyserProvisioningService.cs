@@ -84,6 +84,29 @@ public class GeyserProvisioningService
             _logger.LogInformation("Downloading Geyser from {Url}", geyserFile.Url);
             await _downloader.DownloadFileAsync(geyserFile.Url, geyserPath, null, progress, cancellationToken);
 
+            // --- Fabric API (required for Geyser/Floodgate on Fabric) ---
+            if (loader == "fabric")
+            {
+                ReportStatus(progress, "Checking Fabric API compatibility...");
+                var fabricApiVersion = await _modrinth.GetLatestVersionAsync("fabric-api", minecraftVersion, loader);
+
+                if (fabricApiVersion != null)
+                {
+                    var fabricApiFile = fabricApiVersion.Files.FirstOrDefault(f => f.IsPrimary) ?? fabricApiVersion.Files.FirstOrDefault();
+                    if (fabricApiFile != null)
+                    {
+                        string fabricApiPath = Path.Combine(dirPath, "Fabric-API.jar");
+                        ReportStatus(progress, "Downloading Fabric API...");
+                        _logger.LogInformation("Downloading Fabric API from {Url}", fabricApiFile.Url);
+                        await _downloader.DownloadFileAsync(fabricApiFile.Url, fabricApiPath, null, progress, cancellationToken);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Fabric API not found for {McVer}. Fabric cross-play may fail.", minecraftVersion);
+                }
+            }
+
             // --- Floodgate (optional — Geyser can run without it) ---
             ReportStatus(progress, "Checking Floodgate compatibility...");
             var floodgateVersion = await _modrinth.GetLatestVersionAsync("floodgate", minecraftVersion, loader);
