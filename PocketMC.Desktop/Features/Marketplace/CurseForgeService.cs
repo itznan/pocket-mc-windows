@@ -33,7 +33,63 @@ namespace PocketMC.Desktop.Features.Marketplace
                 : null;
         }
 
-        public async Task<List<ModrinthHit>> SearchAsync(string type, string mcVersion, string query = "", int offset = 0)
+        private static int MapLoaderType(string loader) => loader.ToLowerInvariant() switch
+        {
+            "forge" => 1,
+            "fabric" => 4,
+            "quilt" => 5,
+            "neoforge" => 6,
+            _ => 0
+        };
+
+        private static bool FileSupportsLoader(JsonNode fileNode, string loader)
+        {
+            if (string.IsNullOrWhiteSpace(loader)) return true;
+
+            var normalizedLoader = loader.ToLowerInvariant();
+            var gameVersions = fileNode["gameVersions"]?.AsArray();
+            if (gameVersions == null || gameVersions.Count == 0) return false;
+
+            foreach (var gameVersion in gameVersions)
+            {
+                var value = gameVersion?.ToString();
+                if (string.IsNullOrWhiteSpace(value)) continue;
+
+                if (value.Equals(normalizedLoader, StringComparison.OrdinalIgnoreCase) ||
+                    value.Contains($"-{normalizedLoader}", StringComparison.OrdinalIgnoreCase) ||
+                    value.Contains($"{normalizedLoader}-", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            var sortableVersions = fileNode["sortableGameVersions"]?.AsArray();
+            if (sortableVersions != null)
+            {
+                foreach (var sortable in sortableVersions)
+                {
+                    var value = sortable?["gameVersionName"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+                    if (value.Equals(normalizedLoader, StringComparison.OrdinalIgnoreCase) ||
+                        value.Contains($"-{normalizedLoader}", StringComparison.OrdinalIgnoreCase) ||
+                        value.Contains($"{normalizedLoader}-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            var fileName = fileNode["fileName"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(fileName) &&
+                fileName.Contains(normalizedLoader, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<List<ModrinthHit>> SearchAsync(string type, string mcVersion, string loader, string query = "", int offset = 0)
         {
             try
             {
@@ -64,6 +120,10 @@ namespace PocketMC.Desktop.Features.Marketplace
                 };
 
                 string url = $"{ApiBase}/mods/search?gameId=432&classId={classId}&sortField=2&sortOrder=desc&pageSize=20&index={offset}";
+                if (classId == "6")
+                {
+                    url += $"&modLoaderType={MapLoaderType(loader)}";
+                }
 
                 if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
                     url += $"&gameVersion={Uri.EscapeDataString(mcVersion)}";
@@ -157,7 +217,7 @@ namespace PocketMC.Desktop.Features.Marketplace
             }
         }
 
-        public async Task<ModrinthVersion?> GetLatestVersionAsync(string projectId, string mcVersion)
+        public async Task<ModrinthVersion?> GetLatestVersionAsync(string projectId, string mcVersion, string loader)
         {
             try
             {
@@ -182,7 +242,18 @@ namespace PocketMC.Desktop.Features.Marketplace
 
                 if (files == null || files.Count == 0) return null;
 
-                var latestFile = files[0];
+                JsonNode? latestFile = null;
+                foreach (var file in files)
+                {
+                    if (file == null) continue;
+                    if (string.IsNullOrWhiteSpace(loader) || FileSupportsLoader(file, loader))
+                    {
+                        latestFile = file;
+                        break;
+                    }
+                }
+
+                latestFile ??= files[0];
                 if (latestFile == null) return null;
 
                 long fileId = 0;

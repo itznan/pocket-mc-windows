@@ -85,7 +85,7 @@ namespace PocketMC.Desktop.Features.Marketplace
                 string query = TxtSearch.Text ?? "";
 
                 // Maps/Worlds class ID is 17 in CurseForge API
-                var hits = await _curseForge.SearchAsync("project_type:world", _mcVersion, query, _currentOffset);
+                var hits = await _curseForge.SearchAsync("project_type:world", _mcVersion, "", query, _currentOffset);
 
                 foreach (var hit in hits)
                 {
@@ -139,7 +139,7 @@ namespace PocketMC.Desktop.Features.Marketplace
 
             try
             {
-                var version = await _curseForge.GetLatestVersionAsync(slug, _mcVersion == "*" ? "" : _mcVersion);
+                var version = await _curseForge.GetLatestVersionAsync(slug, _mcVersion == "*" ? "" : _mcVersion, "");
 
                 if (version == null || version.Files.Count == 0)
                 {
