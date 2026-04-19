@@ -139,6 +139,16 @@
                                 <StackPanel>
                                     <ui:CardExpander Header="Visual Identity" Icon="{ui:SymbolIcon Settings24}" Margin="0,0,0,12" IsExpanded="True">
                                         <StackPanel Margin="16,8,16,16">
+                                            <!-- Instance Alias & Description -->
+                                            <TextBlock Text="Instance Name (Label)" Style="{StaticResource SettingsHeader}" Margin="0,0,0,4"/>
+                                            <TextBlock Text="The display name for this instance in your dashboard." Style="{StaticResource SettingsSubtext}" Margin="0,0,0,8"/>
+                                            <ui:TextBox Text="{Binding General.InstanceName, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="My Epic Server" Margin="0,0,0,16"/>
+
+                                            <TextBlock Text="Instance Description" Style="{StaticResource SettingsHeader}" Margin="0,0,0,4"/>
+                                            <TextBlock Text="A short note about this instance's purpose or configuration." Style="{StaticResource SettingsSubtext}" Margin="0,0,0,8"/>
+                                            <ui:TextBox Text="{Binding General.InstanceDescription, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Testing new mods..." Margin="0,0,0,20"/>
+
+                                            <Separator Margin="0,0,0,20" Opacity="0.15"/>
 
                                             <!-- Interactive Dummy Server Card -->
                                             <Border Background="{StaticResource DirtBackground}" BorderThickness="2" BorderBrush="#000000" Padding="4" Margin="0,0,0,16" CornerRadius="0">
@@ -167,8 +177,8 @@
                                                         </Grid.RowDefinitions>
 
                                                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,-2,0,2">
-                                                            <!-- Server Name (Fixed for visual display) -->
-                                                            <TextBlock Text="Minecraft Server" FontFamily="Consolas" FontSize="15" Foreground="White" FontWeight="SemiBold">
+                                                            <!-- Server Name (Bound to InstanceName) -->
+                                                            <TextBlock Text="{Binding General.InstanceName, FallbackValue='Minecraft Server'}" FontFamily="Consolas" FontSize="15" Foreground="White" FontWeight="SemiBold">
                                                                 <TextBlock.Effect>
                                                                     <DropShadowEffect BlurRadius="0" ShadowDepth="2" Opacity="1" Color="Black" />
                                                                 </TextBlock.Effect>

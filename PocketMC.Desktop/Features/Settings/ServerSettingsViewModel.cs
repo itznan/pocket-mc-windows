@@ -111,7 +111,11 @@ namespace PocketMC.Desktop.Features.Settings
             _lifecycleService.OnInstanceStateChanged += _instanceStateChangedHandler;
 
             var updateService = (UpdateService)serviceProvider.GetService(typeof(UpdateService))!;
-            General = new SettingsGeneralVM(ServerDir, updateService, dialogService, navigationService, MarkChanged);
+            General = new SettingsGeneralVM(ServerDir, updateService, dialogService, navigationService, MarkChanged)
+            {
+                InstanceName = metadata.Name,
+                InstanceDescription = metadata.Description
+            };
             World = new SettingsWorldVM(ServerDir, worldManager, dialogService, dispatcher, navigationService, serviceProvider, metadata.MinecraftVersion, () => IsRunning, MarkChanged);
             Performance = new SettingsPerformanceVM(dialogService, MarkChanged);
             Backups = new SettingsBackupsVM(metadata, ServerDir, backupService, dialogService, dispatcher, () => IsRunning, MarkChanged);
@@ -389,6 +393,8 @@ namespace PocketMC.Desktop.Features.Settings
             }
 
             Metadata.GeyserBedrockPort = int.TryParse(General.GeyserBedrockPort, out int gPort) ? gPort : 19132;
+            Metadata.Name = General.InstanceName;
+            Metadata.Description = General.InstanceDescription;
             _serverConfigurationService.Save(Metadata, ServerDir, cfg);
             if (Advanced.IsRawServerPropertiesDirty)
             {

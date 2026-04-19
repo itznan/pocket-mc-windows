@@ -20,6 +20,12 @@ namespace PocketMC.Desktop.Features.Settings
         private string? _motd;
         public string? Motd { get => _motd; set { if (SetProperty(ref _motd, value)) _markDirty(); } }
 
+        private string _instanceName = string.Empty;
+        public string InstanceName { get => _instanceName; set { if (SetProperty(ref _instanceName, value)) _markDirty(); } }
+
+        private string _instanceDescription = string.Empty;
+        public string InstanceDescription { get => _instanceDescription; set { if (SetProperty(ref _instanceDescription, value)) _markDirty(); } }
+
         private string _serverPort = "25565";
         public string ServerPort { get => _serverPort; set { if (SetProperty(ref _serverPort, value)) _markDirty(); } }
 
