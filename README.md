@@ -1,12 +1,12 @@
 <div align="center">
 
-<table border="0">
+<table border="0" cellpadding="16">
   <tr>
     <td align="center" width="200">
       <img src="docs/assets/logo.png" alt="PocketMC" width="180" />
     </td>
-    <td align="left">
-      <h2 style="border: none; margin-bottom: 10px;">PocketMC</h2>
+    <td align="center">
+      <h1 style="border: none; margin-bottom: 10px;">PocketMC</h1>
       <p><b>Run Minecraft Java, Bedrock, and Cross-play servers on Windows.<br> No terminal. No Java headaches. No mess.</b></p>
       <a href="https://github.com/PocketMC/pocket-mc-windows/actions"><img src="https://img.shields.io/github/actions/workflow/status/PocketMC/pocket-mc-windows/production-build.yml?branch=master&style=flat-square&logo=github" alt="Build" /></a>
       <a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet" alt=".NET" /></a>
@@ -140,15 +140,6 @@ Download `Setup.exe` from the [latest release](https://github.com/PocketMC/pocke
 | RAM | 4 GB (8 GB+ recommended) |
 | .NET | .NET 8 Desktop Runtime (auto-prompted on install) |
 | Internet | Required for first-run JRE download and Playit.gg |
-
----
-
-## Roadmap
-
-- [ ] In-app whitelist and op management
-- [ ] Forge 1.17+ bootstrapper stability pass
-- [ ] Modpack install progress UI
-- [ ] Player activity charts and historical metrics
 
 ---
 
