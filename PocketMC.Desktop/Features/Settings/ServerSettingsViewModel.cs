@@ -37,7 +37,7 @@ namespace PocketMC.Desktop.Features.Settings
         private readonly ApplicationState _applicationState;
 
         public InstanceMetadata Metadata { get; }
-        public string ServerDir { get; }
+        public string ServerDir { get; private set; }
 
         // Sub-ViewModels
         public SettingsGeneralVM General { get; }
@@ -349,8 +349,46 @@ namespace PocketMC.Desktop.Features.Settings
             };
         }
 
+        public void UpdateServerDir(string newDir)
+        {
+            if (ServerDir == newDir) return;
+            
+            ServerDir = newDir;
+            
+            General.UpdateServerDir(newDir);
+            World.UpdateServerDir(newDir);
+            Backups.UpdateServerDir(newDir);
+            Addons.UpdateServerDir(newDir);
+            Advanced.UpdateServerDir(newDir);
+            Summaries.UpdateServerDir(newDir);
+        }
+
         private void SaveConfigurations()
         {
+            bool nameChanged = !string.Equals(Metadata.Name, General.InstanceName, StringComparison.Ordinal);
+            
+            if (nameChanged && IsRunning)
+            {
+                _dialogService.ShowMessage("Cannot Rename", "Cannot rename a running server. Please stop the server first.", DialogType.Warning);
+                return;
+            }
+
+            string currentServerDir = ServerDir;
+
+            if (nameChanged)
+            {
+                try
+                {
+                    currentServerDir = _instanceManager.RenameInstance(Metadata.Id, General.InstanceName, General.InstanceDescription);
+                    UpdateServerDir(currentServerDir);
+                }
+                catch (Exception ex)
+                {
+                    _dialogService.ShowMessage("Rename Failed", ex.Message, DialogType.Error);
+                    return;
+                }
+            }
+
             string? customJavaPathToSave = Performance.JavaPath;
             if (string.IsNullOrWhiteSpace(customJavaPathToSave))
             {
@@ -395,10 +433,11 @@ namespace PocketMC.Desktop.Features.Settings
             Metadata.GeyserBedrockPort = int.TryParse(General.GeyserBedrockPort, out int gPort) ? gPort : 19132;
             Metadata.Name = General.InstanceName;
             Metadata.Description = General.InstanceDescription;
-            _serverConfigurationService.Save(Metadata, ServerDir, cfg);
+
+            _serverConfigurationService.Save(Metadata, currentServerDir, cfg);
             if (Advanced.IsRawServerPropertiesDirty)
             {
-                _serverConfigurationService.SaveRawProperties(ServerDir, Advanced.RawServerProperties);
+                _serverConfigurationService.SaveRawProperties(currentServerDir, Advanced.RawServerProperties);
                 Advanced.ClearDirtyRaw();
             }
 

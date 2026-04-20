@@ -12,7 +12,9 @@ namespace PocketMC.Desktop.Features.Settings
     public class SettingsAdvancedVM : ViewModelBase
     {
         private readonly ServerConfigurationService _configService;
-        private readonly string _serverDir;
+        private string _serverDir;
+
+        public void UpdateServerDir(string newDir) => _serverDir = newDir;
         private readonly Action _markDirty;
 
         private bool _enableAutoRestart;

@@ -91,47 +91,84 @@ namespace PocketMC.Desktop.Features.Instances.Services;
             }
         }
 
-        public void UpdateMetadata(string folderName, string newName, string newDescription)
+        public string RenameInstance(Guid instanceId, string newName, string newDescription)
         {
-            string oldFolderPath = _pathService.GetInstancePath(folderName);
-            if (!Directory.Exists(oldFolderPath)) return;
+            string? oldPath = _registry.GetPath(instanceId);
+            if (string.IsNullOrEmpty(oldPath) || !Directory.Exists(oldPath))
+            {
+                throw new DirectoryNotFoundException($"Instance path for {instanceId} not found.");
+            }
 
+            string oldSlug = Path.GetFileName(oldPath);
             string baseSlug = SlugHelper.GenerateSlug(newName);
             string newSlug = baseSlug;
             int counter = 2;
 
-            while (Directory.Exists(_pathService.GetInstancePath(newSlug)) && newSlug != folderName)
+            // Collision detection (excluding the current directory even if case matches)
+            while (Directory.Exists(_pathService.GetInstancePath(newSlug)) && 
+                   !string.Equals(newSlug, oldSlug, StringComparison.OrdinalIgnoreCase))
             {
                 newSlug = $"{baseSlug}-{counter}";
                 counter++;
             }
 
-            string currentFolderPath = oldFolderPath;
+            string finalPath = oldPath;
 
-            if (newSlug != folderName)
+            // Only perform folder move if the slug actually changed (including case changes)
+            if (newSlug != oldSlug)
             {
-                string newFolderPath = _pathService.GetInstancePath(newSlug);
+                string newPath = _pathService.GetInstancePath(newSlug);
+                
                 try
                 {
-                    Directory.Move(oldFolderPath, newFolderPath);
-                    currentFolderPath = newFolderPath;
+                    // Windows is case-insensitive. If it's a case-only rename, we need a 3-step move.
+                    if (string.Equals(newSlug, oldSlug, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string tempPath = newPath + "_" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".tmp";
+                        Directory.Move(oldPath, tempPath);
+                        try
+                        {
+                            Directory.Move(tempPath, newPath);
+                        }
+                        catch
+                        {
+                            Directory.Move(tempPath, oldPath);
+                            throw;
+                        }
+                    }
+                    else
+                    {
+                        Directory.Move(oldPath, newPath);
+                    }
+                    finalPath = newPath;
+                    _logger.LogInformation("Renamed instance folder from {OldPath} to {NewPath}", oldPath, newPath);
                 }
-                catch (IOException ex)
+                catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to rename instance folder {OldFolderPath} to {NewFolderPath}.", oldFolderPath, newFolderPath);
-                    currentFolderPath = oldFolderPath;
+                    _logger.LogError(ex, "Failed to rename instance folder {OldPath} to {NewPath}", oldPath, newPath);
+                    throw new IOException($"Failed to rename server folder. Ensure the server is stopped and no files are open in other programs.", ex);
                 }
             }
 
-            string metadataFile = _pathService.GetMetadataPath(currentFolderPath);
-            if (File.Exists(metadataFile))
+            // Update Metadata
+            var metadata = _registry.GetById(instanceId);
+            if (metadata != null)
             {
-                string content = File.ReadAllText(metadataFile);
-                var metadata = JsonSerializer.Deserialize<InstanceMetadata>(content) ?? new InstanceMetadata();
                 metadata.Name = newName;
                 metadata.Description = newDescription;
+                SaveMetadata(metadata, finalPath);
+            }
 
-                SaveMetadata(metadata, currentFolderPath);
+            return finalPath;
+        }
+
+        [Obsolete("Use RenameInstance(Guid, string, string) for safer atomic renames.")]
+        public void UpdateMetadata(string folderName, string newName, string newDescription)
+        {
+            var metadata = _registry.GetAll().FirstOrDefault(m => string.Equals(Path.GetFileName(_registry.GetPath(m.Id)), folderName, StringComparison.OrdinalIgnoreCase));
+            if (metadata != null)
+            {
+                RenameInstance(metadata.Id, newName, newDescription);
             }
         }
 

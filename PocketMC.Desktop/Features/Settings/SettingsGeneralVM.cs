@@ -12,10 +12,12 @@ namespace PocketMC.Desktop.Features.Settings
     public class SettingsGeneralVM : ViewModelBase
     {
         private readonly UpdateService _updateService;
-        private readonly string _serverDir;
+        private string _serverDir;
         private readonly IDialogService _dialogService;
         private readonly IAppNavigationService _navigationService;
         private readonly Action _markDirty;
+
+        public void UpdateServerDir(string newDir) => _serverDir = newDir;
 
         private string? _motd;
         public string? Motd { get => _motd; set { if (SetProperty(ref _motd, value)) _markDirty(); } }

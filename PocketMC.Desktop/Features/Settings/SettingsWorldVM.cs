@@ -15,12 +15,14 @@ namespace PocketMC.Desktop.Features.Settings
 {
     public class SettingsWorldVM : ViewModelBase
     {
-        private readonly string _serverDir;
+        private string _serverDir;
         private readonly WorldManager _worldManager;
         private readonly IDialogService _dialogService;
         private readonly IAppDispatcher _dispatcher;
         private readonly Func<bool> _isRunningCheck;
         private readonly Action _markDirty;
+
+        public void UpdateServerDir(string newDir) => _serverDir = newDir;
 
         // Properties from ServerSettingsViewModel
         private string? _seed;

@@ -14,7 +14,9 @@ namespace PocketMC.Desktop.Features.Settings;
 /// </summary>
 public class SettingsSummariesVM : ViewModelBase
 {
-    private readonly string _serverDir;
+    private string _serverDir;
+
+    public void UpdateServerDir(string newDir) => _serverDir = newDir;
     private readonly SummaryStorageService _storageService;
     private readonly IDialogService _dialogService;
 

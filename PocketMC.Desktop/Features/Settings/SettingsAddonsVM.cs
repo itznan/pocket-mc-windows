@@ -27,7 +27,9 @@ namespace PocketMC.Desktop.Features.Settings
     public class SettingsAddonsVM : ViewModelBase
     {
         private readonly InstanceMetadata _metadata;
-        private readonly string _serverDir;
+        private string _serverDir;
+
+        public void UpdateServerDir(string newDir) => _serverDir = newDir;
         private readonly ModpackService _modpackService;
         private readonly BedrockAddonInstaller _bedrockInstaller;
         private readonly IDialogService _dialogService;
