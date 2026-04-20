@@ -140,6 +140,7 @@
                                 <ComboBoxItem Content="Paper"/>
                                 <ComboBoxItem Content="Fabric"/>
                                 <ComboBoxItem Content="Forge"/>
+                                <ComboBoxItem Content="NeoForge"/>
                                 <ComboBoxItem Content="Bedrock (BDS)"/>
                                 <ComboBoxItem Content="Pocketmine (PHP)"/>
                             </ComboBox>

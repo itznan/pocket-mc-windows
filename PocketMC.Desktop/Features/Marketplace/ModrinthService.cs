@@ -114,6 +114,12 @@ namespace PocketMC.Desktop.Features.Marketplace
             {
                 // type is expected as "project_type:plugin" or "project_type:mod" or "project_type:modpack"
                 string facetsStr = $"[\"{type}\"]";
+                if (type == "project_type:mod")
+                {
+                    // Ensure we only see mods that can run on a server
+                    facetsStr += ",[\"server_side:required\",\"server_side:optional\"]";
+                }
+
                 if (!string.IsNullOrEmpty(mcVersion) && mcVersion != "*")
                 {
                     facetsStr += $",[\"versions:{mcVersion}\"]";

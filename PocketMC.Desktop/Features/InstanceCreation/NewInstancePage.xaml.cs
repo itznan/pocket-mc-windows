@@ -32,6 +32,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
         private readonly PaperProvider _paperProvider;
         private readonly FabricProvider _fabricProvider;
         private readonly ForgeProvider _forgeProvider;
+        private readonly NeoForgeProvider _neoForgeProvider;
         private readonly BedrockBdsProvider _bedrockProvider;
         private readonly PocketmineProvider _pocketmineProvider;
         private readonly GeyserProvisioningService _geyserProvisioning;
@@ -50,6 +51,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             PaperProvider paperProvider,
             FabricProvider fabricProvider,
             ForgeProvider forgeProvider,
+            NeoForgeProvider neoForgeProvider,
             BedrockBdsProvider bedrockProvider,
             PocketmineProvider pocketmineProvider,
             GeyserProvisioningService geyserProvisioning,
@@ -64,6 +66,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             _paperProvider = paperProvider;
             _fabricProvider = fabricProvider;
             _forgeProvider = forgeProvider;
+            _neoForgeProvider = neoForgeProvider;
             _bedrockProvider = bedrockProvider;
             _pocketmineProvider = pocketmineProvider;
             _geyserProvisioning = geyserProvisioning;
@@ -99,9 +102,9 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             }
 
             string serverType = GetSelectedServerType();
-            if (serverType == "Forge")
+            if (serverType == "Forge" || serverType == "NeoForge")
             {
-                TxtForgeWarning.Text = "⚠ Forge support is in beta. First launch runs the installer automatically. This may take several minutes.";
+                TxtForgeWarning.Text = $"⚠ {serverType} support is in beta. First launch runs the installer automatically. This may take several minutes.";
                 TxtForgeWarning.Visibility = Visibility.Visible;
             }
             else
@@ -179,7 +182,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                 CmbVersion.SelectedItem = null;
                 TxtVersionState.Text = $"Loading {serverType} versions...";
 
-                if (serverType == "Forge")
+                if (serverType == "Forge" || serverType == "NeoForge")
                 {
                     ChkShowSnapshots.IsEnabled = false;
                     ChkShowSnapshots.IsChecked = false;
@@ -286,7 +289,7 @@ namespace PocketMC.Desktop.Features.InstanceCreation
 
                 createdFolderName = Path.GetFileName(createdInstancePath);
                 string jarFile = "server.jar";
-                if (serverType == "Forge") jarFile = "forge-installer.jar";
+                if (serverType == "Forge" || serverType == "NeoForge") jarFile = "installer.jar";
                 else if (serverType.StartsWith("Pocketmine", StringComparison.OrdinalIgnoreCase)) jarFile = "PocketMine-MP.phar";
                 string jarPath = Path.Combine(createdInstancePath, jarFile);
 
@@ -335,8 +338,13 @@ namespace PocketMC.Desktop.Features.InstanceCreation
                 }
                 else if (serverType == "Forge" && !string.IsNullOrEmpty(loaderVersion))
                 {
-                    string forgeJarPath = Path.Combine(createdInstancePath, "forge-installer.jar");
+                    string forgeJarPath = Path.Combine(createdInstancePath, "installer.jar");
                     await _forgeProvider.DownloadForgeJarAsync(selectedVersion.Id, loaderVersion, forgeJarPath, progress);
+                }
+                else if (serverType == "NeoForge" && !string.IsNullOrEmpty(loaderVersion))
+                {
+                    string neoForgeJarPath = Path.Combine(createdInstancePath, "installer.jar");
+                    await _neoForgeProvider.DownloadNeoForgeJarAsync(selectedVersion.Id, loaderVersion, neoForgeJarPath, progress);
                 }
                 else if (!isBedrock)
                 {
@@ -544,6 +552,11 @@ namespace PocketMC.Desktop.Features.InstanceCreation
             if (string.Equals(serverType, "Forge", StringComparison.OrdinalIgnoreCase))
             {
                 return _forgeProvider;
+            }
+
+            if (string.Equals(serverType, "NeoForge", StringComparison.OrdinalIgnoreCase))
+            {
+                return _neoForgeProvider;
             }
 
             if (serverType.StartsWith("Bedrock", StringComparison.OrdinalIgnoreCase))

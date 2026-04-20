@@ -169,6 +169,7 @@ public class GeyserProvisioningService
             "paper" or "spigot" => "spigot",
             "fabric"            => "fabric",
             "forge"             => IsNewerOrEqual(minecraftVersion, "1.20.5") ? "neoforge" : "forge",
+            "neoforge"          => "neoforge",
             _                   => "spigot" // safe default
         };
     }
@@ -245,7 +246,9 @@ public class GeyserProvisioningService
         string[] possiblePaths = {
             Path.Combine(instancePath, "plugins", "Geyser-Spigot", "config.yml"),
             Path.Combine(instancePath, "mods", "Geyser-Fabric", "config.yml"),
-            Path.Combine(instancePath, "mods", "Geyser-Forge", "config.yml")
+            Path.Combine(instancePath, "mods", "Geyser-Forge", "config.yml"),
+            Path.Combine(instancePath, "mods", "Geyser-NeoForge", "config.yml"),
+            Path.Combine(instancePath, "mods", "geyser", "config.yml") // generic fallback
         };
 
         foreach (var path in possiblePaths)

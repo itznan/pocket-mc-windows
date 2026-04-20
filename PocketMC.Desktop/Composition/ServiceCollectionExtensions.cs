@@ -115,6 +115,7 @@ namespace PocketMC.Desktop.Composition
             services.AddHttpClient<VanillaProvider>(SetDefaultUserAgent);
             services.AddHttpClient<FabricProvider>(SetDefaultUserAgent);
             services.AddHttpClient<ForgeProvider>(SetDefaultUserAgent);
+            services.AddHttpClient<NeoForgeProvider>(SetDefaultUserAgent);
             services.AddHttpClient<PaperProvider>(SetDefaultUserAgent);
             services.AddHttpClient<PocketmineProvider>(SetDefaultUserAgent);
             services.AddHttpClient<BedrockBdsProvider>(SetDefaultUserAgent);

@@ -48,8 +48,12 @@ namespace PocketMC.Desktop.Features.Settings
         public bool IsBedrockDedicated  => _metadata.Compatibility.Family == EngineFamily.Bedrock;
         public bool IsPocketmine        => _metadata.Compatibility.Family == EngineFamily.Pocketmine;
         public bool IsBedrockOrPocketmine => IsBedrockDedicated || IsPocketmine;
-        /// <summary>True for Java-based engines (Vanilla, Paper, Fabric, Forge).</summary>
+        /// <summary>True for Java-based engines (Vanilla, Paper, Fabric, Forge, NeoForge).</summary>
         public bool IsJavaEngine => _metadata.Compatibility.IsJavaEngine;
+
+        public bool SupportsPlugins => _metadata.Compatibility.SupportsPlugins;
+        public bool SupportsMods => _metadata.Compatibility.SupportsMods;
+        public bool SupportsBedrockAddons => _metadata.Compatibility.SupportsBedrockAddons;
 
         // ── Commands ─────────────────────────────────────────────────────
         // Shared / Java
@@ -300,6 +304,20 @@ namespace PocketMC.Desktop.Features.Settings
             var files = await _dialogService.OpenFilesDialogAsync("Select Mod(s)", "JAR Files (*.jar)|*.jar");
             foreach (var f in files)
             {
+                var fileName = System.IO.Path.GetFileName(f).ToLowerInvariant();
+                
+                // Audit for common client-side only mods that crash servers
+                if (fileName.Contains("sodium") || fileName.Contains("iris") || fileName.Contains("canvas") || fileName.Contains("optifine"))
+                {
+                    var res = await _dialogService.ShowDialogAsync("Client-Side Mod Warning", 
+                        $"The mod '{System.IO.Path.GetFileName(f)}' appears to be a client-side rendering mod. " +
+                        "Installing this on a server will almost certainly cause a crash.\n\n" +
+                        "Do you want to skip this mod?", 
+                        DialogType.Question);
+
+                    if (res == DialogResult.Yes) continue;
+                }
+
                 var dir = System.IO.Path.Combine(_serverDir, "mods");
                 Directory.CreateDirectory(dir);
                 await FileUtils.CopyFileAsync(f, System.IO.Path.Combine(dir, System.IO.Path.GetFileName(f)), true);

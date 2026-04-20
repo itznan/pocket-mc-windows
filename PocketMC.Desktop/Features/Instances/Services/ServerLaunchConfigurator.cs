@@ -59,8 +59,8 @@ namespace PocketMC.Desktop.Features.Instances.Services;
             int requiredJavaVersion = JavaRuntimeResolver.GetRequiredJavaVersion(meta.MinecraftVersion);
             string javaPath = await EnsureAndResolveJavaPathAsync(meta, requiredJavaVersion, appRootPath, onLog);
 
-            // Forge auto-installation
-            await HandleForgeInstallationAsync(meta, workingDir, javaPath, onLog);
+            // Forge/NeoForge auto-installation
+            await HandleInstallerBasedSetupAsync(meta, workingDir, javaPath, onLog);
 
             var psi = new ProcessStartInfo
             {
@@ -245,18 +245,20 @@ namespace PocketMC.Desktop.Features.Instances.Services;
             return javaPath;
         }
 
-        private async Task HandleForgeInstallationAsync(InstanceMetadata meta, string workingDir, string javaPath, Action<string> onLog)
+        private async Task HandleInstallerBasedSetupAsync(InstanceMetadata meta, string workingDir, string javaPath, Action<string> onLog)
         {
-            string forgeInstaller = Path.Combine(workingDir, "forge-installer.jar");
-            if (meta.ServerType == "Forge" && File.Exists(forgeInstaller) && !Directory.Exists(Path.Combine(workingDir, "libraries")))
+            string installerPath = Path.Combine(workingDir, "installer.jar");
+            bool isForgeOrNeo = meta.ServerType == "Forge" || meta.ServerType == "NeoForge";
+
+            if (isForgeOrNeo && File.Exists(installerPath) && !Directory.Exists(Path.Combine(workingDir, "libraries")))
             {
-                onLog("[PocketMC] First-time Forge setup detected. Running installer...");
+                onLog($"[PocketMC] First-time {meta.ServerType} setup detected. Running installer...");
 
                 var installerPsi = new ProcessStartInfo
                 {
                     FileName = javaPath,
                     WorkingDirectory = workingDir,
-                    Arguments = "-jar forge-installer.jar --installServer",
+                    Arguments = "-Djava.awt.headless=true -Dforge.stdout=true -jar installer.jar --installServer",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -266,9 +268,28 @@ namespace PocketMC.Desktop.Features.Instances.Services;
                 using var proc = Process.Start(installerPsi);
                 if (proc != null)
                 {
+                    // consume streams asynchronously to prevent deadlock
+                    var outputTask = Task.Run(() => {
+                        while (!proc.StandardOutput.EndOfStream)
+                        {
+                            var line = proc.StandardOutput.ReadLine();
+                            if (line != null) onLog?.Invoke(line);
+                        }
+                    });
+
+                    var errorTask = Task.Run(() => {
+                        while (!proc.StandardError.EndOfStream)
+                        {
+                            var line = proc.StandardError.ReadLine();
+                            if (line != null) onLog?.Invoke($"[Error] {line}");
+                        }
+                    });
+
                     await proc.WaitForExitAsync();
-                    if (proc.ExitCode == 0) onLog("[PocketMC] Forge installation successful.");
-                    else throw new Exception($"Forge installer failed with exit code {proc.ExitCode}");
+                    await Task.WhenAll(outputTask, errorTask);
+
+                    if (proc.ExitCode == 0) onLog?.Invoke($"[PocketMC] {meta.ServerType} installation successful.");
+                    else throw new Exception($"{meta.ServerType} installer failed with exit code {proc.ExitCode}");
                 }
             }
         }
@@ -303,7 +324,8 @@ namespace PocketMC.Desktop.Features.Instances.Services;
         {
             string serverJar = Path.Combine(workingDir, "server.jar");
 
-            if (meta.ServerType == "Forge" && !File.Exists(serverJar))
+            bool isForgeOrNeo = meta.ServerType == "Forge" || meta.ServerType == "NeoForge";
+            if (isForgeOrNeo && !File.Exists(serverJar))
             {
                 var winArgs = Directory.GetFiles(workingDir, "win_args.txt", SearchOption.AllDirectories).FirstOrDefault();
                 if (winArgs != null)

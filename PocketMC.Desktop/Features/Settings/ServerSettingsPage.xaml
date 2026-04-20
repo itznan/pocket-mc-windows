@@ -434,8 +434,10 @@
                         <TabItem Header="Addons">
                             <ScrollViewer x:Name="AddonsScrollViewer" VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                 <StackPanel>
-                                    <TextBlock Text="Server Plugins" Style="{StaticResource SettingsHeader}" Margin="4,0,0,12"/>
-                                    <ui:Card Margin="0,0,0,16" Padding="20">
+                                    <TextBlock Text="Server Plugins" Style="{StaticResource SettingsHeader}" Margin="4,0,0,12"
+                                               Visibility="{Binding Addons.SupportsPlugins, Converter={StaticResource VisibleIfTrue}}"/>
+                                    <ui:Card Margin="0,0,0,16" Padding="20"
+                                             Visibility="{Binding Addons.SupportsPlugins, Converter={StaticResource VisibleIfTrue}}">
                                         <StackPanel>
                                             <TextBlock Visibility="{Binding Addons.ShowVanillaWarning, Converter={StaticResource VisibleIfTrue}}"
                                                        Text="⚠ Plugins are not supported on Vanilla software. Please use Paper or Spigot." Foreground="#F38BA8" Margin="0,0,0,15" FontSize="12" FontWeight="SemiBold"/>
@@ -466,9 +468,9 @@
 
                                     <!-- Server Mods — hidden for PocketMine (not applicable) -->
                                     <TextBlock Text="Server Mods" Style="{StaticResource SettingsHeader}" Margin="4,20,0,12"
-                                               Visibility="{Binding Addons.IsJavaEngine, Converter={StaticResource VisibleIfTrue}}"/>
+                                               Visibility="{Binding Addons.SupportsMods, Converter={StaticResource VisibleIfTrue}}"/>
                                     <ui:Card Margin="0,0,0,16" Padding="20"
-                                             Visibility="{Binding Addons.IsJavaEngine, Converter={StaticResource VisibleIfTrue}}">
+                                             Visibility="{Binding Addons.SupportsMods, Converter={StaticResource VisibleIfTrue}}">
                                         <StackPanel Orientation="Horizontal">
                                             <ui:Button Content="Add Mod JAR" Command="{Binding Addons.AddModCommand}" Appearance="Secondary" Margin="0,0,12,0" Icon="{ui:SymbolIcon Add20}"/>
                                             <ui:Button Content="Browse Marketplace" Command="{Binding Addons.BrowseModrinthModsCommand}" Appearance="Primary" Margin="0,0,12,0" Icon="{ui:SymbolIcon Globe20}"/>
@@ -477,7 +479,7 @@
                                     </ui:Card>
                                     <!-- Also hide the mods list for PocketMine -->
                                     <ItemsControl ItemsSource="{Binding Addons.Mods}"
-                                                  Visibility="{Binding Addons.IsJavaEngine, Converter={StaticResource VisibleIfTrue}}">
+                                                  Visibility="{Binding Addons.SupportsMods, Converter={StaticResource VisibleIfTrue}}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <ui:Card Margin="0,0,0,10" Padding="16,12">
@@ -493,9 +495,9 @@
 
                                     <!-- BDS: Add-on import section (replaces mods for Bedrock) -->
                                     <TextBlock Text="Bedrock Add-ons" Style="{StaticResource SettingsHeader}" Margin="4,20,0,12"
-                                               Visibility="{Binding Addons.IsBedrockDedicated, Converter={StaticResource VisibleIfTrue}}"/>
+                                               Visibility="{Binding Addons.SupportsBedrockAddons, Converter={StaticResource VisibleIfTrue}}"/>
                                     <ui:Card Margin="0,0,0,16" Padding="20"
-                                             Visibility="{Binding Addons.IsBedrockDedicated, Converter={StaticResource VisibleIfTrue}}">
+                                             Visibility="{Binding Addons.SupportsBedrockAddons, Converter={StaticResource VisibleIfTrue}}">
                                         <StackPanel>
                                             <TextBlock Text="ℹ Import .mcpack or .mcaddon files. They will be automatically extracted and registered in your world's pack list."
                                                        Foreground="#89B4FA" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
@@ -505,7 +507,7 @@
                                         </StackPanel>
                                     </ui:Card>
                                     <ItemsControl ItemsSource="{Binding Addons.Mods}"
-                                                  Visibility="{Binding Addons.IsBedrockDedicated, Converter={StaticResource VisibleIfTrue}}">
+                                                  Visibility="{Binding Addons.SupportsBedrockAddons, Converter={StaticResource VisibleIfTrue}}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <ui:Card Margin="0,0,0,10" Padding="16,12">
