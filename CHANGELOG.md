@@ -1,6 +1,17 @@
 # Changelog
 
-This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.0`.
+This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.1`.
+
+## v1.5.1 - Setup UX Fixes & Active Server Indicators
+
+This is a minor patch release focusing on improving the first-time user experience and minor dashboard UI tweaks.
+
+### ✨ Enhancements & Fixes
+
+- **Setup Directory Auto-Creation:** Fixed an issue during the first-time setup where selecting the default directory (`Documents/PocketMC`) would fail if it did not already exist. The application now intelligently pre-creates this directory and enables the "Continue" button by default.
+- **Active Instance Indicators:** Added a dynamic emerald-green highlight border around running server cards on the Dashboard, allowing you to easily spot online servers.
+
+---
 
 ## v1.5.0 - Modloader Expansion, Marketplace Intelligence & Instance Management
 
