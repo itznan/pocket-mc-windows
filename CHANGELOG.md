@@ -1,6 +1,19 @@
 # Changelog
 
-This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.1`.
+This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.2`.
+
+## v1.5.2 - Intelligence Safeguards & Under-the-Hood Fixes
+
+This release introduces safety guardrails for the AI summarization feature to protect against unexpected token costs, fixes native Bedrock port conflicts, and removes console command suggestions for a cleaner, faster experience.
+
+### ✨ Enhancements & Fixes
+
+- **AI Token Safeguards:** Added a size threshold check for server session logs. Generating an AI summary for extremely large sessions (>1.5MB of logs) will now prompt a warning dialog to prevent accidental token over-consumption.
+- **Enhanced AI Prompt:** The backend summarization prompt has been fully overhauled to instruct the model to ignore Personally Identifiable Information (PII) like IPs and emails, and to focus more heavily on performance metrics and configuration issues.
+- **Bedrock Port Conflict Fix:** IPv6 ports (`server-portv6`) are now automatically bound and assigned based on the selected IPv4 port (`server-port + 1`) when editing Server Settings. This resolves the `ipv6 port conflict` crashes entirely when running multiple native instances on the same host.
+- **Console Streamlining**: Slashed out the bulky command suggestion overlay from the server console. This provides a cleaner UI, stops accidental command misfires, and prevents the application from constantly parsing massive log text streams for new command syntaxes.
+
+---
 
 ## v1.5.1 - Setup UX Fixes & Active Server Indicators
 
