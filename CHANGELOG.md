@@ -1,6 +1,42 @@
 # Changelog
 
-This file summarizes the PocketMC Desktop release line from `v1.0.0` to `v1.4.3`.
+This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.0`.
+
+## v1.5.0 - Modloader Expansion, Marketplace Intelligence & Instance Management
+
+This release adds NeoForge as a supported modloader, introduces engine-aware addon management with full dependency resolution in the marketplace, and ships a suite of instance management improvements including renaming, customization, and minimum version filtering. Loader-aware filtering for Modrinth and CurseForge is now fully enforced, and several false-warning and fallback bugs are resolved.
+
+### 🧩 Modloader Expansion
+
+- **NeoForge Support:** NeoForge is now a fully supported modloader option in the instance creation workflow, joining Fabric and Forge.
+- **Loader-Aware Filtering:** Modrinth and CurseForge search results are now filtered by the active loader (Fabric / Forge / NeoForge) to prevent incompatible addon installs (#17).
+- **Modrinth Fallback Hardening:** The Modrinth relaxed query no longer falls back to an arbitrary loader. When a version is not found, a clear message is returned instead of a misleading result (#18).
+
+### 🛒 Marketplace Intelligence
+
+- **EngineCompatibility Model:** Introduced a new `EngineCompatibility` model so addons in the marketplace are resolved and displayed based on the active server engine.
+- **Dependency Resolution:** The marketplace now automatically resolves addon dependencies and manages addon manifests, reducing manual setup for complex modpacks.
+- **False Warning Reduction:** Eliminated spurious incompatible-loader warnings that appeared during addon install even when the loader was valid.
+
+### 📁 Instance Management
+
+- **Instance Renaming:** Instances can now be renamed directly from the UI, with collision detection and case-safe directory moves to prevent filesystem conflicts.
+- **Name & Description Customization:** Added support for editing instance names and descriptions from within the instance settings panel.
+- **Minimum Version Filtering:** Server providers now respect minimum version constraints during instance creation, with testability improvements to the underlying filtering logic.
+
+### 📦 Infrastructure & Documentation
+
+- **Project Rename:** The project name has been corrected from `PocketMC` to `Pocket MC` across the application and repository.
+- **CI Improvements:** Added portable test release publishing with artifact upload to the CI pipeline. Production build workflow now includes version checks and improved release logic.
+- **Documentation:** Added detailed documentation for Pocket MC Desktop. README structure and content revised to reflect current features.
+- **Funding:** Added a Buy Me a Coffee link to the repository for community support.
+
+### 🗑️ Removed
+
+- **Multi-Monitor Window Persistence:** Removed the multi-monitor window persistence task, which caused layout issues across display configurations.
+- **`.devin` Directory:** Removed the `.devin` directory from the repository.
+
+---
 
 ## v1.4.3 - Port Engine, Cross-Play, & UI Enhancements
 
