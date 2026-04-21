@@ -75,7 +75,6 @@
                                Appearance="Secondary"
                                MinWidth="128"
                                Margin="12,0,0,0"
-                               IsEnabled="False"
                                Click="BtnContinue_Click"
                                Cursor="Hand"/>
                 </StackPanel>

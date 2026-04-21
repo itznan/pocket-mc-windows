@@ -29,19 +29,33 @@ namespace PocketMC.Desktop.Features.Setup
             InitializeComponent();
 
             string defaultParentDirectory = RootDirectorySetupHelper.GetDefaultParentDirectory();
+            _selectedRootPath = Path.Combine(defaultParentDirectory, RootDirectorySetupHelper.SuggestedFolderName);
             TxtSuggestedFolderName.Text = RootDirectorySetupHelper.SuggestedFolderName;
-            TxtSuggestedPath.Text = Path.Combine(defaultParentDirectory, RootDirectorySetupHelper.SuggestedFolderName);
+            TxtSuggestedPath.Text = _selectedRootPath;
         }
 
         private void BtnSelectDirectory_Click(object sender, RoutedEventArgs e)
         {
             string defaultParentDirectory = RootDirectorySetupHelper.GetDefaultParentDirectory();
+            string suggestedFullPath = Path.Combine(defaultParentDirectory, RootDirectorySetupHelper.SuggestedFolderName);
+
+            if (!Directory.Exists(suggestedFullPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(suggestedFullPath);
+                }
+                catch
+                {
+                    // Ignore exception cleanly, if it fails here the dialog will still try to open
+                }
+            }
 
             var dialog = new OpenFolderDialog
             {
                 Title = "Choose where to create the PocketMC root folder",
                 Multiselect = false,
-                InitialDirectory = defaultParentDirectory,
+                InitialDirectory = suggestedFullPath,
                 DefaultDirectory = defaultParentDirectory,
                 FolderName = RootDirectorySetupHelper.SuggestedFolderName
             };
@@ -63,6 +77,19 @@ namespace PocketMC.Desktop.Features.Setup
             if (string.IsNullOrWhiteSpace(_selectedRootPath))
             {
                 return;
+            }
+
+            if (!Directory.Exists(_selectedRootPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(_selectedRootPath);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to create directory: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
             }
 
             DirectorySelected?.Invoke(this, _selectedRootPath);
