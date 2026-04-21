@@ -31,6 +31,15 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <ui:Card Margin="12" Width="320">
+                            <ui:Card.Style>
+                                <Style TargetType="ui:Card" BasedOn="{StaticResource {x:Type ui:Card}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#22c55e"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Card.Style>
                             <Grid Margin="4">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/> <!-- Header -->
