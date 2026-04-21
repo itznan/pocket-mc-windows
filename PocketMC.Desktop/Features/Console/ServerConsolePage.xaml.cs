@@ -863,6 +863,26 @@ Logs:
 
         private async System.Threading.Tasks.Task SummarizeSessionAsync()
         {
+            var logPath = System.IO.Path.Combine(_serverProcess.WorkingDirectory, "logs", "pocketmc-session.log");
+            if (System.IO.File.Exists(logPath))
+            {
+                var fileInfo = new System.IO.FileInfo(logPath);
+                // ~1.5MB threshold (roughly 15k-20k lines depending on log format)
+                if (fileInfo.Length > 1_500_000)
+                {
+                    var result = System.Windows.MessageBox.Show(
+                        "Your server session is very long. Summarizing it using AI will require a large number of tokens and may increase your AI usage costs.\n\nDo you want to continue?",
+                        "Long Session Detected",
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Warning);
+                    
+                    if (result != System.Windows.MessageBoxResult.Yes)
+                    {
+                        return; // exit silently
+                    }
+                }
+            }
+
             ToggleAiPanel(true);
             TxtAiStatus.Text = "Generating session summary...";
             TxtAiStatus.Visibility = Visibility.Visible;

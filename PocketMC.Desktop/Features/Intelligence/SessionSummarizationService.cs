@@ -19,17 +19,19 @@ public class SessionSummarizationService
     private readonly SummaryStorageService _storageService;
     private readonly ILogger<SessionSummarizationService> _logger;
 
-    private const string SystemPrompt = @"You are a Minecraft server session analyst. Given server logs from a play session, produce a structured summary covering:
+    private const string SystemPrompt = @"You are an expert Minecraft server analyst. Summarize the entire session log provided earlier. 
+Focus on:
+- Important events
+- Crashes, warnings, and lag spikes
+- Player activity
+- Plugin/mod issues
+- Configuration problems
+- Performance metrics
+- Recommendations for improvement
 
-1. **Session Overview** — Duration, peak player count, overall tone (peaceful, chaotic, productive)
-2. **Player Activity** — Who joined and left, with approximate times
-3. **Deaths & PvP** — Who died, how they died, any PvP kills (attacker → victim)
-4. **Notable Events** — Advancements earned, boss fights, significant commands run by operators
-5. **Errors & Issues** — Any warnings, errors, or crashes that occurred
-6. **Session Highlights** — 2-3 sentence narrative summary of the most interesting moments
+Keep the structure clean and easy to skim.
 
-Format the output in clean Markdown. Be concise but thorough. If no events occurred in a category, skip it.
-Do NOT include raw log lines — only summarized information.";
+If the logs include sensitive data (IPs, emails), DO NOT include them in the summary.";
 
     public SessionSummarizationService(
         AiApiClient aiClient,
