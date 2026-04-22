@@ -259,16 +259,7 @@ public partial class MainWindow : FluentWindow, IShellHost, IStartupShellHost
     public bool NavigateToTunnel() =>
         _serviceProvider.GetRequiredService<IAppNavigationService>().NavigateToTunnel();
 
-    public bool NavigateToPlayitGuide(string claimUrl, bool navigateToDashboardOnCompletion)
-    {
-        return Dispatcher.Invoke(() =>
-        {
-            var guidePage = ActivatorUtilities.CreateInstance<PlayitGuidePage>(
-                _serviceProvider, claimUrl, navigateToDashboardOnCompletion);
-            return _serviceProvider.GetRequiredService<IAppNavigationService>().NavigateToDetailPage(
-                guidePage, "Playit.gg Setup", DetailRouteKind.PlayitGuide, DetailBackNavigation.Tunnel, true);
-        });
-    }
+
 
     public void ShowError(string title, string message) =>
         System.Windows.MessageBox.Show(message, title, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
