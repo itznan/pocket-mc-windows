@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Features.Shell.Interfaces;
@@ -30,9 +29,7 @@ namespace PocketMC.Desktop.Features.Tunnel
         private readonly PortRecoveryService _portRecoveryService;
         private readonly InstanceRegistry _registry;
         private readonly IDialogService _dialogService;
-        private readonly IAppNavigationService _navigationService;
         private readonly IAppDispatcher _dispatcher;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<InstanceTunnelOrchestrator> _logger;
 
         private readonly HashSet<Guid> _resolutionsInFlight = new();
@@ -47,9 +44,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             PortRecoveryService portRecoveryService,
             InstanceRegistry registry,
             IDialogService dialogService,
-            IAppNavigationService navigationService,
             IAppDispatcher dispatcher,
-            IServiceProvider serviceProvider,
             ILogger<InstanceTunnelOrchestrator> logger)
         {
             _tunnelService = tunnelService;
@@ -60,9 +55,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             _portRecoveryService = portRecoveryService;
             _registry = registry;
             _dialogService = dialogService;
-            _navigationService = navigationService;
             _dispatcher = dispatcher;
-            _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
@@ -112,39 +105,12 @@ namespace PocketMC.Desktop.Features.Tunnel
                         continue;
                     }
 
-                    if (resolution.Status == TunnelResolutionResult.TunnelStatus.CreationStarted)
+                    if (resolution.Status == TunnelResolutionResult.TunnelStatus.AutoCreated)
                     {
-                        var tcs = new TaskCompletionSource<bool>();
-                        _dispatcher.Invoke(() =>
+                        if (!string.IsNullOrWhiteSpace(resolution.PublicAddress))
                         {
-                            // Create the guide page, passing port and isBedrockTunnel flag
-                            var guidePage = ActivatorUtilities.CreateInstance<TunnelCreationGuidePage>(
-                                _serviceProvider,
-                                request.Port,
-                                isBedrockTunnel,
-                                request.Protocol,
-                                request.DisplayName);
-
-                            guidePage.OnTunnelResolved += address =>
-                            {
-                                if (!string.IsNullOrWhiteSpace(address))
-                                {
-                                    SetTunnelAddress(vm, request, address, null);
-                                }
-                                tcs.TrySetResult(true);
-                            };
-
-                            guidePage.Unloaded += (s, e) => { tcs.TrySetResult(false); };
-
-                            _navigationService.NavigateToDetailPage(
-                                guidePage,
-                                $"Tunnel Setup: {vm.Name}",
-                                DetailRouteKind.TunnelCreationGuide,
-                                DetailBackNavigation.Dashboard,
-                                clearDetailStack: true);
-                        });
-
-                        await tcs.Task;
+                            SetTunnelAddress(vm, request, resolution.PublicAddress, resolution.NumericAddress);
+                        }
                         continue;
                     }
 

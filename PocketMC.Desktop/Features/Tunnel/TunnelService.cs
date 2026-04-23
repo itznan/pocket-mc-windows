@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -17,8 +17,8 @@ namespace PocketMC.Desktop.Features.Tunnel
         {
             /// <summary>Tunnel exists — public address is available.</summary>
             Found,
-            /// <summary>No tunnel, but capacity exists — browser opened for creation.</summary>
-            CreationStarted,
+            /// <summary>Tunnel was automatically created and its address is available.</summary>
+            AutoCreated,
             /// <summary>Tunnel limit hit (4/4) — user must delete or change port.</summary>
             LimitReached,
             /// <summary>API call failed or token invalid — non-blocking warning.</summary>
@@ -177,23 +177,111 @@ namespace PocketMC.Desktop.Features.Tunnel
                 };
             }
 
-            try
+            // Auto-create the tunnel via the API
+            return await AutoCreateTunnelAsync(request);
+        }
+
+        /// <summary>
+        /// Automatically provisions a new PlayIt tunnel matching the given port request.
+        /// On success, re-fetches tunnels to resolve the connect address.
+        /// On failure, logs the error and returns a non-blocking error result.
+        /// </summary>
+        private async Task<TunnelResolutionResult> AutoCreateTunnelAsync(PortCheckRequest request)
+        {
+            bool isBedrock = request.Protocol == PortProtocol.Udp ||
+                             request.BindingRole is PortBindingRole.BedrockServer
+                                 or PortBindingRole.PocketMineServer
+                                 or PortBindingRole.GeyserBedrock ||
+                             request.Engine is PortEngine.BedrockDedicated
+                                 or PortEngine.PocketMine
+                                 or PortEngine.Geyser;
+
+            string tunnelType = isBedrock ? "minecraft-bedrock" : "minecraft-java";
+            string safeName = SanitizeTunnelName(request.InstanceName ?? request.DisplayName ?? "server");
+            string tunnelName = $"{safeName}-{tunnelType}";
+
+            _logger.LogInformation(
+                "Auto-creating Playit tunnel: Name={TunnelName}, Type={TunnelType}, Port={Port}",
+                tunnelName, tunnelType, request.Port);
+
+            TunnelCreateResult createResult = await _apiClient.CreateTunnelAsync(tunnelName, tunnelType, request.Port);
+
+            if (!createResult.Success)
             {
-                Process.Start(new ProcessStartInfo
+                _logger.LogWarning(
+                    "Playit auto-create failed for port {Port}: {Error}",
+                    request.Port, createResult.ErrorMessage);
+
+                return new TunnelResolutionResult
                 {
-                    FileName = "https://playit.gg/account/setup/new-tunnel",
-                    UseShellExecute = true
-                });
+                    Status = TunnelResolutionResult.TunnelStatus.Error,
+                    ErrorMessage = $"Automatic tunnel creation failed: {createResult.ErrorMessage}",
+                    IsTokenInvalid = createResult.IsTokenInvalid,
+                    RequiresClaim = createResult.RequiresClaim
+                };
             }
-            catch (Exception ex)
+
+            _logger.LogInformation(
+                "Playit tunnel created (id={TunnelId}). Resolving connect address...",
+                createResult.TunnelId);
+
+            // Re-fetch tunnels to resolve the connect address.
+            // The newly created tunnel may take a moment to get a public allocation,
+            // so we poll briefly.
+            for (int attempt = 0; attempt < 6; attempt++)
             {
-                _logger.LogWarning(ex, "Failed to open the Playit tunnel creation page.");
+                if (attempt > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(3));
+                }
+
+                TunnelListResult refreshed = await _apiClient.GetTunnelsAsync();
+                if (!refreshed.Success)
+                {
+                    continue;
+                }
+
+                TunnelData? created = refreshed.Tunnels.FirstOrDefault(t =>
+                    t.Port == request.Port &&
+                    (!t.Protocol.HasValue || t.Protocol.Value == request.Protocol ||
+                     t.Protocol.Value == PortProtocol.TcpAndUdp || request.Protocol == PortProtocol.TcpAndUdp));
+
+                if (created != null && !string.IsNullOrWhiteSpace(created.PublicAddress))
+                {
+                    return new TunnelResolutionResult
+                    {
+                        Status = TunnelResolutionResult.TunnelStatus.AutoCreated,
+                        PublicAddress = created.PublicAddress,
+                        NumericAddress = created.NumericAddress
+                    };
+                }
             }
+
+            // Tunnel was created but we couldn't resolve a public address yet.
+            // This is non-fatal — the address will appear once the allocation completes.
+            _logger.LogWarning(
+                "Tunnel was created for port {Port} but a public address is not yet available.",
+                request.Port);
 
             return new TunnelResolutionResult
             {
-                Status = TunnelResolutionResult.TunnelStatus.CreationStarted
+                Status = TunnelResolutionResult.TunnelStatus.AutoCreated,
+                ErrorMessage = "Tunnel created but public address is not yet available."
             };
+        }
+
+        /// <summary>
+        /// Sanitizes an instance name for use as a PlayIt tunnel name.
+        /// Keeps only ASCII alphanumeric characters and hyphens.
+        /// </summary>
+        private static string SanitizeTunnelName(string name)
+        {
+            char[] sanitized = name
+                .ToLowerInvariant()
+                .Select(c => char.IsLetterOrDigit(c) || c == '-' ? c : '-')
+                .ToArray();
+            string result = new string(sanitized).Trim('-');
+            return string.IsNullOrWhiteSpace(result) ? "pocketmc-server" : result;
         }
 
         /// <summary>

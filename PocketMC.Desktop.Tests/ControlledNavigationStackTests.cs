@@ -102,11 +102,11 @@ public class ControlledNavigationStackTests
     }
 
     [Fact]
-    public void TunnelCreationGuideBackRoutesToDashboard()
+    public void PlayitSetupWizardBackRoutesToDashboard()
     {
         var stack = new ControlledNavigationStack();
         stack.Push(
-            NavigationRouteKind.TunnelCreationGuide,
+            NavigationRouteKind.PlayitSetupWizard,
             NavigationBackTarget.ShellRoute(NavigationRouteKind.Dashboard),
             clearExistingStack: true);
 
@@ -118,11 +118,11 @@ public class ControlledNavigationStackTests
     }
 
     [Fact]
-    public void PlayitGuideBackRoutesToTunnel()
+    public void PlayitSetupWizardBackRoutesToTunnel()
     {
         var stack = new ControlledNavigationStack();
         stack.Push(
-            NavigationRouteKind.TunnelCreationGuide,
+            NavigationRouteKind.PlayitSetupWizard,
             NavigationBackTarget.ShellRoute(NavigationRouteKind.Tunnel),
             clearExistingStack: true);
 
