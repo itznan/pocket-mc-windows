@@ -1,6 +1,26 @@
 # Changelog
 
-This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.2`.
+This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.3`.
+
+## v1.5.3 - Java Management, Networking & Setup Fixes
+
+### 🔒 Playit.gg Security & UX Hardening
+* **New Guided Setup Wizard**: Replaced the manual setup flow with a 4-step guided wizard that simplifies agent linking and removes the need for users to manually manage secret keys.
+* **UI Cleanup**: Removed legacy fields for "Secret Key" and "Provisioning Backend" to provide a cleaner, more secure dashboard experience.
+
+### ☕ Java Runtime Lifecycle Management
+* **User Intent Persistence**: Added a "User Removed" flag to the app configuration. Manually deleted runtimes will no longer be automatically re-downloaded at startup, respecting your decision to save disk space.
+* **Active Instance Protection**: The system now blocks the deletion of any Java runtime that is currently being used by a running server instance to prevent unexpected crashes.
+* **Individual Restore Controls**: Added a "Download" button to each missing runtime row. You can now restore specific Java versions individually without being forced to download all missing bundled runtimes.
+* **Atomic Deletion Logic**: Implemented safe-guarding logic that ensures your intent flag is only saved if the deletion is successful, with automatic rollback on file-system errors.
+
+### 🌐 Networking & Port Resolution
+* **Dynamic Port Reservation**: Fixed a bug where offline servers would permanently block ports. Ports are now dynamically released when an instance is stopped, allowing other servers to use them.
+* **Improved Error Messaging**: Updated port conflict dialogs to be more actionable. The app now specifically identifies when an external process is holding a port and provides clearer guidance on how to resolve the conflict.
+
+### 🛠️ Internal Improvements
+* **Settings Architecture**: Expanded `AppSettings` to support complex state tracking for managed runtimes.
+* **Provisioning Flow**: Refined `JavaProvisioningService` to distinguish between background maintenance and manual user-triggered repairs.
 
 ## v1.5.2 - Intelligence Safeguards & Under-the-Hood Fixes
 
