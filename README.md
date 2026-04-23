@@ -129,6 +129,14 @@ Download `Setup.exe` from the [latest release](https://github.com/PocketMC/pocke
 |-----------------|----------------|
 | ![Settings](docs/assets/screenshot-settings.png) | ![Plugins](docs/assets/screenshot-plugins.png) |
 
+| Mod Marketplace | Public Tunnels |
+|-----------------|----------------|
+| ![Marketplace](docs/assets/mod-marketplace.png) | ![Tunnels](docs/assets/tunnels.png) |
+
+| Managed Runtimes | About |
+|------------------|-------|
+| ![Runtimes](docs/assets/runtimes.png) | ![About](docs/assets/about.png) |
+
 ---
 
 ## System Requirements
