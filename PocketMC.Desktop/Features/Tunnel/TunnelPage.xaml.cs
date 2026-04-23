@@ -371,28 +371,55 @@ namespace PocketMC.Desktop.Features.Tunnel
 
         // ─── Rename ──────────────────────────────────────────────────────
 
+        private void TunnelName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox tb || tb.Tag is not string tunnelId) return;
+            TunnelData? tunnel = _currentTunnels.FirstOrDefault(t => t.Id == tunnelId);
+            if (tunnel == null) return;
+
+            bool changed = !string.Equals(tb.Text?.Trim(), tunnel.Name, StringComparison.Ordinal);
+            SetSaveButtonEnabled(tb, changed);
+        }
+
         private void TunnelName_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter && sender is TextBox tb)
             {
-                Keyboard.ClearFocus();
+                // Trigger the adjacent Save button
+                Wpf.Ui.Controls.Button? saveBtn = FindSiblingButton(tb);
+                if (saveBtn != null && saveBtn.IsEnabled)
+                {
+                    saveBtn.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                }
                 e.Handled = true;
             }
         }
 
-        private async void TunnelName_LostFocus(object sender, RoutedEventArgs e)
+        private async void BtnSaveName_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is not TextBox tb || tb.Tag is not string tunnelId) return;
+            if (sender is not Wpf.Ui.Controls.Button btn || btn.Tag is not string tunnelId) return;
 
-            string newName = tb.Text?.Trim() ?? string.Empty;
             TunnelData? tunnel = _currentTunnels.FirstOrDefault(t => t.Id == tunnelId);
-            if (tunnel == null || string.Equals(newName, tunnel.Name, StringComparison.Ordinal)) return;
+            if (tunnel == null) return;
+
+            // Find the name TextBox in the same row
+            TextBox? tb = FindSiblingTextBox(btn);
+            string newName = tb?.Text?.Trim() ?? string.Empty;
+
             if (string.IsNullOrWhiteSpace(newName))
             {
-                tb.Text = tunnel.Name;
+                if (tb != null) tb.Text = tunnel.Name;
+                btn.IsEnabled = false;
                 return;
             }
 
+            if (string.Equals(newName, tunnel.Name, StringComparison.Ordinal))
+            {
+                btn.IsEnabled = false;
+                return;
+            }
+
+            btn.IsEnabled = false;
             TunnelActionResult result = await _playitApiClient.RenameTunnelAsync(tunnelId, newName);
             if (result.Success)
             {
@@ -400,16 +427,19 @@ namespace PocketMC.Desktop.Features.Tunnel
             }
             else
             {
-                tb.Text = tunnel.Name; // rollback
+                if (tb != null) tb.Text = tunnel.Name;
                 ShowInlineError(tunnelId, $"Rename failed: {result.ErrorMessage}");
             }
         }
 
         // ─── Enable / Disable ────────────────────────────────────────────
 
-        private async void ToggleEnabled_Click(object sender, RoutedEventArgs e)
+        private bool _suppressToggle;
+
+        private async void ToggleEnabled_Changed(object sender, RoutedEventArgs e)
         {
-            if (sender is not ToggleButton toggle || toggle.Tag is not string tunnelId) return;
+            if (_suppressToggle) return;
+            if (sender is not Wpf.Ui.Controls.ToggleSwitch toggle || toggle.Tag is not string tunnelId) return;
 
             bool desiredEnabled = toggle.IsChecked == true;
             TunnelData? tunnel = _currentTunnels.FirstOrDefault(t => t.Id == tunnelId);
@@ -423,7 +453,9 @@ namespace PocketMC.Desktop.Features.Tunnel
             {
                 // Rollback
                 tunnel.IsEnabled = !desiredEnabled;
+                _suppressToggle = true;
                 toggle.IsChecked = !desiredEnabled;
+                _suppressToggle = false;
                 ShowInlineError(tunnelId, $"Toggle failed: {result.ErrorMessage}");
             }
         }
@@ -471,34 +503,55 @@ namespace PocketMC.Desktop.Features.Tunnel
 
         // ─── Update Local Port ───────────────────────────────────────────
 
+        private void TunnelPort_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox tb || tb.Tag is not string tunnelId) return;
+            TunnelData? tunnel = _currentTunnels.FirstOrDefault(t => t.Id == tunnelId);
+            if (tunnel == null) return;
+
+            bool changed = !string.Equals(tb.Text?.Trim(), tunnel.Port.ToString(), StringComparison.Ordinal);
+            SetSaveButtonEnabled(tb, changed);
+        }
+
         private void TunnelPort_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter && sender is TextBox tb)
             {
-                Keyboard.ClearFocus();
+                Wpf.Ui.Controls.Button? saveBtn = FindSiblingButton(tb);
+                if (saveBtn != null && saveBtn.IsEnabled)
+                {
+                    saveBtn.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                }
                 e.Handled = true;
             }
         }
 
-        private async void TunnelPort_LostFocus(object sender, RoutedEventArgs e)
+        private async void BtnSavePort_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is not TextBox tb || tb.Tag is not string tunnelId) return;
+            if (sender is not Wpf.Ui.Controls.Button btn || btn.Tag is not string tunnelId) return;
 
             TunnelData? tunnel = _currentTunnels.FirstOrDefault(t => t.Id == tunnelId);
             if (tunnel == null || !tunnel.HasAgentOrigin) return;
 
-            if (!int.TryParse(tb.Text?.Trim(), out int newPort) || newPort < 1 || newPort > 65535)
+            TextBox? tb = FindSiblingTextBox(btn);
+            if (!int.TryParse(tb?.Text?.Trim(), out int newPort) || newPort < 1 || newPort > 65535)
             {
-                tb.Text = tunnel.Port.ToString();
+                if (tb != null) tb.Text = tunnel.Port.ToString();
+                btn.IsEnabled = false;
                 ShowInlineError(tunnelId, "Invalid port number (1–65535).");
                 return;
             }
 
-            if (newPort == tunnel.Port) return;
+            if (newPort == tunnel.Port)
+            {
+                btn.IsEnabled = false;
+                return;
+            }
 
             int previousPort = tunnel.Port;
             string localIp = tunnel.LocalIp ?? "127.0.0.1";
 
+            btn.IsEnabled = false;
             TunnelActionResult result = await _playitApiClient.UpdateTunnelAsync(
                 tunnelId, localIp, newPort, tunnel.AgentId, tunnel.IsEnabled);
 
@@ -508,7 +561,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             }
             else
             {
-                tb.Text = previousPort.ToString();
+                if (tb != null) tb.Text = previousPort.ToString();
                 ShowInlineError(tunnelId, $"Port update failed: {result.ErrorMessage}");
             }
         }
@@ -574,6 +627,67 @@ namespace PocketMC.Desktop.Features.Tunnel
             }
 
             return null;
+        }
+
+        // ─── Save-button helpers ─────────────────────────────────────────
+
+        /// <summary>
+        /// Walks up from a TextBox to its parent panel and finds the adjacent
+        /// <see cref="Wpf.Ui.Controls.Button"/> with Content == "Save".
+        /// </summary>
+        private static Wpf.Ui.Controls.Button? FindSiblingButton(TextBox textBox)
+        {
+            DependencyObject? parent = VisualTreeHelper.GetParent(textBox);
+            // Walk up until we hit a Grid (the row container)
+            while (parent != null && parent is not Grid)
+            {
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            if (parent == null) return null;
+
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+                if (child is Wpf.Ui.Controls.Button btn && btn.Content is string s && s == "Save")
+                {
+                    return btn;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// From a Save button, walks its parent to find the TextBox that shares the same Tag (tunnel ID).
+        /// </summary>
+        private static TextBox? FindSiblingTextBox(Wpf.Ui.Controls.Button button)
+        {
+            string? targetTag = button.Tag as string;
+            if (targetTag == null) return null;
+
+            DependencyObject? parent = VisualTreeHelper.GetParent(button);
+            while (parent != null && parent is not Grid)
+            {
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            if (parent == null) return null;
+
+            return FindChildByTag<TextBox>(parent, targetTag);
+        }
+
+        /// <summary>
+        /// Enables or disables the Save button adjacent to the given TextBox.
+        /// </summary>
+        private static void SetSaveButtonEnabled(TextBox textBox, bool enabled)
+        {
+            Wpf.Ui.Controls.Button? saveBtn = FindSiblingButton(textBox);
+            if (saveBtn != null)
+            {
+                saveBtn.IsEnabled = enabled;
+            }
         }
 
         // ─── Action buttons ──────────────────────────────────────────────

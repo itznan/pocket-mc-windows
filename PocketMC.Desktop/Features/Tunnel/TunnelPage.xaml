@@ -164,12 +164,15 @@
                                     Padding="16,14"
                                     Margin="0,0,0,10">
                                 <StackPanel>
-                                    <!-- Row 1: Name (editable) + Enable toggle + Delete -->
+                                    <!-- Row 1: Name (editable) + Save + Enable toggle + Delete + Copy -->
                                     <Grid Margin="0,0,0,10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="8"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="6"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="12"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="8"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -195,23 +198,34 @@
                                                  Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                  VerticalAlignment="Center"
                                                  Padding="4,4"
-                                                 LostFocus="TunnelName_LostFocus"
+                                                 TextChanged="TunnelName_TextChanged"
                                                  KeyDown="TunnelName_KeyDown"
-                                                 ToolTip="Press Enter or click away to rename"/>
+                                                 ToolTip="Edit the tunnel name, then click Save"/>
 
-                                        <!-- Enable/disable toggle -->
-                                        <ToggleButton Grid.Column="3"
-                                                      IsChecked="{Binding IsEnabled, Mode=OneWay}"
-                                                      Tag="{Binding Id}"
-                                                      Click="ToggleEnabled_Click"
-                                                      ToolTip="Enable or disable this tunnel"
-                                                      VerticalAlignment="Center"
-                                                      Cursor="Hand"
-                                                      Padding="6,4"
-                                                      MinWidth="50"/>
+                                        <!-- Save name button -->
+                                        <ui:Button Grid.Column="4"
+                                                   Content="Save"
+                                                   Appearance="Primary"
+                                                   FontSize="11"
+                                                   Padding="10,4"
+                                                   IsEnabled="False"
+                                                   Click="BtnSaveName_Click"
+                                                   Tag="{Binding Id}"
+                                                   Cursor="Hand"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip="Save the new tunnel name"/>
+
+                                        <!-- Enable/disable toggle (native ToggleSwitch) -->
+                                        <ui:ToggleSwitch Grid.Column="6"
+                                                         IsChecked="{Binding IsEnabled, Mode=OneWay}"
+                                                         Tag="{Binding Id}"
+                                                         Checked="ToggleEnabled_Changed"
+                                                         Unchecked="ToggleEnabled_Changed"
+                                                         ToolTip="Enable or disable this tunnel"
+                                                         VerticalAlignment="Center"/>
 
                                         <!-- Delete button -->
-                                        <ui:Button Grid.Column="5"
+                                        <ui:Button Grid.Column="8"
                                                    ToolTip="Delete this tunnel"
                                                    Icon="{ui:SymbolIcon Delete24}"
                                                    Appearance="Secondary"
@@ -222,7 +236,7 @@
                                                    VerticalAlignment="Center"/>
 
                                         <!-- Copy address -->
-                                        <ui:Button Grid.Column="7"
+                                        <ui:Button Grid.Column="10"
                                                    ToolTip="Copy public address"
                                                    Appearance="Secondary"
                                                    Icon="{ui:SymbolIcon Copy24}"
@@ -233,9 +247,11 @@
                                                    VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Row 2: Port badge + Tunnel Type dropdown + Public Address -->
+                                    <!-- Row 2: Port (editable + Save) + Tunnel Type label + Public Address -->
                                     <Grid Margin="0,0,0,0">
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="6"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="12"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -268,15 +284,28 @@
                                                          MaxWidth="80"
                                                          Padding="2,2"
                                                          VerticalAlignment="Center"
-                                                         LostFocus="TunnelPort_LostFocus"
+                                                         TextChanged="TunnelPort_TextChanged"
                                                          KeyDown="TunnelPort_KeyDown"
                                                          IsEnabled="{Binding HasAgentOrigin}"
-                                                         ToolTip="Edit local port (Enter to save)"/>
+                                                         ToolTip="Edit local port, then click Save"/>
                                             </StackPanel>
                                         </Border>
 
+                                        <!-- Save port button -->
+                                        <ui:Button Grid.Column="2"
+                                                   Content="Save"
+                                                   Appearance="Primary"
+                                                   FontSize="11"
+                                                   Padding="10,4"
+                                                   IsEnabled="False"
+                                                   Click="BtnSavePort_Click"
+                                                   Tag="{Binding Id}"
+                                                   Cursor="Hand"
+                                                   VerticalAlignment="Center"
+                                                   ToolTip="Save the new local port"/>
+
                                         <!-- Tunnel Type (read-only) -->
-                                        <Border Grid.Column="2"
+                                        <Border Grid.Column="4"
                                                 Background="#15CBA6F7"
                                                 BorderBrush="#30CBA6F7"
                                                 BorderThickness="1"
@@ -291,7 +320,7 @@
                                         </Border>
 
                                         <!-- Public Address -->
-                                        <Border Grid.Column="4"
+                                        <Border Grid.Column="6"
                                                 Background="#1589B4FA"
                                                 BorderBrush="#3089B4FA"
                                                 BorderThickness="1"
