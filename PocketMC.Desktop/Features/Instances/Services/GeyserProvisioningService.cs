@@ -228,7 +228,7 @@ public class GeyserProvisioningService
                 "Bedrock players: Connect with the SAME IP on Geyser's Bedrock UDP port (default: 19132).\n\n" +
                 "First run:\n" +
                 "  1. Start the server once — Geyser will auto-generate its config.yml\n" +
-                $"     inside {targetDir}/Geyser-Spigot/config.yml\n" +
+                $"     inside plugins/Geyser-Spigot/config.yml (or config/Geyser-Fabric/config.yml, depending on server type)\n" +
                 "  2. Restart the server. Geyser will then listen on its configured Bedrock UDP port.\n\n" +
                 "Tunneling (Playit.gg):\n" +
                 "  - For your Java port tunnel, select: Minecraft Java\n" +
@@ -248,7 +248,11 @@ public class GeyserProvisioningService
             Path.Combine(instancePath, "mods", "Geyser-Fabric", "config.yml"),
             Path.Combine(instancePath, "mods", "Geyser-Forge", "config.yml"),
             Path.Combine(instancePath, "mods", "Geyser-NeoForge", "config.yml"),
-            Path.Combine(instancePath, "mods", "geyser", "config.yml") // generic fallback
+            Path.Combine(instancePath, "mods", "geyser", "config.yml"), // generic fallback
+            Path.Combine(instancePath, "config", "Geyser-Fabric", "config.yml"),
+            Path.Combine(instancePath, "config", "Geyser-Forge", "config.yml"),
+            Path.Combine(instancePath, "config", "Geyser-NeoForge", "config.yml"),
+            Path.Combine(instancePath, "config", "geyser", "config.yml")
         };
 
         foreach (var path in possiblePaths)
