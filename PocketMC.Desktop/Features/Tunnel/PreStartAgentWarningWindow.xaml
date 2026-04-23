@@ -1,0 +1,51 @@
+<ui:FluentWindow x:Class="PocketMC.Desktop.Features.Tunnel.PreStartAgentWarningWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Agent Not Connected"
+        Width="520" Height="280"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowCornerPreference="Round" ExtendsContentIntoTitleBar="True" Background="#1E1E2E">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="⚠ Agent Not Connected"
+                   FontSize="18" FontWeight="Bold"
+                   Foreground="#F38BA8"
+                   Margin="0,0,0,12"/>
+
+        <!-- Explanation -->
+        <TextBlock Grid.Row="1"
+                   Foreground="#BAC2DE" FontSize="13"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,16"
+                   Text="Your PlayIt.gg agent is not connected. Public addresses will not work until the agent is running."/>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="StartAnywayButton"
+                    Content="Start Anyway"
+                    Width="140" Height="32"
+                    Background="#45475A" Foreground="#CDD6F4"
+                    BorderThickness="0"
+                    Margin="0,0,12,0"
+                    Click="StartAnywayButton_Click"/>
+
+            <Button x:Name="ConnectAgentButton"
+                    Content="Connect Agent"
+                    Width="140" Height="32"
+                    Background="#89B4FA" Foreground="#1E1E2E"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    Click="ConnectAgentButton_Click"/>
+        </StackPanel>
+    </Grid>
+</ui:FluentWindow>

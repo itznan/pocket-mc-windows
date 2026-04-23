@@ -19,6 +19,8 @@ using PocketMC.Desktop.Models;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
 using PocketMC.Desktop.Features.Intelligence;
+using PocketMC.Desktop.Features.Settings;
+using PocketMC.Desktop.Features.Tunnel;
 using Microsoft.Extensions.DependencyInjection;
 using PocketMC.Desktop.Features.Shell;
 
@@ -56,6 +58,7 @@ namespace PocketMC.Desktop.Features.Console
         private readonly InstanceMetadata _metadata;
         private readonly ServerProcess _serverProcess;
         private readonly IServerLifecycleService _lifecycleService;
+        private readonly AgentProvisioningService _agentProvisioning;
         private readonly ApplicationState _applicationState;
         private readonly ILogger<ServerConsolePage> _logger;
         private readonly SessionSummarizationService _summarizationService;
@@ -117,6 +120,7 @@ namespace PocketMC.Desktop.Features.Console
         public ServerConsolePage(
             IAppNavigationService navigationService,
             IServerLifecycleService lifecycleService,
+            AgentProvisioningService agentProvisioning,
             InstanceMetadata metadata,
             ServerProcess serverProcess,
             ApplicationState applicationState,
@@ -127,6 +131,7 @@ namespace PocketMC.Desktop.Features.Console
         {
             _navigationService = navigationService;
             _lifecycleService = lifecycleService;
+            _agentProvisioning = agentProvisioning;
             _metadata = metadata;
             _serverProcess = serverProcess;
             _applicationState = applicationState;
@@ -571,6 +576,21 @@ namespace PocketMC.Desktop.Features.Console
         {
             try
             {
+                var agentState = await _agentProvisioning.GetConnectionStateAsync();
+                if (agentState != PocketMC.Desktop.Features.Tunnel.AgentConnectionState.Connected)
+                {
+                    var dialog = new PocketMC.Desktop.Features.Tunnel.PreStartAgentWarningWindow(_agentProvisioning)
+                    {
+                        Owner = System.Windows.Application.Current.MainWindow
+                    };
+                    dialog.Show();
+                    var dialogResult = await dialog.WaitForResultAsync();
+                    if (!dialogResult)
+                    {
+                        return;
+                    }
+                }
+
                 Logs.Add(new LogLine { Text = "[PocketMC] Initiating manual restart...", TextColor = Brushes.Cyan });
                 await _lifecycleService.RestartAsync(_metadata.Id);
             }

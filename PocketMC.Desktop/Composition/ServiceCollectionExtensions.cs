@@ -130,6 +130,7 @@ namespace PocketMC.Desktop.Composition
             services.AddSingleton<PlayitAgentStateMachine>();
             services.AddSingleton<PlayitApiClient>();
             services.AddSingleton<PlayitAgentService>();
+            services.AddSingleton<AgentProvisioningService>();
             services.AddSingleton<InstanceTunnelOrchestrator>();
             // Tunnel resolution is orchestrated from singleton services and keeps no
             // per-request state, so it should share the same app-wide lifetime.

@@ -36,6 +36,7 @@ namespace PocketMC.Desktop.Features.Dashboard
         private readonly IDialogService _dialogService;
         private readonly IAppNavigationService _navigationService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly AgentProvisioningService _agentProvisioning;
         private readonly ILogger<DashboardActionsVM> _logger;
 
         public DashboardActionsVM(
@@ -48,6 +49,7 @@ namespace PocketMC.Desktop.Features.Dashboard
             IDialogService dialogService,
             IAppNavigationService navigationService,
             IServiceProvider serviceProvider,
+            AgentProvisioningService agentProvisioning,
             ILogger<DashboardActionsVM> logger)
         {
             _applicationState = applicationState;
@@ -59,6 +61,7 @@ namespace PocketMC.Desktop.Features.Dashboard
             _dialogService = dialogService;
             _navigationService = navigationService;
             _serviceProvider = serviceProvider;
+            _agentProvisioning = agentProvisioning;
             _logger = logger;
         }
 
@@ -66,6 +69,21 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             try
             {
+                var agentState = await _agentProvisioning.GetConnectionStateAsync();
+                if (agentState != AgentConnectionState.Connected)
+                {
+                    var dialog = new PreStartAgentWarningWindow(_agentProvisioning)
+                    {
+                        Owner = System.Windows.Application.Current.MainWindow
+                    };
+                    dialog.Show();
+                    var dialogResult = await dialog.WaitForResultAsync();
+                    if (!dialogResult)
+                    {
+                        return;
+                    }
+                }
+
                 var availableMb = MemoryHelper.GetAvailablePhysicalMemoryMb();
                 var requiredMb = (ulong)vm.Metadata.MaxRamMb;
                 if (availableMb < requiredMb + 512)
@@ -184,6 +202,21 @@ namespace PocketMC.Desktop.Features.Dashboard
         {
             try
             {
+                var agentState = await _agentProvisioning.GetConnectionStateAsync();
+                if (agentState != AgentConnectionState.Connected)
+                {
+                    var dialog = new PreStartAgentWarningWindow(_agentProvisioning)
+                    {
+                        Owner = System.Windows.Application.Current.MainWindow
+                    };
+                    dialog.Show();
+                    var dialogResult = await dialog.WaitForResultAsync();
+                    if (!dialogResult)
+                    {
+                        return;
+                    }
+                }
+
                 vm.UpdateState(ServerState.Stopping);
                 await _lifecycleService.RestartAsync(vm.Id);
                 vm.ClearPortIssue();
