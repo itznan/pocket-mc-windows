@@ -1,6 +1,18 @@
 # Changelog
 
-This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.5.4`.
+This file summarizes the Pocket MC Desktop release line from `v1.0.0` to `v1.6.0`.
+
+## v1.6.0 - Dynamic Theming & Advanced Tunnel Management
+
+### 🎨 Dynamic Theming & UI Enhancements
+* **User-Selectable Themes**: Added a new application theme toggle in App Settings allowing you to freely switch between Light, Dark, and System Default themes without needing to restart the application.
+* **Intelligent Color Adaptability**: Overhauled dashboard and tunnel interfaces to use dynamic resources, ensuring high readability and vibrant aesthetics regardless of the active theme.
+
+### 🌐 Advanced Playit.gg Tunnel Management
+* **Automated Provisioning**: Eliminated the manual tunnel guide. Tunnels are now seamlessly and automatically provisioned in the background the moment you start your server.
+* **Full Tunnel Controls**: The Tunnel Page has been upgraded with a comprehensive management suite. You can now rename tunnels, change local ports, toggle them on/off, and delete them directly from the PocketMC UI.
+* **Explicit Editing States**: Refactored the tunnel renaming and port editing fields to require explicit "Save" actions, preventing accidental misconfigurations.
+* **Connection Transparency**: Added dynamic skeleton loading indicators and clearer error states to the Dashboard's instance cards, providing immediate visual feedback while tunnel addresses are being resolved or if they hit rate limits.
 
 ## v1.5.4 - Playit.gg Connection Gate & Settings Refactor
 
