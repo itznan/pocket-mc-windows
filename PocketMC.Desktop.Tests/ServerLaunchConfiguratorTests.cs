@@ -27,7 +27,7 @@ public sealed class ServerLaunchConfiguratorTests : IDisposable
         // For simplicity in this test, I'll mock the dependencies of the provisioners if I can't mock them directly.
         // But ServerLaunchConfigurator only calls Ensured versions which we can assume pass for these unit tests.
         
-        _javaMock = new Mock<JavaProvisioningService>(null!, null!, null!, null!, null!);
+        _javaMock = new Mock<JavaProvisioningService>(null!, null!, null!, null!, null!, null!);
         _javaMock.Setup(x => x.IsJavaVersionPresent(It.IsAny<int>())).Returns(true);
         
         _phpMock = new Mock<PhpProvisioningService>(new HttpClient(), null!, null!, null!);
