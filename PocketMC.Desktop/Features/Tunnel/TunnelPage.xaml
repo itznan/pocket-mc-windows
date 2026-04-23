@@ -31,95 +31,130 @@
                 Padding="20"
                 Margin="0,0,0,20">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                    <TextBlock Text="Agent Status"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               FontSize="12"
-                               Margin="0,0,0,4"/>
-                    <TextBlock x:Name="TxtStatusValue"
-                               Text="Checking..."
-                               Foreground="#F9E2AF"
-                               FontSize="26"
-                               FontWeight="SemiBold"/>
-                    <TextBlock x:Name="TxtStatusDetail"
-                               Text="Preparing tunnel diagnostics..."
-                               Margin="0,6,0,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               TextWrapping="Wrap"/>
-                </StackPanel>
+                <!-- Left column: Agent status content -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <Border Grid.Row="1"
-                        Background="#12FFFFFF"
-                        CornerRadius="8"
-                        Padding="12"
-                        Margin="0,0,0,12">
-                    <StackPanel>
-                        <TextBlock Text="Agent Path"
+                    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                        <TextBlock Text="Agent Status"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    Margin="0,0,0,4"/>
-                        <TextBlock x:Name="TxtExecutablePath"
-                                   Text=""
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        <TextBlock x:Name="TxtStatusValue"
+                                   Text="Checking..."
+                                   Foreground="#F9E2AF"
+                                   FontSize="26"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtStatusDetail"
+                                   Text="Preparing tunnel diagnostics..."
+                                   Margin="0,6,0,0"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap"/>
                     </StackPanel>
-                </Border>
 
-                <StackPanel Grid.Row="2" Margin="0,0,0,12">
-                    <ProgressBar x:Name="DownloadProgressBar"
-                                 Height="6"
-                                 Minimum="0"
-                                 Maximum="100"
-                                 Value="0"
-                                 Visibility="Collapsed"/>
-                    <TextBlock x:Name="TxtDownloadProgress"
-                               Text=""
-                               Margin="0,8,0,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Visibility="Collapsed"/>
-                </StackPanel>
+                    <Border Grid.Row="1"
+                            Background="#12FFFFFF"
+                            CornerRadius="8"
+                            Padding="12"
+                            Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Agent Path"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       FontSize="12"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock x:Name="TxtExecutablePath"
+                                       Text=""
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                        </StackPanel>
+                    </Border>
 
-                <StackPanel Grid.Row="3" Orientation="Horizontal">
-                    <ui:Button x:Name="BtnDownloadAgent"
-                               Content="Download Agent"
-                               Icon="{ui:SymbolIcon ArrowDownload24}"
-                               Appearance="Primary"
-                               Click="BtnDownloadAgent_Click"
-                               Cursor="Hand"
-                               Margin="0,0,8,0"/>
-                    <ui:Button x:Name="BtnSetupAgent"
-                               Content="Setup Agent"
-                               Icon="{ui:SymbolIcon PersonAdd24}"
+                    <StackPanel Grid.Row="2" Margin="0,0,0,12">
+                        <ProgressBar x:Name="DownloadProgressBar"
+                                     Height="6"
+                                     Minimum="0"
+                                     Maximum="100"
+                                     Value="0"
+                                     Visibility="Collapsed"/>
+                        <TextBlock x:Name="TxtDownloadProgress"
+                                   Text=""
+                                   Margin="0,8,0,0"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal">
+                        <ui:Button x:Name="BtnDownloadAgent"
+                                   Content="Download Agent"
+                                   Icon="{ui:SymbolIcon ArrowDownload24}"
+                                   Appearance="Primary"
+                                   Click="BtnDownloadAgent_Click"
+                                   Cursor="Hand"
+                                   Margin="0,0,8,0"/>
+                        <ui:Button x:Name="BtnSetupAgent"
+                                   Content="Setup Agent"
+                                   Icon="{ui:SymbolIcon PersonAdd24}"
+                                   Appearance="Secondary"
+                                   Click="BtnSetupAgent_Click"
+                                   Cursor="Hand"
+                                   Margin="0,0,8,0"/>
+                        <ui:Button x:Name="BtnConnect"
+                                   Content="Connect"
+                                   Icon="{ui:SymbolIcon Play24}"
+                                   Appearance="Secondary"
+                                   Click="BtnConnect_Click"
+                                   Cursor="Hand"
+                                   Margin="0,0,8,0"/>
+                        <ui:Button x:Name="BtnDisconnect"
+                                   Content="Disconnect"
+                                   Icon="{ui:SymbolIcon Stop24}"
+                                   Appearance="Secondary"
+                                   Click="BtnDisconnect_Click"
+                                   Cursor="Hand"
+                                   Margin="0,0,8,0"/>
+                        <ui:Button x:Name="BtnRefresh"
+                                   Content="Refresh"
+                                   Icon="{ui:SymbolIcon ArrowSync24}"
+                                   Appearance="Secondary"
+                                   Click="BtnRefresh_Click"
+                                   Cursor="Hand"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Right column: PlayIt.gg attribution -->
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Right"
+                            Margin="20,0,0,0">
+                    <TextBlock Text="Special Thanks to Playit.gg ❤️"
+                               FontSize="13"
+                               FontWeight="Medium"
+                               HorizontalAlignment="Right"
+                               Margin="0,0,0,6">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#89dceb" Offset="0.0" />
+                                <GradientStop Color="#89b4fa" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+                    <ui:Button Content="Visit Playit.gg"
+                               Icon="{ui:SymbolIcon Open24}"
                                Appearance="Secondary"
-                               Click="BtnSetupAgent_Click"
-                               Cursor="Hand"
-                               Margin="0,0,8,0"/>
-                    <ui:Button x:Name="BtnConnect"
-                               Content="Connect"
-                               Icon="{ui:SymbolIcon Play24}"
-                               Appearance="Secondary"
-                               Click="BtnConnect_Click"
-                               Cursor="Hand"
-                               Margin="0,0,8,0"/>
-                    <ui:Button x:Name="BtnDisconnect"
-                               Content="Disconnect"
-                               Icon="{ui:SymbolIcon Stop24}"
-                               Appearance="Secondary"
-                               Click="BtnDisconnect_Click"
-                               Cursor="Hand"
-                               Margin="0,0,8,0"/>
-                    <ui:Button x:Name="BtnRefresh"
-                               Content="Refresh"
-                               Icon="{ui:SymbolIcon ArrowSync24}"
-                               Appearance="Secondary"
-                               Click="BtnRefresh_Click"
+                               FontSize="11"
+                               Padding="10,5"
+                               HorizontalAlignment="Right"
+                               Click="BtnVisitPlayit_Click"
                                Cursor="Hand"/>
                 </StackPanel>
             </Grid>

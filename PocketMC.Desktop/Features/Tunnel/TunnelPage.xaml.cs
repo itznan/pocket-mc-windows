@@ -344,6 +344,24 @@ namespace PocketMC.Desktop.Features.Tunnel
             TxtTunnelListStatus.Text = message;
         }
 
+        // ─── Attribution ─────────────────────────────────────────────────
+
+        private void BtnVisitPlayit_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "https://playit.gg",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to open playit.gg in browser.");
+            }
+        }
+
         // ─── Clipboard ───────────────────────────────────────────────────
 
         private void BtnCopyAddress_Click(object sender, RoutedEventArgs e)

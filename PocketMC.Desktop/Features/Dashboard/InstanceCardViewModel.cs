@@ -30,6 +30,8 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     private string _ipDisplayText = "Will Appear Here!";
     private string? _portIssueText;
     private string? _portIssueTooltip;
+    private bool _isTunnelResolving;
+    private string? _tunnelErrorText;
 
     public InstanceCardViewModel(InstanceMetadata metadata, ServerProcessManager serverProcessManager, IServerLifecycleService lifecycleService, PocketMC.Desktop.Features.Shell.ApplicationState appState)
     {
@@ -68,6 +70,42 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     public Visibility PortIssueVisibility => HasPortIssue ? Visibility.Visible : Visibility.Collapsed;
     public string? PortIssueText => _portIssueText;
     public string? PortIssueTooltip => _portIssueTooltip;
+
+    /// <summary>True while the tunnel connect address is being resolved.</summary>
+    public bool IsTunnelResolving
+    {
+        get => _isTunnelResolving;
+        set
+        {
+            if (SetProperty(ref _isTunnelResolving, value))
+            {
+                OnPropertyChanged(nameof(ShowTunnelSkeleton));
+            }
+        }
+    }
+
+    /// <summary>True when tunnel resolution failed and no address is available.</summary>
+    public bool HasTunnelError => !string.IsNullOrEmpty(_tunnelErrorText);
+    public string? TunnelErrorText => _tunnelErrorText;
+
+    /// <summary>True when we should show the skeleton loader (resolving + no address yet).</summary>
+    public bool ShowTunnelSkeleton => _isTunnelResolving && !HasTunnelAddress;
+
+    public void SetTunnelResolving(bool resolving)
+    {
+        _tunnelErrorText = null;
+        OnPropertyChanged(nameof(HasTunnelError));
+        OnPropertyChanged(nameof(TunnelErrorText));
+        IsTunnelResolving = resolving;
+    }
+
+    public void SetTunnelError(string message)
+    {
+        _tunnelErrorText = message;
+        IsTunnelResolving = false;
+        OnPropertyChanged(nameof(HasTunnelError));
+        OnPropertyChanged(nameof(TunnelErrorText));
+    }
 
     /// <summary>True for native Bedrock servers (BDS, Pocketmine).</summary>
     public bool IsBedrockServer =>

@@ -83,7 +83,12 @@ namespace PocketMC.Desktop.Features.Tunnel
                     return;
                 }
 
-                _dispatcher.Invoke(() => { vm.TunnelAddress = null; vm.BedrockTunnelAddress = null; });
+                _dispatcher.Invoke(() =>
+                {
+                    vm.SetTunnelResolving(true);
+                    vm.TunnelAddress = null;
+                    vm.BedrockTunnelAddress = null;
+                });
                 EnsurePlayitAgentRunning();
 
                 foreach (PortCheckRequest request in requests)
@@ -116,6 +121,7 @@ namespace PocketMC.Desktop.Features.Tunnel
 
                     if (resolution.Status == TunnelResolutionResult.TunnelStatus.LimitReached)
                     {
+                        _dispatcher.Invoke(() => vm.SetTunnelError("Address unavailable"));
                         ShowTunnelFailure(vm.Name, request, resolution);
                         break;
                     }
@@ -132,6 +138,7 @@ namespace PocketMC.Desktop.Features.Tunnel
                     }
                     else if (resolution.Status == TunnelResolutionResult.TunnelStatus.Error)
                     {
+                        _dispatcher.Invoke(() => vm.SetTunnelError("Address unavailable"));
                         HandleResolutionError(vm.Name, request, resolution);
                     }
                 }
@@ -142,6 +149,7 @@ namespace PocketMC.Desktop.Features.Tunnel
             }
             finally
             {
+                _dispatcher.Invoke(() => vm.SetTunnelResolving(false));
                 lock (_lock)
                 {
                     _resolutionsInFlight.Remove(vm.Id);
