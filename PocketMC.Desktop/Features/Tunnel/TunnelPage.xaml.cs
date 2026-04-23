@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using PocketMC.Desktop.Core.Interfaces;
 using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Instances.Services;
 using PocketMC.Desktop.Features.Instances.Models;
@@ -33,6 +35,8 @@ namespace PocketMC.Desktop.Features.Tunnel
         private readonly PlayitAgentService _playitAgentService;
         private readonly PlayitApiClient _playitApiClient;
         private readonly PlayitPartnerProvisioningClient _partnerProvisioningClient;
+        private readonly IAppNavigationService _navigationService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<TunnelPage> _logger;
         private bool _isSubscribed;
         private int _refreshVersion;
@@ -43,6 +47,8 @@ namespace PocketMC.Desktop.Features.Tunnel
             PlayitAgentService playitAgentService,
             PlayitApiClient playitApiClient,
             PlayitPartnerProvisioningClient partnerProvisioningClient,
+            IAppNavigationService navigationService,
+            IServiceProvider serviceProvider,
             ILogger<TunnelPage> logger)
         {
             InitializeComponent();
@@ -50,6 +56,8 @@ namespace PocketMC.Desktop.Features.Tunnel
             _playitAgentService = playitAgentService;
             _playitApiClient = playitApiClient;
             _partnerProvisioningClient = partnerProvisioningClient;
+            _navigationService = navigationService;
+            _serviceProvider = serviceProvider;
             _logger = logger;
 
             Loaded += OnLoaded;
@@ -190,7 +198,7 @@ namespace PocketMC.Desktop.Features.Tunnel
                     return;
 
                 case PlayitAgentState.AwaitingSetupCode:
-                    SetUiState(TunnelUiState.AwaitingSetupCode, "Awaiting Setup Code", BuildAwaitingSetupMessage(), Brushes.Gold);
+                    SetUiState(TunnelUiState.AwaitingSetupCode, "Awaiting Setup", "Click Setup Agent to link your Playit.gg account.", Brushes.Gold);
                     ShowNoTunnels("Link Playit with a setup code to load tunnel information.");
                     UpdateActionButtons(binaryExists: true);
                     return;
@@ -204,7 +212,7 @@ namespace PocketMC.Desktop.Features.Tunnel
                     SetUiState(
                         TunnelUiState.ReauthRequired,
                         "Reconnect Required",
-                        _playitAgentService.LastErrorMessage ?? "The saved Playit credentials are no longer valid. Open the setup page and connect again with a new setup code.",
+                        _playitAgentService.LastErrorMessage ?? "The saved Playit credentials are no longer valid. Click Setup Agent to connect again.",
                         Brushes.Orange);
                     ShowNoTunnels("Reconnect Playit to restore tunnel access.");
                     UpdateActionButtons(binaryExists: true);
@@ -217,15 +225,15 @@ namespace PocketMC.Desktop.Features.Tunnel
                     bool hasPartnerConnection = !string.IsNullOrWhiteSpace(_playitAgentService.PartnerConnection?.AgentSecretKey);
                     SetUiState(
                         hasPartnerConnection ? TunnelUiState.Ready : TunnelUiState.AwaitingSetupCode,
-                        hasPartnerConnection ? "Ready" : "Awaiting Setup Code",
+                        hasPartnerConnection ? "Ready" : "Awaiting Setup",
                         hasPartnerConnection
                             ? "PocketMC has Playit credentials saved. Click Connect to start the embedded agent."
-                            : BuildAwaitingSetupMessage(),
+                            : "Click Setup Agent to link your Playit.gg account.",
                         hasPartnerConnection ? Brushes.Silver : Brushes.Gold);
                     ShowNoTunnels(
                         hasPartnerConnection
                             ? "Connect the Playit agent to load tunnel information."
-                            : "Link Playit with a setup code to load tunnel information.");
+                            : "Link Playit with the setup wizard to load tunnel information.");
                     UpdateActionButtons(binaryExists: true);
                     return;
             }
@@ -261,8 +269,8 @@ namespace PocketMC.Desktop.Features.Tunnel
                 {
                     SetUiState(
                         TunnelUiState.AwaitingSetupCode,
-                        "Awaiting Setup Code",
-                        result.ErrorMessage ?? "PocketMC needs a Playit setup code before it can load tunnel inventory.",
+                        "Awaiting Setup",
+                        result.ErrorMessage ?? "PocketMC needs a Playit setup code. Click Setup Agent to get started.",
                         Brushes.Gold);
                     ShowNoTunnels("Link Playit to load your tunnels.");
                     return;
@@ -273,7 +281,7 @@ namespace PocketMC.Desktop.Features.Tunnel
                     SetUiState(
                         TunnelUiState.Ready,
                         "Reconnect Required",
-                        result.ErrorMessage ?? "The saved Playit credentials were rejected. Open the setup page and reconnect with a fresh code.",
+                        result.ErrorMessage ?? "The saved Playit credentials were rejected. Click Setup Agent to reconnect.",
                         Brushes.Orange);
                     ShowNoTunnels("Tunnel data is unavailable until the agent is linked again.");
                     return;
@@ -356,18 +364,19 @@ namespace PocketMC.Desktop.Features.Tunnel
             BtnDownloadAgent.IsEnabled = !isDownloading;
             BtnDownloadAgent.Content = partialExists ? "Resume Download" : "Download Agent";
 
-            BtnOpenSetup.IsEnabled = true;
+            // Setup Agent is shown when no saved connection exists (needs setup)
+            BtnSetupAgent.Visibility = (!hasSavedConnection && binaryExists) ? Visibility.Visible : Visibility.Collapsed;
+            BtnSetupAgent.IsEnabled = !isDownloading && binaryExists;
 
-            BtnConnect.Content = hasSavedConnection
-                ? (_currentUiState == TunnelUiState.ReauthRequired ? "Reconnect Playit" : "Connect")
-                : "Link Playit";
+            // Connect is shown when there IS a saved connection (just needs to start the agent)
+            BtnConnect.Visibility = hasSavedConnection ? Visibility.Visible : Visibility.Collapsed;
+            BtnConnect.Content = _currentUiState == TunnelUiState.ReauthRequired ? "Reconnect" : "Connect";
             BtnConnect.IsEnabled =
                 !isDownloading &&
                 binaryExists &&
                 _currentUiState is TunnelUiState.Ready or TunnelUiState.AwaitingSetupCode or TunnelUiState.ReauthRequired;
 
             BtnDisconnect.IsEnabled = !isDownloading && hasSavedConnection;
-            TxtSetupCode.IsEnabled = !isDownloading;
 
             BtnRefresh.IsEnabled = !isDownloading;
         }
@@ -385,6 +394,23 @@ namespace PocketMC.Desktop.Features.Tunnel
             _ = _playitAgentService.DownloadAgentAsync();
         }
 
+        /// <summary>
+        /// Opens the Setup Agent wizard as a detail page.
+        /// </summary>
+        private void BtnSetupAgent_Click(object sender, RoutedEventArgs e)
+        {
+            var wizardPage = ActivatorUtilities.CreateInstance<PlayitSetupWizardPage>(_serviceProvider);
+            _navigationService.NavigateToDetailPage(
+                wizardPage,
+                "Playit Agent Setup",
+                DetailRouteKind.PlayitSetupWizard,
+                DetailBackNavigation.Tunnel,
+                clearDetailStack: true);
+        }
+
+        /// <summary>
+        /// Starts or restarts the Playit agent when saved credentials already exist.
+        /// </summary>
         private async void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
             if (!_applicationState.IsConfigured || !File.Exists(_applicationState.GetPlayitExecutablePath()) || _playitAgentService.IsDownloadingBinary)
@@ -395,35 +421,16 @@ namespace PocketMC.Desktop.Features.Tunnel
 
             try
             {
-                bool hasSavedConnection = !string.IsNullOrWhiteSpace(_playitAgentService.PartnerConnection?.AgentSecretKey);
-                if (!hasSavedConnection)
-                {
-                    SetUiState(TunnelUiState.Provisioning, "Provisioning", "Creating a self-managed Playit agent for PocketMC.", Brushes.DeepSkyBlue);
-                    ShowNoTunnels("Waiting for Playit provisioning to finish.");
+                SetUiState(TunnelUiState.Starting, "Starting", "Launching the Playit agent and waiting for it to connect.", Brushes.Gold);
+                ShowNoTunnels("Waiting for the Playit agent to come online.");
 
-                    PlayitPartnerCreateAgentResult result = await _playitAgentService.ConnectWithSetupCodeAsync(TxtSetupCode.Text ?? string.Empty);
-                    if (!result.Success)
-                    {
-                        SetUiState(
-                            TunnelUiState.AwaitingSetupCode,
-                            "Awaiting Setup Code",
-                            result.ErrorMessage ?? "PocketMC could not provision the Playit agent.",
-                            Brushes.Orange);
-                    }
+                if (_playitAgentService.IsRunning)
+                {
+                    await _playitAgentService.RestartAsync();
                 }
                 else
                 {
-                    SetUiState(TunnelUiState.Starting, "Starting", "Launching the Playit agent and waiting for it to connect.", Brushes.Gold);
-                    ShowNoTunnels("Waiting for the Playit agent to come online.");
-
-                    if (_playitAgentService.IsRunning)
-                    {
-                        await _playitAgentService.RestartAsync();
-                    }
-                    else
-                    {
-                        _playitAgentService.Start();
-                    }
+                    _playitAgentService.Start();
                 }
             }
             catch (Exception ex)
@@ -442,44 +449,9 @@ namespace PocketMC.Desktop.Features.Tunnel
             await RefreshStatusAsync();
         }
 
-        private void BtnOpenSetup_Click(object sender, RoutedEventArgs e)
-        {
-            Uri? setupUri = _partnerProvisioningClient.GetSetupPageUri();
-            if (setupUri == null)
-            {
-                return;
-            }
-
-            try
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = setupUri.AbsoluteUri,
-                    UseShellExecute = true
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to open the Playit setup page.");
-            }
-        }
-
         private async void BtnRefresh_Click(object sender, RoutedEventArgs e)
         {
             await RefreshStatusAsync();
-        }
-
-
-
-        private string BuildAwaitingSetupMessage()
-        {
-            if (!_partnerProvisioningClient.IsConfigured)
-            {
-                return "Open the Playit setup page to create a code, then configure the PocketMC Playit backend URL before linking the agent.";
-            }
-
-            return _playitAgentService.LastErrorMessage ??
-                   "Open the Playit setup page, create a setup code, paste it here, and click Link Playit.";
         }
 
         private static string FormatBytes(long bytes)

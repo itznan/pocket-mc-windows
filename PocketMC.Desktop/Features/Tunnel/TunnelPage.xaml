@@ -32,8 +32,6 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Margin="0,0,0,12">
@@ -70,26 +68,7 @@
                     </StackPanel>
                 </Border>
 
-
-                <StackPanel Grid.Row="3" Margin="0,0,0,12">
-                    <TextBlock Text="Setup Code"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               FontSize="12"
-                               Margin="0,0,0,4"/>
-                    <TextBox x:Name="TxtSetupCode"
-                             MinWidth="300"
-                             Padding="10,8"
-                             HorizontalAlignment="Left"
-                             TextWrapping="NoWrap"
-                             ToolTip="Paste the Playit setup code created from the Playit website."/>
-                    <TextBlock x:Name="TxtSetupCodeHint"
-                               Text="Open the Playit setup page, choose PocketMC or Other, and paste the code here."
-                               Margin="0,8,0,0"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               TextWrapping="Wrap"/>
-                </StackPanel>
-
-                <StackPanel Grid.Row="4" Margin="0,0,0,12">
+                <StackPanel Grid.Row="2" Margin="0,0,0,12">
                     <ProgressBar x:Name="DownloadProgressBar"
                                  Height="6"
                                  Minimum="0"
@@ -103,7 +82,7 @@
                                Visibility="Collapsed"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="5" Orientation="Horizontal">
+                <StackPanel Grid.Row="3" Orientation="Horizontal">
                     <ui:Button x:Name="BtnDownloadAgent"
                                Content="Download Agent"
                                Icon="{ui:SymbolIcon ArrowDownload24}"
@@ -111,11 +90,11 @@
                                Click="BtnDownloadAgent_Click"
                                Cursor="Hand"
                                Margin="0,0,8,0"/>
-                    <ui:Button x:Name="BtnOpenSetup"
-                               Content="Open Setup Page"
-                               Icon="{ui:SymbolIcon Globe24}"
+                    <ui:Button x:Name="BtnSetupAgent"
+                               Content="Setup Agent"
+                               Icon="{ui:SymbolIcon PersonAdd24}"
                                Appearance="Secondary"
-                               Click="BtnOpenSetup_Click"
+                               Click="BtnSetupAgent_Click"
                                Cursor="Hand"
                                Margin="0,0,8,0"/>
                     <ui:Button x:Name="BtnConnect"

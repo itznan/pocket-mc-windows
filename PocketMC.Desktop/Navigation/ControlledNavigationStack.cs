@@ -15,6 +15,7 @@ public enum NavigationRouteKind
     PluginBrowser,
     ServerConsole,
     TunnelCreationGuide,
+    PlayitSetupWizard,
     ImageCrop
 }
 

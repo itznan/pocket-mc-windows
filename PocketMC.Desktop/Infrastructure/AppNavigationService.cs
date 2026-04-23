@@ -224,6 +224,7 @@ namespace PocketMC.Desktop.Infrastructure
             DetailRouteKind.PluginBrowser => NavigationRouteKind.PluginBrowser,
             DetailRouteKind.ServerConsole => NavigationRouteKind.ServerConsole,
             DetailRouteKind.TunnelCreationGuide => NavigationRouteKind.TunnelCreationGuide,
+            DetailRouteKind.PlayitSetupWizard => NavigationRouteKind.PlayitSetupWizard,
             DetailRouteKind.ImageCrop => NavigationRouteKind.ImageCrop,
             _ => throw new ArgumentOutOfRangeException(nameof(routeKind), routeKind, null)
         };

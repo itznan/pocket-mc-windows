@@ -11,6 +11,7 @@ namespace PocketMC.Desktop.Core.Interfaces
         PluginBrowser,
         ServerConsole,
         TunnelCreationGuide,
+        PlayitSetupWizard,
         ImageCrop
     }
 
