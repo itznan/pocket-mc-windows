@@ -6,7 +6,8 @@
         Width="520" Height="540"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        WindowCornerPreference="Round" ExtendsContentIntoTitleBar="True" Background="#1E1E2E">
+        WindowCornerPreference="Round" ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica" Background="{DynamicResource ApplicationBackgroundBrush}">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -161,22 +162,18 @@
                              Margin="0,0,12,0"
                              VerticalAlignment="Center"/>
 
-            <Button Grid.Column="2"
-                    x:Name="BtnCancel"
-                    Content="Cancel"
-                    Width="100" Height="34"
-                    Background="#45475A" Foreground="#CDD6F4"
-                    BorderThickness="0"
-                    Click="BtnCancel_Click"/>
+            <ui:Button Grid.Column="2"
+                       x:Name="BtnCancel"
+                       Content="Cancel"
+                       Width="100"
+                       Click="BtnCancel_Click"/>
 
-            <Button Grid.Column="4"
-                    x:Name="BtnCreate"
-                    Content="Create"
-                    Width="120" Height="34"
-                    Background="#89B4FA" Foreground="#1E1E2E"
-                    FontWeight="Bold"
-                    BorderThickness="0"
-                    Click="BtnCreate_Click"/>
+            <ui:Button Grid.Column="4"
+                       x:Name="BtnCreate"
+                       Content="Create"
+                       Appearance="Primary"
+                       Width="120"
+                       Click="BtnCreate_Click"/>
         </Grid>
     </Grid>
 </ui:FluentWindow>

@@ -12,10 +12,15 @@
         WindowBackdropType="Mica"
         Background="{DynamicResource ApplicationBackgroundBrush}">
 
-    <DockPanel Margin="24,14,24,18" LastChildFill="True">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <!-- Header: icon + title (top) -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+        <!-- Header: icon + title -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
             <TextBlock x:Name="TxtIcon"
                        FontSize="18"
                        VerticalAlignment="Center"
@@ -27,9 +32,19 @@
                        TextTrimming="CharacterEllipsis"/>
         </StackPanel>
 
-        <!-- Buttons (bottom, right-aligned) -->
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
-                    HorizontalAlignment="Right" Margin="0,14,0,0">
+        <!-- Message body -->
+        <ScrollViewer Grid.Row="1"
+                      MaxHeight="300"
+                      VerticalScrollBarVisibility="Auto">
+            <TextBlock x:Name="TxtMessage"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       FontSize="13"
+                       TextWrapping="Wrap"
+                       LineHeight="20"/>
+        </ScrollViewer>
+
+        <!-- Action buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <ui:Button x:Name="BtnSecondary"
                        Width="100"
                        Margin="0,0,10,0"
@@ -44,16 +59,5 @@
                        IsDefault="True"/>
         </StackPanel>
 
-        <!-- Message body (fills remaining space) -->
-        <ScrollViewer MaxHeight="300"
-                      VerticalScrollBarVisibility="Auto"
-                      Margin="0,0,0,0">
-            <TextBlock x:Name="TxtMessage"
-                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                       FontSize="13"
-                       TextWrapping="Wrap"
-                       LineHeight="20"/>
-        </ScrollViewer>
-
-    </DockPanel>
+    </Grid>
 </ui:FluentWindow>
