@@ -125,7 +125,7 @@ Download `Setup.exe` from the [latest release](https://github.com/PocketMC/pocke
 |-----------|---------------|
 | ![Dashboard](docs/assets/screenshot-dashboard.png) | ![Console](docs/assets/screenshot-console.png) |
 
-| Server Settings | Plugin Browser |
+| App Settings | Plugin Browser |
 |-----------------|----------------|
 | ![Settings](docs/assets/screenshot-settings.png) | ![Plugins](docs/assets/screenshot-plugins.png) |
 
