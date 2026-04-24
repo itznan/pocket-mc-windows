@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using PocketMC.Desktop.Infrastructure;
 
 namespace PocketMC.Desktop.Features.Tunnel
 {
@@ -83,25 +84,6 @@ namespace PocketMC.Desktop.Features.Tunnel
             e.Handled = !e.Text.All(char.IsDigit);
         }
 
-        // ─── Error mapping ───────────────────────────────────────────────
-
-        /// <summary>
-        /// Maps a TunnelCreateErrorV1 code to a user-friendly message.
-        /// </summary>
-        private static string MapErrorCode(string? errorCode)
-        {
-            return errorCode switch
-            {
-                "RequiresVerifiedAccount" => "Your PlayIt.gg account must be verified to create tunnels.",
-                "RegionRequiresPlayitPremium" => "The selected region requires a PlayIt.gg Premium account.",
-                "RequiresPlayitPremium" => "This tunnel type requires PlayIt.gg Premium.",
-                "TunnelNameIsNotAscii" => "Tunnel name must contain ASCII characters only.",
-                "TunnelNameTooLong" => "Tunnel name is too long.",
-                "RegionNotSupported" => "The selected region is not supported for this tunnel type.",
-                _ => $"Tunnel creation failed: {errorCode ?? "unknown error"}."
-            };
-        }
-
         // ─── Actions ─────────────────────────────────────────────────────
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
@@ -142,26 +124,15 @@ namespace PocketMC.Desktop.Features.Tunnel
                     return;
                 }
 
-                // Map known error codes to inline field errors where appropriate
-                if (result.ErrorCode is "TunnelNameIsNotAscii" or "TunnelNameTooLong")
-                {
-                    ShowFieldError(TxtNameError, MapErrorCode(result.ErrorCode));
-                }
-                else
-                {
-                    // Show in the general error area
-                    TxtApiError.Text = MapErrorCode(result.ErrorCode ?? result.ErrorMessage);
-                    ErrorBorder.Visibility = Visibility.Visible;
-                }
+                // Close the dialog, then surface the error via AppDialog
+                string errorMessage = TunnelCreateResult.MapCreateError(result.ErrorCode ?? result.ErrorMessage);
+                Close();
+                AppDialog.ShowError("Tunnel Creation Failed", errorMessage);
             }
             catch (Exception ex)
             {
-                TxtApiError.Text = $"Tunnel creation failed: {ex.Message}";
-                ErrorBorder.Visibility = Visibility.Visible;
-            }
-            finally
-            {
-                SetFormEnabled(true);
+                Close();
+                AppDialog.ShowError("Tunnel Creation Failed", $"Tunnel creation failed: {ex.Message}");
             }
         }
 

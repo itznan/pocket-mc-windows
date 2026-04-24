@@ -36,6 +36,12 @@ namespace PocketMC.Desktop.Features.Tunnel
         public IReadOnlyList<TunnelData> ExistingTunnels { get; set; } = Array.Empty<TunnelData>();
         public PortFailureCode FailureCode { get; set; } = PortFailureCode.None;
 
+        /// <summary>
+        /// When set, indicates the failure was specifically from a v1_tunnels_create call.
+        /// Contains the raw TunnelCreateErrorV1 code from the API.
+        /// </summary>
+        public string? CreateErrorCode { get; set; }
+
         public PortCheckResult? ToPortCheckResult(PortCheckRequest request)
         {
             PortFailureCode failureCode = FailureCode == PortFailureCode.None
@@ -166,18 +172,8 @@ namespace PocketMC.Desktop.Features.Tunnel
                     NumericAddress = matching.NumericAddress
                 };
             }
-
-            if (result.Tunnels.Count >= 4)
-            {
-                return new TunnelResolutionResult
-                {
-                    Status = TunnelResolutionResult.TunnelStatus.LimitReached,
-                    ExistingTunnels = result.Tunnels,
-                    FailureCode = PortFailureCode.TunnelLimitReached
-                };
-            }
-
-            // Auto-create the tunnel via the API
+            // No matching tunnel exists — auto-create one via the API.
+            // The API will reject the request if the account's tunnel limit is reached.
             return await AutoCreateTunnelAsync(request);
         }
 
@@ -208,6 +204,22 @@ namespace PocketMC.Desktop.Features.Tunnel
 
             if (!createResult.Success)
             {
+                // Check if the API rejected because the tunnel limit was hit
+                if (createResult.IsLimitError)
+                {
+                    _logger.LogInformation(
+                        "Playit tunnel limit reached for port {Port}. Upgrade required.",
+                        request.Port);
+
+                    return new TunnelResolutionResult
+                    {
+                        Status = TunnelResolutionResult.TunnelStatus.LimitReached,
+                        ErrorMessage = "Tunnel limit reached. Visit playit.gg to upgrade.",
+                        FailureCode = PortFailureCode.TunnelLimitReached,
+                        CreateErrorCode = createResult.ErrorCode
+                    };
+                }
+
                 _logger.LogWarning(
                     "Playit auto-create failed for port {Port}: {Error}",
                     request.Port, createResult.ErrorMessage);
@@ -217,7 +229,8 @@ namespace PocketMC.Desktop.Features.Tunnel
                     Status = TunnelResolutionResult.TunnelStatus.Error,
                     ErrorMessage = $"Automatic tunnel creation failed: {createResult.ErrorMessage}",
                     IsTokenInvalid = createResult.IsTokenInvalid,
-                    RequiresClaim = createResult.RequiresClaim
+                    RequiresClaim = createResult.RequiresClaim,
+                    CreateErrorCode = createResult.ErrorCode
                 };
             }
 

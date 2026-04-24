@@ -55,6 +55,35 @@ namespace PocketMC.Desktop.Features.Tunnel
         public string? ErrorCode { get; set; }
         public bool IsTokenInvalid { get; set; }
         public bool RequiresClaim { get; set; }
+
+        /// <summary>
+        /// True when the API rejected the creation because the account's tunnel limit was reached.
+        /// </summary>
+        public bool IsLimitError =>
+            ErrorCode is "RequiresPlayitPremium" or "RegionRequiresPlayitPremium";
+
+        /// <summary>
+        /// Maps a raw TunnelCreateErrorV1 code to a human-readable message for display in AppDialog.
+        /// </summary>
+        public static string MapCreateError(string? errorCode)
+        {
+            return errorCode switch
+            {
+                "RequiresPlayitPremium" => "Tunnel limit reached. Upgrade to PlayIt.gg Premium to create more tunnels.",
+                "RegionRequiresPlayitPremium" => "The selected region requires a PlayIt.gg Premium account.",
+                "PublicPortRequiresPlayitPremium" => "A public port requires PlayIt.gg Premium.",
+                "RequiresVerifiedAccount" => "Your PlayIt.gg account must be verified before creating tunnels.",
+                "AgentVersionTooOld" => "The PlayIt.gg agent is out of date. Please update it and try again.",
+                "AgentNotFound" => "PlayIt.gg agent not found. Please reconnect and try again.",
+                "TunnelNameIsNotAscii" => "Tunnel name contains invalid characters. Use ASCII characters only.",
+                "TunnelNameTooLong" => "Tunnel name is too long. Please shorten it and try again.",
+                "RegionNotSupported" => "The selected region is not supported for this tunnel type.",
+                "TunnelTypeBlockedOnRegion" => "This tunnel type is not available in the selected region.",
+                "GatewayAlreadyHasTunnelType" => "A tunnel of this type already exists on this gateway.",
+                "InvalidTunnelConfig" => "Invalid tunnel configuration. Please check your settings and try again.",
+                _ => $"Tunnel creation failed: {errorCode ?? "unknown error"}. Please try again."
+            };
+        }
     }
 
     /// <summary>
