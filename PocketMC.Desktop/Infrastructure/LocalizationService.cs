@@ -20,7 +20,10 @@ namespace PocketMC.Desktop.Infrastructure
         {
             new LanguageInfo("en-US", "English"),
             new LanguageInfo("es-ES", "Español"),
-            new LanguageInfo("hi-IN", "हिंदी")
+            new LanguageInfo("hi-IN", "हिंदी"),
+            new LanguageInfo("fr-FR", "Français"),
+            new LanguageInfo("de-DE", "Deutsch"),
+            new LanguageInfo("ja-JP", "日本語")
         };
 
         public string CurrentLanguageCode { get; private set; } = "en-US";

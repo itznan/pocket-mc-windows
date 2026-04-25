@@ -18,6 +18,9 @@
     <sys:String x:Key="LanguageEnglish">English</sys:String>
     <sys:String x:Key="LanguageSpanish">Español</sys:String>
     <sys:String x:Key="LanguageHindi">हिंदी</sys:String>
+    <sys:String x:Key="LanguageFrench">फ्रेंच</sys:String>
+    <sys:String x:Key="LanguageGerman">जर्मन</sys:String>
+    <sys:String x:Key="LanguageJapanese">जापानी</sys:String>
     <sys:String x:Key="SettingsCardApiConfiguration">API कॉन्फ़िगरेशन</sys:String>
     <sys:String x:Key="SettingsCardApiConfigurationDescription">CurseForge जैसे तृतीय-पक्ष API कुंजियों को कॉन्फ़िगर करें।</sys:String>
     <sys:String x:Key="CurseForgeApiKeyLabel">CurseForge API कुंजी</sys:String>

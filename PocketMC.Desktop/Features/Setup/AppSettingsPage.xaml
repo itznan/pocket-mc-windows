@@ -115,6 +115,9 @@
                             <ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="en-US"/>
                             <ComboBoxItem Content="{DynamicResource LanguageSpanish}" Tag="es-ES"/>
                             <ComboBoxItem Content="{DynamicResource LanguageHindi}" Tag="hi-IN"/>
+                            <ComboBoxItem Content="{DynamicResource LanguageFrench}" Tag="fr-FR"/>
+                            <ComboBoxItem Content="{DynamicResource LanguageGerman}" Tag="de-DE"/>
+                            <ComboBoxItem Content="{DynamicResource LanguageJapanese}" Tag="ja-JP"/>
                         </ComboBox>
                     </StackPanel>
                 </ui:CardExpander>

@@ -18,6 +18,9 @@
     <sys:String x:Key="LanguageEnglish">English</sys:String>
     <sys:String x:Key="LanguageSpanish">Español</sys:String>
     <sys:String x:Key="LanguageHindi">Hindi</sys:String>
+    <sys:String x:Key="LanguageFrench">Francés</sys:String>
+    <sys:String x:Key="LanguageGerman">Alemán</sys:String>
+    <sys:String x:Key="LanguageJapanese">Japonés</sys:String>
     <sys:String x:Key="SettingsCardApiConfiguration">Configuración de API</sys:String>
     <sys:String x:Key="SettingsCardApiConfigurationDescription">Configura claves API de terceros como CurseForge.</sys:String>
     <sys:String x:Key="CurseForgeApiKeyLabel">Clave API de CurseForge</sys:String>
