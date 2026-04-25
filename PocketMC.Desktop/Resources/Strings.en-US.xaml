@@ -19,7 +19,7 @@
     <sys:String x:Key="LanguageSpanish">Español</sys:String>
     <sys:String x:Key="LanguageFrench">Français</sys:String>
     <sys:String x:Key="LanguageGerman">Deutsch</sys:String>
-    <sys:String x:Key="LanguageJapanese">日本語</sys:String>    <sys:String x:Key="LanguageChinese">??</sys:String>    <sys:String x:Key="SettingsCardApiConfiguration">API Configuration</sys:String>
+    <sys:String x:Key="LanguageJapanese">日本語</sys:String>    <sys:String x:Key="LanguageChinese">中文</sys:String>    <sys:String x:Key="SettingsCardApiConfiguration">API Configuration</sys:String>
     <sys:String x:Key="SettingsCardApiConfigurationDescription">Configure third-party API keys for services like CurseForge.</sys:String>
     <sys:String x:Key="CurseForgeApiKeyLabel">CurseForge API Key</sys:String>
     <sys:String x:Key="CurseForgeApiKeyDescription">Obtain a key from CurseForge console if you hit rate limits.</sys:String>
