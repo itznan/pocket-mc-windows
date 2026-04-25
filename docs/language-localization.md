@@ -57,6 +57,15 @@ Always bind localized UI text with `DynamicResource`:
 
 `StaticResource` will not update after the language changes.
 
+### Localized Window Titles
+
+For new dialogs or windows, ensure the `Title` attribute uses `DynamicResource` rather than a hardcoded string:
+
+```xml
+<ui:FluentWindow x:Class="..."
+                 Title="{DynamicResource MyDialogTitle}">
+```
+
 ### Localized hyperlink text
 
 In WPF, hyperlink text must be wrapped in a `Run`:
@@ -118,6 +127,15 @@ Example:
 ```
 
 ## Troubleshooting
+
+### Encoding Issues (Garbled Characters)
+
+If localized characters (like ñ, é, ä, or Japanese/Chinese text) appear corrupted or as "mojibake" in the UI, the XML file may have lost its UTF-8 encoding metadata.
+**Fix:** Ensure the very first line of the resource dictionary explicitly declares UTF-8 encoding:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+```
+This forces the WPF parser to interpret the file using UTF-8 regardless of the system's default code page.
 
 ### Common issues
 
