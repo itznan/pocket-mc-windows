@@ -16,7 +16,7 @@ This guide explains how PocketMC handles runtime localization and how to extend 
 PocketMC uses WPF `ResourceDictionary` files to store UI text for each supported culture. The localization flow is:
 
 1. App startup loads a default resource dictionary.
-2. `LocalizationService.Initialize(...)` reads the saved language code from user settings.
+2. `LocalizationService.Initialize(...)` reads the saved language code from user settings. If no saved language exists, it detects the PC's current UI language and uses the matching supported culture automatically; otherwise it falls back to English (`en-US`).
 3. The current language resource dictionary is merged into `Application.Current.Resources`.
 4. UI elements use `DynamicResource` for text values so changes apply immediately.
 
