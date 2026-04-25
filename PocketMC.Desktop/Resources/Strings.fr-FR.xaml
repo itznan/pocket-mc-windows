@@ -290,6 +290,7 @@
     <sys:String x:Key="TunnelCopyAddressToolTip">Copier l'adresse publique dans le presse-papiers</sys:String>
     <sys:String x:Key="TunnelPortLabel">PORT</sys:String>
     <sys:String x:Key="TunnelEditPortToolTip">Modifier le port local pour ce tunnel</sys:String>
+    <sys:String x:Key="TunnelSavePortToolTip">Enregistrer le nouveau port local pour ce tunnel</sys:String>
     <sys:String x:Key="JavaSetupPageTitle">Configuration Java</sys:String>
     <sys:String x:Key="JavaSetupPageDescription">Gérer et installer les environnements d'exécution Java requis par vos serveurs.</sys:String>
     <sys:String x:Key="JavaSetupDownloadMissingButton">Télécharger manquants</sys:String>

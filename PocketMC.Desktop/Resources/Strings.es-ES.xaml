@@ -290,6 +290,7 @@
     <sys:String x:Key="TunnelCopyAddressToolTip">Copiar dirección pública al portapapeles</sys:String>
     <sys:String x:Key="TunnelPortLabel">PUERTO</sys:String>
     <sys:String x:Key="TunnelEditPortToolTip">Editar puerto local para este túnel</sys:String>
+    <sys:String x:Key="TunnelSavePortToolTip">Guardar el nuevo puerto local para este túnel</sys:String>
     <sys:String x:Key="JavaSetupPageTitle">Configuración de Java</sys:String>
     <sys:String x:Key="JavaSetupPageDescription">Administrar e instalar tiempos de ejecución de Java requeridos por tus servidores.</sys:String>
     <sys:String x:Key="JavaSetupDownloadMissingButton">Descargar faltantes</sys:String>

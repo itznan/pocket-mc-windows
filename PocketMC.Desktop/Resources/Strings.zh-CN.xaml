@@ -290,6 +290,7 @@
     <sys:String x:Key="TunnelCopyAddressToolTip">将公共地址复制到剪贴板</sys:String>
     <sys:String x:Key="TunnelPortLabel">端口</sys:String>
     <sys:String x:Key="TunnelEditPortToolTip">编辑此隧道的本地端口</sys:String>
+    <sys:String x:Key="TunnelSavePortToolTip">保存此隧道的新本地端口</sys:String>
     <sys:String x:Key="JavaSetupPageTitle">Java设置</sys:String>
     <sys:String x:Key="JavaSetupPageDescription">管理和安装您的服务器所需的Java运行时。</sys:String>
     <sys:String x:Key="JavaSetupDownloadMissingButton">下载缺失项</sys:String>

@@ -290,6 +290,7 @@
     <sys:String x:Key="TunnelCopyAddressToolTip">公開アドレスをクリップボードにコピー</sys:String>
     <sys:String x:Key="TunnelPortLabel">ポート</sys:String>
     <sys:String x:Key="TunnelEditPortToolTip">このトンネルのローカルポートを編集</sys:String>
+    <sys:String x:Key="TunnelSavePortToolTip">このトンネルの新しいローカルポートを保存する</sys:String>
     <sys:String x:Key="JavaSetupPageTitle">Java設定</sys:String>
     <sys:String x:Key="JavaSetupPageDescription">サーバーで必要なJavaランタイムを管理およびインストールします。</sys:String>
     <sys:String x:Key="JavaSetupDownloadMissingButton">不足をダウンロード</sys:String>

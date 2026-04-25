@@ -290,6 +290,7 @@
     <sys:String x:Key="TunnelCopyAddressToolTip">Öffentliche Adresse in die Zwischenablage kopieren</sys:String>
     <sys:String x:Key="TunnelPortLabel">PORT</sys:String>
     <sys:String x:Key="TunnelEditPortToolTip">Lokalen Port für diesen Tunnel bearbeiten</sys:String>
+    <sys:String x:Key="TunnelSavePortToolTip">Neuen lokalen Port für diesen Tunnel speichern</sys:String>
     <sys:String x:Key="JavaSetupPageTitle">Java-Setup</sys:String>
     <sys:String x:Key="JavaSetupPageDescription">Verwalten und installieren Sie Java-Laufzeiten, die von Ihren Servern benötigt werden.</sys:String>
     <sys:String x:Key="JavaSetupDownloadMissingButton">Fehlende herunterladen</sys:String>

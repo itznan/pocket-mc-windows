@@ -392,6 +392,7 @@ namespace PocketMC.Desktop.Features.Setup
             {
                 // LocalizationService.ChangeLanguage() already persists the language setting to disk.
                 _localizationService.ChangeLanguage(languageCode);
+                _applicationState.Settings.Language = languageCode;
             }
         }
 
