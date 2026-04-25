@@ -14,7 +14,7 @@
         <!-- Header -->
         <Grid Grid.Row="0" Margin="0,0,0,20">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <ui:Button Content="Back"
+                <ui:Button Content="{DynamicResource BackButton}"
                            Appearance="Secondary"
                            Icon="{ui:SymbolIcon ArrowLeft24}"
                            MinWidth="88"
@@ -23,34 +23,34 @@
 
                 <ui:TextBlock x:Name="TxtTitle"
                               FontTypography="Title"
-                              Text="World Maps Browser"
+                              Text="{DynamicResource MapBrowserTitle}"
                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                               VerticalAlignment="Center"/>
             </StackPanel>
             
-            <ui:Button Content="Browse More on Web" 
-                       Appearance="Secondary" 
-                       Icon="{ui:SymbolIcon Globe24}" 
-                       HorizontalAlignment="Right" 
+            <ui:Button Content="{DynamicResource BrowseMoreMapsButton}"
+                       Appearance="Secondary"
+                       Icon="{ui:SymbolIcon Globe24}"
+                       HorizontalAlignment="Right"
                        Click="BtnWebBrowse_Click"
-                       ToolTip="Open minecraftmaps.com"/>
+                       ToolTip="{DynamicResource BrowseMoreMapsToolTip}"/>
         </Grid>
 
         <!-- Search and Filters -->
         <Grid Grid.Row="1" Margin="0,0,0,16">
             <ui:Card Padding="16">
                 <StackPanel Orientation="Horizontal">
-                    <ui:AutoSuggestBox x:Name="TxtSearch" PlaceholderText="Search maps..." Width="260" Margin="0,0,16,0"
+                    <ui:AutoSuggestBox x:Name="TxtSearch" PlaceholderText="{DynamicResource MapBrowserSearchPlaceholder}" Width="260" Margin="0,0,16,0"
                                        Icon="{ui:SymbolIcon Search24}" TextChanged="TxtSearch_TextChanged"/>
 
-                    <TextBlock Text="Source:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="{DynamicResource MapBrowserSourceLabel}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     <ComboBox x:Name="CmbSource" Width="130" Margin="0,0,16,0" IsEnabled="False">
-                        <ComboBoxItem Content="CurseForge" IsSelected="True"/>
+                        <ComboBoxItem Content="{DynamicResource MapBrowserSourceCurseForge}" IsSelected="True"/>
                     </ComboBox>
 
-                    <TextBlock Text="Sort By:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="{DynamicResource MapBrowserSortByLabel}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     <ComboBox x:Name="CmbSort" Width="130" Margin="0,0,16,0" SelectionChanged="RefreshList_SelectionChanged" Visibility="Hidden">
-                        <ComboBoxItem Content="Trending" Tag="relevance" IsSelected="True"/>
+                        <ComboBoxItem Content="{DynamicResource MapBrowserSortTrending}" Tag="relevance" IsSelected="True"/>
                     </ComboBox>
 
                     <ui:SymbolIcon Symbol="Info24" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
@@ -89,14 +89,14 @@
 
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
                                             <ui:Button x:Name="BtnAction" Width="90" Height="36"
-                                                       Click="BtnInstall_Click" Tag="{Binding Slug}" Appearance="Primary" Content="Import"/>
+                                                       Click="BtnInstall_Click" Tag="{Binding Slug}" Appearance="Primary" Content="{DynamicResource ImportButton}"/>
                                         </StackPanel>
                                     </Grid>
                                 </ui:Card>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <ui:Button x:Name="BtnLoadMore" Content="Load More" Appearance="Secondary" HorizontalAlignment="Center" Margin="0,8,0,16" Click="BtnLoadMore_Click" Visibility="Collapsed"/>
+                    <ui:Button x:Name="BtnLoadMore" Content="{DynamicResource LoadMoreButton}" Appearance="Secondary" HorizontalAlignment="Center" Margin="0,8,0,16" Click="BtnLoadMore_Click" Visibility="Collapsed"/>
                 </StackPanel>
             </ScrollViewer>
 

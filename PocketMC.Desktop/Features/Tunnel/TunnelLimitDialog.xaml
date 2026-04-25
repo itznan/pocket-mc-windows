@@ -18,7 +18,7 @@
 
         <!-- Header -->
         <TextBlock Grid.Row="0"
-                   Text="⚠ Tunnel Limit Reached (4/4)"
+                   Text="{DynamicResource TunnelLimitTitle}"
                    FontSize="18" FontWeight="Bold"
                    Foreground="#F38BA8"
                    Margin="0,0,0,12"/>
@@ -28,12 +28,12 @@
                    Foreground="#BAC2DE" FontSize="13"
                    TextWrapping="Wrap"
                    Margin="0,0,0,16"
-                   Text="Your Playit.gg account has reached the maximum of 4 tunnels. To make this server public, either delete a tunnel from your Playit.gg dashboard, or change this server's port to one that already has a tunnel assigned."/>
+                   Text="{DynamicResource TunnelLimitMessage}"/>
 
         <!-- Existing tunnels list -->
         <Border Grid.Row="2" Background="#313244" CornerRadius="6" Padding="12" Margin="0,0,0,16">
             <StackPanel>
-                <TextBlock Text="Current Tunnels:"
+                <TextBlock Text="{DynamicResource TunnelLimitCurrentTunnelsLabel}"
                            Foreground="#CDD6F4" FontWeight="Bold" FontSize="13"
                            Margin="0,0,0,8"/>
                 <ItemsControl x:Name="TunnelListControl" Foreground="#A6ADC8" FontSize="12">
@@ -58,7 +58,7 @@
         <!-- Action Buttons -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="OpenDashboardButton"
-                    Content="Open Tunnel Dashboard"
+                    Content="{DynamicResource OpenTunnelDashboardButton}"
                     Width="180" Height="32"
                     Background="#89B4FA" Foreground="#1E1E2E"
                     FontWeight="Bold"
@@ -67,7 +67,7 @@
                     Click="OpenDashboardButton_Click"/>
 
             <Button x:Name="ChangePortButton"
-                    Content="Change Port"
+                    Content="{DynamicResource ChangePortButton}"
                     Width="120" Height="32"
                     Background="#45475A" Foreground="#CDD6F4"
                     BorderThickness="0"

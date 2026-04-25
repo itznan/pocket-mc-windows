@@ -14,7 +14,7 @@
         <!-- Header -->
         <Grid Grid.Row="0" Margin="0,0,0,20">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <ui:Button Content="Back"
+                <ui:Button Content="{DynamicResource BackButton}"
                            Appearance="Secondary"
                            Icon="{ui:SymbolIcon ArrowLeft24}"
                            MinWidth="88"
@@ -23,7 +23,7 @@
 
                 <ui:TextBlock x:Name="TxtTitle"
                               FontTypography="Title"
-                              Text="Plugin Marketplace"
+                              Text="{DynamicResource PluginBrowserTitle}"
                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                               VerticalAlignment="Center"/>
             </StackPanel>
@@ -33,20 +33,20 @@
         <Grid Grid.Row="1" Margin="0,0,0,16">
             <ui:Card Padding="16">
                 <StackPanel Orientation="Horizontal">
-                    <ui:AutoSuggestBox x:Name="TxtSearch" PlaceholderText="Search mods/plugins..." Width="260" Margin="0,0,16,0"
+                    <ui:AutoSuggestBox x:Name="TxtSearch" PlaceholderText="{DynamicResource PluginBrowserSearchPlaceholder}" Width="260" Margin="0,0,16,0"
                                        Icon="{ui:SymbolIcon Search24}" TextChanged="TxtSearch_TextChanged"/>
 
-                    <TextBlock Text="Source:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="{DynamicResource PluginBrowserSourceLabel}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     <ComboBox x:Name="CmbSource" Width="130" Margin="0,0,16,0" SelectionChanged="RefreshList_SelectionChanged">
-                        <ComboBoxItem Content="Modrinth" IsSelected="True"/>
-                        <ComboBoxItem Content="CurseForge"/>
+                        <ComboBoxItem Content="{DynamicResource PluginBrowserSourceModrinth}" IsSelected="True"/>
+                        <ComboBoxItem Content="{DynamicResource PluginBrowserSourceCurseForge}"/>
                     </ComboBox>
 
-                    <TextBlock Text="Sort By:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Text="{DynamicResource PluginBrowserSortByLabel}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                     <ComboBox x:Name="CmbSort" Width="130" Margin="0,0,16,0" SelectionChanged="RefreshList_SelectionChanged">
-                        <ComboBoxItem Content="Trending" Tag="relevance" IsSelected="True"/>
-                        <ComboBoxItem Content="Top Downloads" Tag="downloads"/>
-                        <ComboBoxItem Content="Newest" Tag="newest"/>
+                        <ComboBoxItem Content="{DynamicResource PluginBrowserSortTrending}" Tag="relevance" IsSelected="True"/>
+                        <ComboBoxItem Content="{DynamicResource PluginBrowserSortTopDownloads}" Tag="downloads"/>
+                        <ComboBoxItem Content="{DynamicResource PluginBrowserSortNewest}" Tag="newest"/>
                     </ComboBox>
 
                     <ui:SymbolIcon Symbol="Info24" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
@@ -96,7 +96,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <ui:Button x:Name="BtnLoadMore" Content="Load More" Appearance="Secondary" HorizontalAlignment="Center" Margin="0,8,0,16" Click="BtnLoadMore_Click" Visibility="Collapsed"/>
+                    <ui:Button x:Name="BtnLoadMore" Content="{DynamicResource LoadMoreButton}" Appearance="Secondary" HorizontalAlignment="Center" Margin="0,8,0,16" Click="BtnLoadMore_Click" Visibility="Collapsed"/>
                 </StackPanel>
             </ScrollViewer>
 

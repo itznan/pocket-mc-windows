@@ -14,24 +14,24 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
             <StackPanel>
-                <TextBlock Text="PocketMC"
+                <TextBlock Text="{DynamicResource RootDirectorySetupAppTitle}"
                            FontSize="18"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                            Margin="0,0,0,16"/>
 
                 <ui:TextBlock FontTypography="Title"
-                              Text="Choose a home folder for PocketMC"
+                              Text="{DynamicResource RootDirectorySetupHeading}"
                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                               Margin="0,0,0,10"/>
 
-                <TextBlock Text="PocketMC needs one home folder before setup can continue. This is where the app stores Java runtimes, server files, backups, and PocketMC app data."
+                <TextBlock Text="{DynamicResource RootDirectorySetupDescription}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            TextWrapping="Wrap"
                            FontSize="14"
                            Margin="0,0,0,24"/>
 
-                <TextBlock Text="Folder name"
+                <TextBlock Text="{DynamicResource RootDirectoryFolderNameLabel}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            FontSize="12"
                            Margin="0,0,0,8"/>
@@ -46,7 +46,7 @@
                          BorderThickness="1"
                          Margin="0,0,0,18"/>
 
-                <TextBlock Text="Folder preview"
+                <TextBlock Text="{DynamicResource RootDirectoryPreviewLabel}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            FontSize="12"
                            Margin="0,0,0,8"/>
@@ -62,7 +62,7 @@
 
                 <StackPanel Orientation="Horizontal">
                     <ui:Button x:Name="SelectDirectoryButton"
-                               Content="Select Directory"
+                               Content="{DynamicResource SelectDirectoryButton}"
                                Icon="{ui:SymbolIcon Folder24}"
                                Appearance="Primary"
                                MinWidth="164"
@@ -71,7 +71,7 @@
                                Cursor="Hand"/>
 
                     <ui:Button x:Name="ContinueButton"
-                               Content="Continue"
+                               Content="{DynamicResource ContinueButton}"
                                Appearance="Secondary"
                                MinWidth="128"
                                Margin="12,0,0,0"

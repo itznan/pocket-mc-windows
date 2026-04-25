@@ -10,8 +10,8 @@
                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,1,0,0"
                 Padding="16,12">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:Button Content="Cancel" Click="BtnCancel_Click" Margin="0,0,8,0" Icon="{ui:SymbolIcon Dismiss24}"/>
-                <ui:Button Appearance="Primary" Content="Crop &amp; Save" Click="BtnSave_Click" Icon="{ui:SymbolIcon Checkmark24}"/>
+                <ui:Button Content="{DynamicResource CancelButton}" Click="BtnCancel_Click" Margin="0,0,8,0" Icon="{ui:SymbolIcon Dismiss24}"/>
+                <ui:Button Appearance="Primary" Content="{DynamicResource CropAndSaveButton}" Click="BtnSave_Click" Icon="{ui:SymbolIcon Checkmark24}"/>
             </StackPanel>
         </Border>
 
@@ -25,8 +25,8 @@
 
             <!-- Header -->
             <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                <TextBlock Text="Crop Server Icon" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                <TextBlock Text="Select a square region of the image. It will be resized to 64×64 pixels and saved as your server icon." 
+                <TextBlock Text="{DynamicResource ImageCropTitle}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                <TextBlock Text="{DynamicResource ImageCropDescription}"
                            FontSize="13" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
             </StackPanel>
 
@@ -57,7 +57,7 @@
 
             <!-- Preview -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0" HorizontalAlignment="Left">
-                <TextBlock Text="Preview:" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,12,0" FontSize="13"/>
+                <TextBlock Text="{DynamicResource ImageCropPreviewLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,12,0" FontSize="13"/>
                 <Border Width="64" Height="64" BorderThickness="1" BorderBrush="#555" Background="#111">
                     <Image x:Name="PreviewImage" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Border>

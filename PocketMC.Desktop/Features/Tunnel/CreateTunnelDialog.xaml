@@ -19,11 +19,11 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="✦ Create Tunnel"
+            <TextBlock Text="{DynamicResource CreateTunnelTitle}"
                        FontSize="18" FontWeight="Bold"
                        Foreground="#89B4FA"
                        Margin="0,0,0,4"/>
-            <TextBlock Text="Configure a new PlayIt.gg tunnel for your Minecraft server."
+            <TextBlock Text="{DynamicResource CreateTunnelDescription}"
                        Foreground="#BAC2DE" FontSize="13"
                        TextWrapping="Wrap"/>
         </StackPanel>
@@ -32,7 +32,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
             <StackPanel>
                 <!-- Tunnel Name -->
-                <TextBlock Text="Tunnel Name"
+                <TextBlock Text="{DynamicResource TunnelNameLabel}"
                            Foreground="#CDD6F4" FontWeight="SemiBold" FontSize="13"
                            Margin="0,0,0,6"/>
                 <TextBox x:Name="TxtTunnelName"
@@ -43,7 +43,7 @@
                          BorderBrush="#45475A"
                          CaretBrush="#CDD6F4"
                          Padding="10,8"
-                         ToolTip="ASCII characters only"/>
+                         ToolTip="{DynamicResource TunnelNameTooltip}"/>
                 <TextBlock x:Name="TxtNameError"
                            Foreground="#F38BA8" FontSize="11"
                            Margin="0,4,0,0"
@@ -51,7 +51,7 @@
                            TextWrapping="Wrap"/>
 
                 <!-- Tunnel Type -->
-                <TextBlock Text="Tunnel Type"
+                <TextBlock Text="{DynamicResource TunnelTypeLabel}"
                            Foreground="#CDD6F4" FontWeight="SemiBold" FontSize="13"
                            Margin="0,16,0,6"/>
                 <ComboBox x:Name="CmbTunnelType"
@@ -61,12 +61,12 @@
                           BorderBrush="#45475A"
                           SelectedIndex="0"
                           MinHeight="36">
-                    <ComboBoxItem Content="Minecraft Java" Tag="minecraft-java"/>
-                    <ComboBoxItem Content="Minecraft Bedrock" Tag="minecraft-bedrock"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelTypeMinecraftJava}" Tag="minecraft-java"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelTypeMinecraftBedrock}" Tag="minecraft-bedrock"/>
                 </ComboBox>
 
                 <!-- Local Port -->
-                <TextBlock Text="Local Port"
+                <TextBlock Text="{DynamicResource LocalPortLabel}"
                            Foreground="#CDD6F4" FontWeight="SemiBold" FontSize="13"
                            Margin="0,16,0,6"/>
                 <TextBox x:Name="TxtLocalPort"
@@ -78,7 +78,7 @@
                          BorderBrush="#45475A"
                          CaretBrush="#CDD6F4"
                          Padding="10,8"
-                         ToolTip="Port number between 1 and 65535"
+                         ToolTip="{DynamicResource LocalPortTooltip}"
                          PreviewTextInput="TxtLocalPort_PreviewTextInput"/>
                 <TextBlock x:Name="TxtPortError"
                            Foreground="#F38BA8" FontSize="11"
@@ -87,7 +87,7 @@
                            TextWrapping="Wrap"/>
 
                 <!-- Region -->
-                <TextBlock Text="Region"
+                <TextBlock Text="{DynamicResource RegionLabel}"
                            Foreground="#CDD6F4" FontWeight="SemiBold" FontSize="13"
                            Margin="0,16,0,6"/>
                 <ComboBox x:Name="CmbRegion"
@@ -97,14 +97,14 @@
                           BorderBrush="#45475A"
                           SelectedIndex="0"
                           MinHeight="36">
-                    <ComboBoxItem Content="Global (default)" Tag="global"/>
-                    <ComboBoxItem Content="North America" Tag="north-america"/>
-                    <ComboBoxItem Content="Europe" Tag="europe"/>
-                    <ComboBoxItem Content="Asia" Tag="asia"/>
-                    <ComboBoxItem Content="India" Tag="india"/>
-                    <ComboBoxItem Content="South America" Tag="south-america"/>
-                    <ComboBoxItem Content="Japan" Tag="japan"/>
-                    <ComboBoxItem Content="Australia" Tag="australia"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionGlobal}" Tag="global"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionNorthAmerica}" Tag="north-america"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionEurope}" Tag="europe"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionAsia}" Tag="asia"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionIndia}" Tag="india"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionSouthAmerica}" Tag="south-america"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionJapan}" Tag="japan"/>
+                    <ComboBoxItem Content="{DynamicResource TunnelRegionAustralia}" Tag="australia"/>
                 </ComboBox>
 
                 <!-- Enable immediately -->
@@ -114,9 +114,9 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Enable immediately"
+                        <TextBlock Text="{DynamicResource EnableImmediatelyLabel}"
                                    Foreground="#CDD6F4" FontWeight="SemiBold" FontSize="13"/>
-                        <TextBlock Text="The tunnel will start routing traffic as soon as it's created."
+                        <TextBlock Text="{DynamicResource EnableImmediatelyDescription}"
                                    Foreground="#A6ADC8" FontSize="11"
                                    Margin="0,2,0,0"/>
                     </StackPanel>
@@ -164,13 +164,13 @@
 
             <ui:Button Grid.Column="2"
                        x:Name="BtnCancel"
-                       Content="Cancel"
+                       Content="{DynamicResource CancelButton}"
                        Width="100"
                        Click="BtnCancel_Click"/>
 
             <ui:Button Grid.Column="4"
                        x:Name="BtnCreate"
-                       Content="Create"
+                       Content="{DynamicResource CreateButton}"
                        Appearance="Primary"
                        Width="120"
                        Click="BtnCreate_Click"/>
