@@ -112,12 +112,12 @@
                         <TextBlock Text="{DynamicResource ApplicationLanguageLabel}" FontSize="14" FontWeight="Medium"/>
                         <TextBlock Text="{DynamicResource ApplicationLanguageDescription}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,4,0,8" TextWrapping="Wrap"/>
                         <ComboBox x:Name="LanguageCombo" Width="260" HorizontalAlignment="Left" SelectionChanged="LanguageCombo_SelectionChanged">
-                            <ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="en-US"/>
+                            <ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="en-US" IsSelected="True"/>
                             <ComboBoxItem Content="{DynamicResource LanguageSpanish}" Tag="es-ES"/>
-                            <ComboBoxItem Content="{DynamicResource LanguageHindi}" Tag="hi-IN"/>
                             <ComboBoxItem Content="{DynamicResource LanguageFrench}" Tag="fr-FR"/>
                             <ComboBoxItem Content="{DynamicResource LanguageGerman}" Tag="de-DE"/>
                             <ComboBoxItem Content="{DynamicResource LanguageJapanese}" Tag="ja-JP"/>
+                            <ComboBoxItem Content="{DynamicResource LanguageChinese}" Tag="zh-CN"/>
                         </ComboBox>
                     </StackPanel>
                 </ui:CardExpander>

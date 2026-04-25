@@ -392,9 +392,8 @@ namespace PocketMC.Desktop.Features.Setup
             if (_isInitializing) return;
             if (LanguageCombo.SelectedItem is ComboBoxItem item && item.Tag is string languageCode)
             {
+                // LocalizationService.ChangeLanguage() already persists the language setting to disk.
                 _localizationService.ChangeLanguage(languageCode);
-                var settings = _applicationState.Settings;
-                settings.Language = _localizationService.CurrentLanguageCode;
             }
         }
 

@@ -6,10 +6,10 @@ This guide explains how PocketMC handles runtime localization and how to extend 
 
 - English (`en-US`)
 - Spanish (`es-ES`)
-- Hindi (`hi-IN`)
 - French (`fr-FR`)
 - German (`de-DE`)
 - Japanese (`ja-JP`)
+- Chinese (`zh-CN`)
 
 ## Architecture Overview
 
@@ -24,10 +24,10 @@ PocketMC uses WPF `ResourceDictionary` files to store UI text for each supported
 
 - `PocketMC.Desktop/Resources/Strings.en-US.xaml`
 - `PocketMC.Desktop/Resources/Strings.es-ES.xaml`
-- `PocketMC.Desktop/Resources/Strings.hi-IN.xaml`
 - `PocketMC.Desktop/Resources/Strings.fr-FR.xaml`
 - `PocketMC.Desktop/Resources/Strings.de-DE.xaml`
 - `PocketMC.Desktop/Resources/Strings.ja-JP.xaml`
+- `PocketMC.Desktop/Resources/Strings.zh-CN.xaml`
 - `PocketMC.Desktop/Infrastructure/LocalizationService.cs`
 - `PocketMC.Desktop/Features/Setup/AppSettingsPage.xaml`
 
@@ -81,17 +81,22 @@ public IReadOnlyList<LanguageInfo> SupportedLanguages { get; } = new List<Langua
 {
     new LanguageInfo("en-US", "English"),
     new LanguageInfo("es-ES", "Español"),
-    new LanguageInfo("hi-IN", "हिंदी"),
     new LanguageInfo("fr-FR", "Français"),
     new LanguageInfo("de-DE", "Deutsch"),
-    new LanguageInfo("ja-JP", "日本語")
+    new LanguageInfo("ja-JP", "日本語"),
+    new LanguageInfo("zh-CN", "中文")
 };
 ```
 
 4. Add a `ComboBoxItem` to `PocketMC.Desktop/Features/Setup/AppSettingsPage.xaml`:
 
 ```xml
-<ComboBoxItem Content="{DynamicResource LanguageFrench}" Tag="fr-FR" />
+<ComboBoxItem Content="{DynamicResource LanguageEnglish}" Tag="en-US" IsSelected="True"/>
+<ComboBoxItem Content="{DynamicResource LanguageSpanish}" Tag="es-ES"/>
+<ComboBoxItem Content="{DynamicResource LanguageFrench}" Tag="fr-FR"/>
+<ComboBoxItem Content="{DynamicResource LanguageGerman}" Tag="de-DE"/>
+<ComboBoxItem Content="{DynamicResource LanguageJapanese}" Tag="ja-JP"/>
+<ComboBoxItem Content="{DynamicResource LanguageChinese}" Tag="zh-CN"/>
 ```
 
 5. Add the new `Language<Label>` key to all existing resource dictionaries.
@@ -119,10 +124,6 @@ Example:
 - `DynamicResource` not updating: check that the XAML binding is `DynamicResource`, not `StaticResource`.
 - Missing key in one language file: add the key to every `Strings.*.xaml` file.
 - Wrong page language after switching: ensure `LocalizationService.ChangeLanguage(...)` saved the selected code to settings.
-
-### Special note for Hindi and RTL-like text
-
-Hindi is left-to-right, but UI copy may wrap differently. Use `TextWrapping="Wrap"` and avoid hard-coded inline markup inside localized blocks.
 
 ## Advanced developer notes
 
@@ -152,10 +153,10 @@ PocketMC.Desktop/
   Resources/
     Strings.en-US.xaml
     Strings.es-ES.xaml
-    Strings.hi-IN.xaml
     Strings.fr-FR.xaml
     Strings.de-DE.xaml
     Strings.ja-JP.xaml
+    Strings.zh-CN.xaml
   Infrastructure/
     LocalizationService.cs
   Features/
