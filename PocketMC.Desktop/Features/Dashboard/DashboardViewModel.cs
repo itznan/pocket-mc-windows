@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using PocketMC.Desktop.Core.Interfaces;
@@ -147,7 +148,8 @@ namespace PocketMC.Desktop.Features.Dashboard
         private void NavigateToNewInstance()
         {
             var page = ActivatorUtilities.CreateInstance<NewInstancePage>(_serviceProvider);
-            _navigationService.NavigateToDetailPage(page, "New Instance", DetailRouteKind.NewInstance, DetailBackNavigation.Dashboard, true);
+            var label = Application.Current.TryFindResource("BreadcrumbNewInstance") as string ?? "New Instance";
+            _navigationService.NavigateToDetailPage(page, label, DetailRouteKind.NewInstance, DetailBackNavigation.Dashboard, true);
         }
 
         private void UpdateAllLiveMetrics()

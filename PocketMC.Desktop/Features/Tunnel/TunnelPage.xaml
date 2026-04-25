@@ -2,7 +2,7 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      Title="Tunnel">
+      Title="{DynamicResource TunnelPageTitle}">
 
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -16,8 +16,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <ui:TextBlock FontTypography="Title" Text="Tunnel" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4"/>
-            <TextBlock Text="Manage the Playit.gg agent, download the tunnel binary, and retry connections without leaving PocketMC."
+            <ui:TextBlock FontTypography="Title" Text="{DynamicResource TunnelPageTitle}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4"/>
+            <TextBlock Text="{DynamicResource TunnelPageDescription}"
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        TextWrapping="Wrap"
                        FontSize="13"/>
@@ -46,17 +46,17 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                        <TextBlock Text="Agent Status"
+                        <TextBlock Text="{DynamicResource TunnelAgentStatusLabel}"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    Margin="0,0,0,4"/>
                         <TextBlock x:Name="TxtStatusValue"
-                                   Text="Checking..."
+                                   Text="{DynamicResource TunnelStatusChecking}"
                                    Foreground="{DynamicResource SystemFillColorCautionBrush}"
                                    FontSize="26"
                                    FontWeight="SemiBold"/>
                         <TextBlock x:Name="TxtStatusDetail"
-                                   Text="Preparing tunnel diagnostics..."
+                                   Text="{DynamicResource TunnelPreparingDiagnostics}"
                                    Margin="0,6,0,0"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    TextWrapping="Wrap"/>
@@ -68,7 +68,7 @@
                             Padding="12"
                             Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock Text="Agent Path"
+                            <TextBlock Text="{DynamicResource TunnelAgentPathLabel}"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        FontSize="12"
                                        Margin="0,0,0,4"/>
@@ -95,35 +95,35 @@
 
                     <StackPanel Grid.Row="3" Orientation="Horizontal">
                         <ui:Button x:Name="BtnDownloadAgent"
-                                   Content="Download Agent"
+                                   Content="{DynamicResource TunnelDownloadAgentButton}"
                                    Icon="{ui:SymbolIcon ArrowDownload24}"
                                    Appearance="Primary"
                                    Click="BtnDownloadAgent_Click"
                                    Cursor="Hand"
                                    Margin="0,0,8,0"/>
                         <ui:Button x:Name="BtnSetupAgent"
-                                   Content="Setup Agent"
+                                   Content="{DynamicResource TunnelSetupAgentButton}"
                                    Icon="{ui:SymbolIcon PersonAdd24}"
                                    Appearance="Secondary"
                                    Click="BtnSetupAgent_Click"
                                    Cursor="Hand"
                                    Margin="0,0,8,0"/>
                         <ui:Button x:Name="BtnConnect"
-                                   Content="Connect"
+                                   Content="{DynamicResource TunnelConnectButton}"
                                    Icon="{ui:SymbolIcon Play24}"
                                    Appearance="Secondary"
                                    Click="BtnConnect_Click"
                                    Cursor="Hand"
                                    Margin="0,0,8,0"/>
                         <ui:Button x:Name="BtnDisconnect"
-                                   Content="Disconnect"
+                                   Content="{DynamicResource TunnelDisconnectButton}"
                                    Icon="{ui:SymbolIcon Stop24}"
                                    Appearance="Secondary"
                                    Click="BtnDisconnect_Click"
                                    Cursor="Hand"
                                    Margin="0,0,8,0"/>
                         <ui:Button x:Name="BtnRefresh"
-                                   Content="Refresh"
+                                   Content="{DynamicResource TunnelRefreshButton}"
                                    Icon="{ui:SymbolIcon ArrowSync24}"
                                    Appearance="Secondary"
                                    Click="BtnRefresh_Click"
@@ -136,7 +136,7 @@
                             VerticalAlignment="Top"
                             HorizontalAlignment="Right"
                             Margin="20,0,0,0">
-                    <TextBlock Text="Special Thanks to Playit.gg ❤️"
+                    <TextBlock Text="{DynamicResource TunnelSpecialThanks}"
                                FontSize="13"
                                FontWeight="Medium"
                                HorizontalAlignment="Right"
@@ -148,7 +148,7 @@
                             </LinearGradientBrush>
                         </TextBlock.Foreground>
                     </TextBlock>
-                    <ui:Button Content="Visit Playit.gg"
+                    <ui:Button Content="{DynamicResource TunnelVisitPlayitButton}"
                                Icon="{ui:SymbolIcon Open24}"
                                Appearance="Secondary"
                                FontSize="11"
@@ -176,12 +176,12 @@
 
                 <ui:TextBlock Grid.Row="0"
                               FontTypography="Subtitle"
-                              Text="Active Tunnels"
+                              Text="{DynamicResource TunnelActiveTunnelsLabel}"
                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                               Margin="0,0,0,6"/>
                 <TextBlock x:Name="TxtTunnelListStatus"
                            Grid.Row="1"
-                           Text="No tunnel data yet."
+                           Text="{DynamicResource TunnelNoDataYetMessage}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Margin="0,0,0,12"
                            TextWrapping="Wrap"/>
@@ -235,11 +235,11 @@
                                                  Padding="4,4"
                                                  TextChanged="TunnelName_TextChanged"
                                                  KeyDown="TunnelName_KeyDown"
-                                                 ToolTip="Edit the tunnel name, then click Save"/>
+                                                 ToolTip="{DynamicResource TunnelEditNameToolTip}"/>
 
                                         <!-- Save name button -->
                                         <ui:Button Grid.Column="4"
-                                                   Content="Save"
+                                                   Content="{DynamicResource TunnelSaveButton}"
                                                    Appearance="Primary"
                                                    FontSize="11"
                                                    Padding="10,4"
@@ -248,7 +248,7 @@
                                                    Tag="{Binding Id}"
                                                    Cursor="Hand"
                                                    VerticalAlignment="Center"
-                                                   ToolTip="Save the new tunnel name"/>
+                                                   ToolTip="{DynamicResource TunnelSaveNameToolTip}"/>
 
                                         <!-- Enable/disable toggle (native ToggleSwitch) -->
                                         <ui:ToggleSwitch Grid.Column="6"
@@ -256,12 +256,12 @@
                                                          Tag="{Binding Id}"
                                                          Checked="ToggleEnabled_Changed"
                                                          Unchecked="ToggleEnabled_Changed"
-                                                         ToolTip="Enable or disable this tunnel"
+                                                         ToolTip="{DynamicResource TunnelEnableDisableToolTip}"
                                                          VerticalAlignment="Center"/>
 
                                         <!-- Delete button -->
                                         <ui:Button Grid.Column="8"
-                                                   ToolTip="Delete this tunnel"
+                                                   ToolTip="{DynamicResource TunnelDeleteTunnelToolTip}"
                                                    Icon="{ui:SymbolIcon Delete24}"
                                                    Appearance="Secondary"
                                                    Padding="6"
@@ -272,7 +272,7 @@
 
                                         <!-- Copy address -->
                                         <ui:Button Grid.Column="10"
-                                                   ToolTip="Copy public address"
+                                                   ToolTip="{DynamicResource TunnelCopyAddressToolTip}"
                                                    Appearance="Secondary"
                                                    Icon="{ui:SymbolIcon Copy24}"
                                                    Padding="6"
@@ -302,7 +302,7 @@
                                                 CornerRadius="6"
                                                 Padding="6,4">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="Port"
+                                                <TextBlock Text="{DynamicResource TunnelPortLabel}"
                                                            FontSize="11"
                                                            Foreground="{DynamicResource SystemFillColorSuccessBrush}"
                                                            FontWeight="Medium"
@@ -322,13 +322,13 @@
                                                          TextChanged="TunnelPort_TextChanged"
                                                          KeyDown="TunnelPort_KeyDown"
                                                          IsEnabled="{Binding HasAgentOrigin}"
-                                                         ToolTip="Edit local port, then click Save"/>
+                                                         ToolTip="{DynamicResource TunnelEditPortToolTip}"/>
                                             </StackPanel>
                                         </Border>
 
                                         <!-- Save port button -->
                                         <ui:Button Grid.Column="2"
-                                                   Content="Save"
+                                                   Content="{DynamicResource TunnelSaveButton}"
                                                    Appearance="Primary"
                                                    FontSize="11"
                                                    Padding="10,4"
@@ -337,7 +337,7 @@
                                                    Tag="{Binding Id}"
                                                    Cursor="Hand"
                                                    VerticalAlignment="Center"
-                                                   ToolTip="Save the new local port"/>
+                                                   ToolTip="{DynamicResource TunnelSavePortToolTip}"/>
 
                                         <!-- Tunnel Type (read-only) -->
                                         <Border Grid.Column="4"

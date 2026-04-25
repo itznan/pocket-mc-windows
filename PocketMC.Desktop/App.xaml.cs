@@ -64,6 +64,10 @@ public partial class App : Application
 
         await _host.StartAsync();
 
+        var settingsManager = Services.GetRequiredService<SettingsManager>();
+        var localizationService = Services.GetRequiredService<LocalizationService>();
+        localizationService.Initialize(settingsManager.Load().Language);
+
         var mainWindow = Services.GetRequiredService<MainWindow>();
         if (Services.GetService<IAppNavigationService>() is IAppNavigationService appNavigationService)
         {

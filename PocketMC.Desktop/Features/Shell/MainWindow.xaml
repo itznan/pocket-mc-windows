@@ -34,8 +34,8 @@
                         TrayMouseDoubleClick="AppTrayIcon_TrayMouseDoubleClick">
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Open Dashboard" Click="TrayOpen_Click"/>
-                    <MenuItem Header="Exit PocketMC" Click="TrayExit_Click"/>
+                    <MenuItem Header="{DynamicResource TrayOpenDashboardMenuItem}" Click="TrayOpen_Click"/>
+                    <MenuItem Header="{DynamicResource TrayExitPocketMCMenuItem}" Click="TrayExit_Click"/>
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
         </tb:TaskbarIcon>
@@ -85,12 +85,12 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <!-- "Restart now" button — only shown when update is fully downloaded -->
-                        <ui:Button Content="Restart to update"
+                        <ui:Button Content="{DynamicResource RestartToUpdateButton}"
                                    Appearance="Secondary"
                                    Margin="12,0,8,0"
                                    Padding="10,4"
                                    Command="{Binding RestartAndApplyUpdateCommand}"
-                                   ToolTip="Stop all servers first if any are running"
+                                   ToolTip="{DynamicResource RestartToUpdateToolTip}"
                                    Visibility="{Binding IsUpdateReadyToApply, Converter={StaticResource BoolToVis}}"/>
 
                         <!-- Dismiss -->
@@ -98,7 +98,7 @@
                                    Appearance="Transparent"
                                    Padding="4"
                                    Command="{Binding DismissUpdateBannerCommand}"
-                                   ToolTip="Dismiss — update will apply on next restart"/>
+                                   ToolTip="{DynamicResource DismissUpdateBannerToolTip}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -116,7 +116,7 @@
 
                 <!-- ─── Title Bar ─── -->
                 <ui:NavigationView.Header>
-                    <ui:TitleBar Title="PocketMC Desktop"
+                    <ui:TitleBar Title="{DynamicResource MainWindowTitle}"
                                  ShowMaximize="True"
                                  ShowMinimize="True"
                                  ShowClose="True">
@@ -180,11 +180,11 @@
                 <!-- ─── Sidebar Items ─── -->
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem x:Name="NavDashboard"
-                                           Content="Dashboard"
+                                           Content="{DynamicResource NavDashboardLabel}"
                                            Icon="{ui:SymbolIcon Home24}"
                                            TargetPageType="{x:Type dash:DashboardPage}"/>
                     <ui:NavigationViewItem x:Name="NavTunnel"
-                                           Content="Tunnel"
+                                           Content="{DynamicResource NavTunnelLabel}"
                                            Icon="{ui:SymbolIcon Globe24}"
                                            TargetPageType="{x:Type tunnel:TunnelPage}"/>
                 </ui:NavigationView.MenuItems>
@@ -192,15 +192,15 @@
                 <!-- ─── Footer ─── -->
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem x:Name="NavJavaSetup"
-                                           Content="Java Setup"
+                                           Content="{DynamicResource NavJavaSetupLabel}"
                                            Icon="{ui:SymbolIcon ArrowDownload24}"
                                            TargetPageType="{x:Type setup:JavaSetupPage}"/>
                     <ui:NavigationViewItem x:Name="NavSettings"
-                                           Content="Settings"
+                                           Content="{DynamicResource NavSettingsLabel}"
                                            Icon="{ui:SymbolIcon Settings24}"
                                            TargetPageType="{x:Type setup:AppSettingsPage}"/>
                     <ui:NavigationViewItem x:Name="NavAbout"
-                                           Content="About"
+                                           Content="{DynamicResource NavAboutLabel}"
                                            Icon="{ui:SymbolIcon Info24}"
                                            TargetPageType="{x:Type shell:AboutPage}"/>
                 </ui:NavigationView.FooterMenuItems>

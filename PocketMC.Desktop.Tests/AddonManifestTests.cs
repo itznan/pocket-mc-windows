@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using PocketMC.Desktop.Features.Marketplace;
 using PocketMC.Desktop.Features.Marketplace.Models;
@@ -43,7 +46,7 @@ namespace PocketMC.Desktop.Tests
             File.WriteAllText(manifestPath, System.Text.Json.JsonSerializer.Serialize(manifest));
 
             // Act
-            await service.SyncManifestAsync(_tempDir, null, new EngineCompatibility("Fabric"));
+            await service.SyncManifestAsync(_tempDir, CreateNoOpModrinthService(), new EngineCompatibility("Fabric"));
             var updated = await service.LoadManifestAsync(_tempDir);
 
             // Assert
@@ -70,12 +73,31 @@ namespace PocketMC.Desktop.Tests
             File.WriteAllText(manifestPath, System.Text.Json.JsonSerializer.Serialize(manifest));
 
             // Act
-            await service.SyncManifestAsync(_tempDir, null, new EngineCompatibility("Fabric"));
+            await service.SyncManifestAsync(_tempDir, CreateNoOpModrinthService(), new EngineCompatibility("Fabric"));
             var updated = await service.LoadManifestAsync(_tempDir);
 
             // Assert
             Assert.Single(updated.Entries);
             Assert.Equal("mod-a", updated.Entries[0].ProjectId);
+        }
+
+        private static ModrinthService CreateNoOpModrinthService()
+        {
+            var handler = new NoOpHttpMessageHandler();
+            return new ModrinthService(new HttpClient(handler));
+        }
+
+        private sealed class NoOpHttpMessageHandler : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json")
+                };
+
+                return Task.FromResult(response);
+            }
         }
     }
 }

@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:presentation="clr-namespace:PocketMC.Desktop.Core.Presentation"
-      Title="Dashboard">
+      Title="{DynamicResource NavDashboardLabel}">
 
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -17,8 +17,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,24" Orientation="Horizontal">
-            <ui:TextBlock FontTypography="Title" Text="Instances" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,16,0" VerticalAlignment="Center"/>
-            <ui:Button Content="New Instance" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Command="{Binding DataContext.NewInstanceCommand, RelativeSource={RelativeSource AncestorType=Page}}" Cursor="Hand"/>
+            <ui:TextBlock FontTypography="Title" Text="{DynamicResource DashboardInstancesLabel}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+            <ui:Button Content="{DynamicResource NewInstanceButtonLabel}" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Command="{Binding DataContext.NewInstanceCommand, RelativeSource={RelativeSource AncestorType=Page}}" Cursor="Hand"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -70,10 +70,10 @@
                                     <ui:Button Grid.Column="1" Appearance="Transparent" Icon="{ui:SymbolIcon MoreVertical24}" Click="BtnMoreOptions_Click" Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Page}}">
                                         <ui:Button.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="Copy Crash Report" Command="{Binding PlacementTarget.Tag.CopyCrashReportCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
-                                                <MenuItem Header="Open Folder" Command="{Binding PlacementTarget.Tag.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                                                <MenuItem Header="{DynamicResource DashboardCopyCrashReportButton}" Command="{Binding PlacementTarget.Tag.CopyCrashReportCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                                                <MenuItem Header="{DynamicResource DashboardOpenFolderButton}" Command="{Binding PlacementTarget.Tag.OpenFolderCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
                                                 <Separator/>
-                                                <MenuItem Header="Delete Instance" Command="{Binding PlacementTarget.Tag.DeleteInstanceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                                                <MenuItem Header="{DynamicResource DashboardDeleteInstanceButton}" Command="{Binding PlacementTarget.Tag.DeleteInstanceCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
                                             </ContextMenu>
                                         </ui:Button.ContextMenu>
                                     </ui:Button>
@@ -83,15 +83,15 @@
                                 <Border Grid.Row="1" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,16">
                                     <UniformGrid Columns="3">
                                         <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="CPU" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{DynamicResource DashboardMetricCpuLabel}" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                             <TextBlock Text="{Binding CpuText}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="RAM" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{DynamicResource DashboardMetricRamLabel}" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                             <TextBlock Text="{Binding RamText}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="PLAYERS" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                            <TextBlock Text="{DynamicResource DashboardMetricPlayersLabel}" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                             <TextBlock Text="{Binding PlayerStatus}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" HorizontalAlignment="Center"/>
                                         </StackPanel>
                                     </UniformGrid>
@@ -185,7 +185,7 @@
                                             </Grid.ColumnDefinitions>
                                             <ui:SymbolIcon Grid.Column="0" Margin="0,0,8,0" VerticalAlignment="Center" Symbol="Home24" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock Text="Local Network (LAN)" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontWeight="Bold"/>
+                                                <TextBlock Text="{DynamicResource DashboardLocalNetworkLabel}" FontSize="10" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontWeight="Bold"/>
                                                 <TextBlock Text="{Binding LanAddressDisplayText}" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                             <ui:Button Grid.Column="2" Appearance="Transparent" Icon="{ui:SymbolIcon Copy16}" Click="BtnCopyLanIp_Click"/>
@@ -246,15 +246,15 @@
                                 <!-- Actions -->
                                 <Grid Grid.Row="3">
                                     <UniformGrid Columns="2" Visibility="{Binding StoppedControlsVisibility}">
-                                        <ui:Button Content="Start" Appearance="Primary" Icon="{ui:SymbolIcon Play24}" Command="{Binding DataContext.StartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
-                                        <ui:Button Content="Logs" Appearance="Secondary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
-                                        <ui:Button Content="Settings" Appearance="Secondary" Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="{DynamicResource DashboardStartButton}" Appearance="Primary" Icon="{ui:SymbolIcon Play24}" Command="{Binding DataContext.StartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="{DynamicResource DashboardLogsButton}" Appearance="Secondary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="{DynamicResource DashboardSettingsButton}" Appearance="Secondary" Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
                                     </UniformGrid>
                                     <UniformGrid Columns="2" Visibility="{Binding RunningControlsVisibility}">
                                         <ui:Button Content="{Binding StopButtonText}" Appearance="Danger" Icon="{ui:SymbolIcon Stop24}" Command="{Binding DataContext.StopServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
-                                        <ui:Button Content="Restart" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowClockwise24}" Command="{Binding DataContext.RestartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
-                                        <ui:Button Content="Console" Appearance="Primary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
-                                        <ui:Button Content="Settings" Appearance="Secondary" Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="{DynamicResource DashboardRestartButton}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowClockwise24}" Command="{Binding DataContext.RestartServerCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="{DynamicResource DashboardConsoleButton}" Appearance="Primary" Icon="{ui:SymbolIcon WindowConsole20}" Command="{Binding DataContext.OpenConsoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
+                                        <ui:Button Content="{DynamicResource DashboardSettingsButton}" Appearance="Secondary" Icon="{ui:SymbolIcon Settings24}" Command="{Binding DataContext.ServerSettingsCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Stretch"/>
                                     </UniformGrid>
                                 </Grid>
                             </Grid>

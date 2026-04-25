@@ -8,6 +8,7 @@ using PocketMC.Desktop.Features.Mods;
 
 namespace PocketMC.Desktop.Tests;
 
+#pragma warning disable CS0618
 public sealed class PluginScannerTests : IDisposable
 {
     private readonly string _tempDirectory = Path.Combine(Path.GetTempPath(), "PocketMC.Tests", Guid.NewGuid().ToString("N"));
@@ -48,3 +49,4 @@ public sealed class PluginScannerTests : IDisposable
         }
     }
 }
+#pragma warning restore CS0618

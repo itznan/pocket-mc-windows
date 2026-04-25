@@ -12,6 +12,7 @@ using PocketMC.Desktop.Features.Shell;
 using PocketMC.Desktop.Features.Settings;
 using PocketMC.Desktop.Features.Console;
 using PocketMC.Desktop.Features.Marketplace;
+using System.Windows;
 using PocketMC.Desktop.Features.InstanceCreation;
 
 namespace PocketMC.Desktop.Infrastructure
@@ -41,7 +42,7 @@ namespace PocketMC.Desktop.Infrastructure
             if (navigated)
             {
                 ClearDetailStack();
-                _uiStateService.UpdateBreadcrumb("Dashboard");
+                _uiStateService.UpdateBreadcrumb(GetBreadcrumbForPageType(typeof(DashboardPage)) ?? "Dashboard");
             }
 
             return navigated;
@@ -55,7 +56,7 @@ namespace PocketMC.Desktop.Infrastructure
             if (navigated)
             {
                 ClearDetailStack();
-                _uiStateService.UpdateBreadcrumb("Tunnel");
+                _uiStateService.UpdateBreadcrumb(GetBreadcrumbForPageType(typeof(TunnelPage)) ?? "Tunnel");
             }
 
             return navigated;
@@ -129,18 +130,25 @@ namespace PocketMC.Desktop.Infrastructure
 
         private string? GetBreadcrumbForPageType(Type pageType)
         {
-            return pageType.Name switch
+            var key = pageType.Name switch
             {
-                nameof(DashboardPage) => "Dashboard",
-                nameof(TunnelPage) => "Tunnel",
-                nameof(JavaSetupPage) => "Java Setup",
-                nameof(AboutPage) => "About",
-                nameof(AppSettingsPage) => "Settings",
-                nameof(NewInstancePage) => "New Instance",
-                nameof(ServerSettingsPage) => "Server Settings",
-                nameof(ServerConsolePage) => "Console",
+                nameof(DashboardPage) => "BreadcrumbDashboard",
+                nameof(TunnelPage) => "BreadcrumbTunnel",
+                nameof(JavaSetupPage) => "BreadcrumbJavaSetup",
+                nameof(AboutPage) => "BreadcrumbAbout",
+                nameof(AppSettingsPage) => "BreadcrumbSettings",
+                nameof(NewInstancePage) => "BreadcrumbNewInstance",
+                nameof(ServerSettingsPage) => "BreadcrumbServerSettings",
+                nameof(ServerConsolePage) => "BreadcrumbConsole",
                 _ => null
             };
+
+            if (key == null)
+            {
+                return null;
+            }
+
+            return Application.Current?.TryFindResource(key) as string ?? key;
         }
 
         private void ValidateDetailTransition(DetailRouteKind routeKind, DetailBackNavigation backNavigation)

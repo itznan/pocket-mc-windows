@@ -5,20 +5,24 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using PocketMC.Desktop.Core.Interfaces;
+using PocketMC.Desktop.Infrastructure;
 
 namespace PocketMC.Desktop.Features.Shell
 {
     public partial class AboutPage : Page
     {
         private readonly IDialogService _dialogService;
+        private readonly LocalizationService _localizationService;
 
-        public AboutPage(IDialogService dialogService)
+        public AboutPage(IDialogService dialogService, LocalizationService localizationService)
         {
             InitializeComponent();
             _dialogService = dialogService;
+            _localizationService = localizationService;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            TxtVersion.Text = $"Version {version?.Major}.{version?.Minor}.{version?.Build}";
+            TxtVersion.Text = string.Format(_localizationService.GetString("AboutPageVersionLabel"),
+                $"{version?.Major}.{version?.Minor}.{version?.Build}");
         }
 
         private void OpenDiscord_Click(object sender, RoutedEventArgs e)
@@ -31,7 +35,7 @@ namespace PocketMC.Desktop.Features.Shell
             }
             catch (Exception ex)
             {
-                _dialogService.ShowMessage("Unable to open link", ex.Message);
+                _dialogService.ShowMessage(_localizationService.GetString("UnableToOpenLinkTitle"), ex.Message);
             }
         }
 
@@ -40,11 +44,11 @@ namespace PocketMC.Desktop.Features.Shell
             try
             {
                 Clipboard.SetText("https://discord.gg/h27uNCaxPH");
-                _dialogService.ShowMessage("Copied", "Discord invite copied to clipboard.");
+                _dialogService.ShowMessage(_localizationService.GetString("CopiedTitle"), _localizationService.GetString("CopiedToClipboardMessage"));
             }
             catch (Exception ex)
             {
-                _dialogService.ShowMessage("Unable to copy invite", ex.Message);
+                _dialogService.ShowMessage(_localizationService.GetString("UnableToCopyInviteTitle"), ex.Message);
             }
         }
 

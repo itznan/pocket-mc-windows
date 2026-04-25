@@ -34,6 +34,7 @@ namespace PocketMC.Desktop.Features.Setup
     {
         private readonly ApplicationState _applicationState;
         private readonly SettingsManager _settingsManager;
+        private readonly LocalizationService _localizationService;
         private readonly IDialogService _dialogService;
         private readonly AiApiClient _aiApiClient;
         private readonly UpdateService _updateService;
@@ -46,6 +47,7 @@ namespace PocketMC.Desktop.Features.Setup
         public AppSettingsPage(
             ApplicationState applicationState, 
             SettingsManager settingsManager, 
+            LocalizationService localizationService,
             IDialogService dialogService, 
             AiApiClient aiApiClient,
             UpdateService updateService,
@@ -56,6 +58,7 @@ namespace PocketMC.Desktop.Features.Setup
             _previewMouseWheelHandler = OnPagePreviewMouseWheel;
             _applicationState = applicationState;
             _settingsManager = settingsManager;
+            _localizationService = localizationService;
             _dialogService = dialogService;
             _aiApiClient = aiApiClient;
             _updateService = updateService;
@@ -86,6 +89,17 @@ namespace PocketMC.Desktop.Features.Setup
                 if (item.Tag?.ToString() == savedTheme)
                 {
                     ThemeCombo.SelectedItem = item;
+                    break;
+                }
+            }
+
+            // Language setting
+            string savedLanguage = _applicationState.Settings.Language ?? "en-US";
+            foreach (ComboBoxItem item in LanguageCombo.Items)
+            {
+                if (item.Tag?.ToString() == savedLanguage)
+                {
+                    LanguageCombo.SelectedItem = item;
                     break;
                 }
             }
@@ -201,7 +215,7 @@ namespace PocketMC.Desktop.Features.Setup
         {
             _applicationState.Settings.CurseForgeApiKey = CurseForgeKeyInput.Text.Trim();
             _settingsManager.Save(_applicationState.Settings);
-            _dialogService.ShowMessage("Saved", "API Configuration saved successfully.");
+            _dialogService.ShowMessage(_localizationService.GetString("SavedTitle"), _localizationService.GetString("SavedApiConfigurationMessage"));
         }
 
         // ── AI Summarization Handlers ──────────────────────────────────
@@ -226,7 +240,7 @@ namespace PocketMC.Desktop.Features.Setup
             var apiKey = AiApiKeyInput.Text.Trim();
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                AiKeyStatus.Text = "⚠ Please enter an API key first.";
+                AiKeyStatus.Text = "⚠ " + _localizationService.GetString("PleaseEnterApiKeyMessage");
                 AiKeyStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF3, 0x8B, 0xA8));
                 return;
             }
@@ -259,7 +273,7 @@ namespace PocketMC.Desktop.Features.Setup
         private void SaveAiKey_Click(object sender, RoutedEventArgs e)
         {
             SaveAiSettings();
-            _dialogService.ShowMessage("Saved", "AI Summarization configuration saved successfully.");
+            _dialogService.ShowMessage(_localizationService.GetString("SavedTitle"), _localizationService.GetString("SavedAiConfigurationMessage"));
         }
 
         private void ToggleAiSummarization_Changed(object sender, RoutedEventArgs e)
@@ -341,7 +355,7 @@ namespace PocketMC.Desktop.Features.Setup
         {
             var folderDialog = new System.Windows.Forms.FolderBrowserDialog
             {
-                Description = "Select External Backup Folder (e.g. Google Drive/Dropbox sync folder)"
+                Description = _localizationService.GetString("ExternalBackupFolderDescription")
             };
 
             if (folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -356,7 +370,7 @@ namespace PocketMC.Desktop.Features.Setup
 
             if (!string.IsNullOrWhiteSpace(path) && !System.IO.Directory.Exists(path))
             {
-                _dialogService.ShowMessage("Invalid Path", "The selected directory does not exist or is inaccessible.");
+                _dialogService.ShowMessage(_localizationService.GetString("InvalidPathTitle"), _localizationService.GetString("InvalidPathMessage"));
                 return;
             }
 
@@ -364,7 +378,19 @@ namespace PocketMC.Desktop.Features.Setup
             settings.ExternalBackupDirectory = string.IsNullOrWhiteSpace(path) ? null : path;
             _settingsManager.Save(settings);
 
-            _dialogService.ShowMessage("Saved", "External backup location saved. Next time a server backup runs, it will be automatically replicated here.");
+            _dialogService.ShowMessage(_localizationService.GetString("SavedTitle"), _localizationService.GetString("SavedExternalBackupMessage"));
+        }
+
+        private void LanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+            if (LanguageCombo.SelectedItem is ComboBoxItem item && item.Tag is string languageCode)
+            {
+                _localizationService.ChangeLanguage(languageCode);
+                var settings = _applicationState.Settings;
+                settings.Language = languageCode;
+                _settingsManager.Save(settings);
+            }
         }
 
         private async void ExportBundle_Click(object sender, RoutedEventArgs e)
