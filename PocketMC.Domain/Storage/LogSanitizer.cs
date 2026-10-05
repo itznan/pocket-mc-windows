@@ -54,14 +54,21 @@ namespace PocketMC.Domain.Storage
         {
             if (string.IsNullOrEmpty(line)) return string.Empty;
 
-            string cleaned = StripAnsi(line);
-            cleaned = SanitizeControlCharacters(cleaned);
+            try
+            {
+                string cleaned = StripAnsi(line);
+                cleaned = SanitizeControlCharacters(cleaned);
 
-            cleaned = Ipv4Regex.Replace(cleaned, "[REDACTED_IP]");
-            cleaned = RedactIpv6Tokens(cleaned);
-            cleaned = EmailRegex.Replace(cleaned, "[REDACTED_EMAIL]");
+                cleaned = Ipv4Regex.Replace(cleaned, "[REDACTED_IP]");
+                cleaned = RedactIpv6Tokens(cleaned);
+                cleaned = EmailRegex.Replace(cleaned, "[REDACTED_EMAIL]");
 
-            return cleaned;
+                return cleaned;
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return line;
+            }
         }
 
         private static string StripAnsi(string line)
@@ -112,12 +119,21 @@ namespace PocketMC.Domain.Storage
 
         public static string SanitizePlayitLine(string? line)
         {
-            string sanitized = SanitizeConsoleLine(line);
-            sanitized = PlayitClaimUrlRegex.Replace(sanitized, "https://playit.gg/claim/[REDACTED]");
-            sanitized = SecretAssignmentRegex.Replace(
-                sanitized,
-                match => $"{match.Groups[1].Value}{match.Groups[2].Value}[REDACTED]");
-            return sanitized;
+            if (string.IsNullOrEmpty(line)) return string.Empty;
+
+            try
+            {
+                string sanitized = SanitizeConsoleLine(line);
+                sanitized = PlayitClaimUrlRegex.Replace(sanitized, "https://playit.gg/claim/[REDACTED]");
+                sanitized = SecretAssignmentRegex.Replace(
+                    sanitized,
+                    match => $"{match.Groups[1].Value}{match.Groups[2].Value}[REDACTED]");
+                return sanitized;
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return line;
+            }
         }
     }
 }
