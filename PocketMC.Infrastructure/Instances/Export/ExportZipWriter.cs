@@ -137,6 +137,7 @@ public class ExportZipWriter
         snapshot.CustomJavaPath = MakePathPortable(snapshot.CustomJavaPath, appRoot);
         snapshot.SimpleVoiceChatConfigPath = MakePathPortable(snapshot.SimpleVoiceChatConfigPath, appRoot);
         snapshot.CustomBackupDirectory = null;
+        snapshot.CloudSync = new InstanceCloudSyncConfig();
 
         return snapshot;
     }
