@@ -2161,6 +2161,7 @@
                                                     </ItemsControl>
                                                 </ScrollViewer>
                                             </StackPanel>
+                                        </StackPanel>
                                     </ui:Card>
 
                                     <!-- CLOUD STORAGE SYNC & SHARED SERVER -->
