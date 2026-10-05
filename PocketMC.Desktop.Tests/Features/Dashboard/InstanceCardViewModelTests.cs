@@ -64,6 +64,51 @@ public sealed class InstanceCardViewModelTests
     }
 
     [Fact]
+    public void Constructor_WithCloudSyncEnabled_ShowsCloudSyncBadge()
+    {
+        var metadata = new InstanceMetadata
+        {
+            Id = Guid.NewGuid(),
+            Name = "Synced Server",
+            ServerType = "Paper",
+            CloudSync = new InstanceCloudSyncConfig
+            {
+                Enabled = true,
+                Provider = CloudBackupProviderType.GoogleDrive
+            }
+        };
+
+        using var workspace = new PortReliabilityTestWorkspace();
+        var vm = CreateViewModel(workspace, metadata);
+
+        Assert.True(vm.IsCloudSyncEnabled);
+        Assert.Equal(System.Windows.Visibility.Visible, vm.CloudSyncBadgeVisibility);
+        Assert.Equal("Cloud Sync", vm.CloudSyncBadgeText);
+        Assert.Contains("GoogleDrive", vm.CloudSyncBadgeTooltip);
+    }
+
+    [Fact]
+    public void Constructor_WithCloudSyncDisabled_HidesCloudSyncBadge()
+    {
+        var metadata = new InstanceMetadata
+        {
+            Id = Guid.NewGuid(),
+            Name = "Local Server",
+            ServerType = "Paper",
+            CloudSync = new InstanceCloudSyncConfig
+            {
+                Enabled = false
+            }
+        };
+
+        using var workspace = new PortReliabilityTestWorkspace();
+        var vm = CreateViewModel(workspace, metadata);
+
+        Assert.False(vm.IsCloudSyncEnabled);
+        Assert.Equal(System.Windows.Visibility.Collapsed, vm.CloudSyncBadgeVisibility);
+    }
+
+    [Fact]
     public void Constructor_WithVoiceChatEnabled_ShowsVoiceChatBadge()
     {
         using var workspace = new PortReliabilityTestWorkspace();

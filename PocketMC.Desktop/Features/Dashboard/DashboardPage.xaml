@@ -278,6 +278,12 @@
                                                 <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4" Padding="5,2" Margin="0,0,5,3" Visibility="{Binding VoiceChatBadgeVisibility}" ToolTip="{Binding VoiceChatBadgeTooltip}">
                                                     <ui:SymbolIcon Symbol="Mic24" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                                 </Border>
+                                                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4" Padding="6,2" Margin="0,0,5,3" Visibility="{Binding CloudSyncBadgeVisibility}" ToolTip="{Binding CloudSyncBadgeTooltip}">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon Symbol="Cloud20" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="{Binding CloudSyncBadgeText}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
                                             </WrapPanel>
                                             <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap" MaxHeight="32" TextTrimming="CharacterEllipsis" Visibility="{Binding Description, Converter={StaticResource NullOrEmptyToVis}}"/>
                                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center"

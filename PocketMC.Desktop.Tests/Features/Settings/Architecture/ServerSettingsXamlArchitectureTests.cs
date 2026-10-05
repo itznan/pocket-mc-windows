@@ -49,4 +49,40 @@ public sealed class ServerSettingsXamlArchitectureTests
         // Progress bar should be in the bottom action bar
         Assert.InRange(progressIndex, bottomActionBarIndex, mainLayoutIndex);
     }
+
+    [Fact]
+    public void CloudSync_CardAndBindingsExistInBackupsTab()
+    {
+        string xaml = File.ReadAllText(TestSourceFileResolver.Resolve(
+            "PocketMC.Desktop",
+            "Features",
+            "Settings",
+            "ServerSettingsPage.xaml"));
+
+        Assert.Contains("{Binding CloudSync", xaml);
+        Assert.Contains("DataContext=\"{Binding CloudSync}\"", xaml);
+        Assert.Contains("{Binding ManualSyncNowCommand}", xaml);
+        Assert.Contains("{Binding ForceUnlockCommand}", xaml);
+        Assert.Contains("{Binding RefreshLockStatusCommand}", xaml);
+        Assert.Contains("{Binding AutoSyncOnStart, Mode=TwoWay}", xaml);
+        Assert.Contains("{Binding AutoSyncOnStop, Mode=TwoWay}", xaml);
+        Assert.Contains("{Binding SyncWorld, Mode=TwoWay}", xaml);
+        Assert.Contains("{Binding SyncConfig, Mode=TwoWay}", xaml);
+        Assert.Contains("{Binding SyncMods, Mode=TwoWay}", xaml);
+        Assert.Contains("{Binding SyncPlugins, Mode=TwoWay}", xaml);
+    }
+
+    [Fact]
+    public void Dashboard_CloudSyncBadgeExists()
+    {
+        string xaml = File.ReadAllText(TestSourceFileResolver.Resolve(
+            "PocketMC.Desktop",
+            "Features",
+            "Dashboard",
+            "DashboardPage.xaml"));
+
+        Assert.Contains("{Binding CloudSyncBadgeVisibility}", xaml);
+        Assert.Contains("{Binding CloudSyncBadgeTooltip}", xaml);
+        Assert.Contains("{Binding CloudSyncBadgeText}", xaml);
+    }
 }

@@ -149,6 +149,10 @@ public class InstanceCardViewModel : INotifyPropertyChanged
     public Visibility CrossPlayBadgeVisibility => ShowCrossPlayBadge ? Visibility.Visible : Visibility.Collapsed;
     public string CrossPlayBadgeText => "Cross-play";
     public string CrossPlayBadgeTooltip => "Java and Bedrock players can join through Geyser/Floodgate.";
+    public bool IsCloudSyncEnabled => _metadata.CloudSync?.Enabled == true;
+    public Visibility CloudSyncBadgeVisibility => IsCloudSyncEnabled ? Visibility.Visible : Visibility.Collapsed;
+    public string CloudSyncBadgeText => "Cloud Sync";
+    public string CloudSyncBadgeTooltip => $"Cloud synchronization enabled via {_metadata.CloudSync?.Provider}. Shared server locking active.";
 
     public void NotifyUptimeChanged()
     {

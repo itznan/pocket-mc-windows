@@ -70,6 +70,7 @@ namespace PocketMC.Desktop.Features.Settings
         public SettingsAdvancedVM Advanced { get; }
         public SettingsSummariesVM Summaries { get; }
         public ServerCloudBackupViewModel CloudBackups { get; }
+        public PocketMC.Desktop.Features.Instances.CloudSync.ServerCloudSyncViewModel? CloudSync { get; }
 
         public int InitialTabIndex { get; set; } = 0;
 
@@ -193,6 +194,17 @@ namespace PocketMC.Desktop.Features.Settings
                 backupService,
                 () => ServerDir,
                 () => IsRunning);
+
+            var cloudSyncService = serviceProvider.GetService(typeof(ICloudSyncService)) as ICloudSyncService;
+            if (cloudSyncService != null)
+            {
+                CloudSync = new PocketMC.Desktop.Features.Instances.CloudSync.ServerCloudSyncViewModel(
+                    metadata,
+                    cloudSyncService,
+                    dialogService,
+                    () => ServerDir,
+                    () => _instanceManager.SaveMetadata(Metadata, ServerDir));
+            }
 
             _playitApiClient = playitApiClient;
             SaveCommand = new RelayCommand(_ => SaveConfigurations(), _ => !IsTransientState);

@@ -2161,6 +2161,63 @@
                                                     </ItemsControl>
                                                 </ScrollViewer>
                                             </StackPanel>
+                                    </ui:Card>
+
+                                    <!-- CLOUD STORAGE SYNC & SHARED SERVER -->
+                                    <ui:Card Padding="16,12" Margin="0,0,0,16"
+                                             Visibility="{Binding CloudSync, Converter={StaticResource VisibleIfNotEmpty}}">
+                                        <StackPanel DataContext="{Binding CloudSync}">
+                                            <TextBlock Text="Cloud Storage Sync &amp; Shared Server" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                            <TextBlock Text="Synchronize server state across devices via Google Drive, Dropbox, or OneDrive with distributed locking." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,0,0,12"/>
+
+                                            <Grid Margin="0,0,0,12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ui:ToggleSwitch Grid.Column="0" Content="Enable Cloud Sync" IsChecked="{Binding IsEnabled, Mode=TwoWay}" VerticalAlignment="Center" FontSize="13" Margin="0,0,16,0"/>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsEnabled, Converter={StaticResource VisibleIfTrue}}">
+                                                    <TextBlock Text="Provider:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                    <ComboBox ItemsSource="{Binding AvailableProviders}" SelectedItem="{Binding SelectedProvider, Mode=TwoWay}" Width="140" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <ui:Button Content="Sync Now" Command="{Binding ManualSyncNowCommand}" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowSync20}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                    <ui:Button Content="Force Unlock" Command="{Binding ForceUnlockCommand}" Appearance="Danger" Icon="{ui:SymbolIcon Warning24}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <StackPanel Visibility="{Binding IsEnabled, Converter={StaticResource VisibleIfTrue}}">
+                                                <Separator Margin="0,4,0,12" Opacity="0.15"/>
+                                                <TextBlock Text="Sync Options" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,8"/>
+                                                <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                    <ui:ToggleSwitch Content="Auto-sync on Start" IsChecked="{Binding AutoSyncOnStart, Mode=TwoWay}" Margin="0,0,20,0"/>
+                                                    <ui:ToggleSwitch Content="Auto-sync on Stop" IsChecked="{Binding AutoSyncOnStop, Mode=TwoWay}" Margin="0,0,20,0"/>
+                                                    <ui:ToggleSwitch Content="World" IsChecked="{Binding SyncWorld, Mode=TwoWay}" Margin="0,0,20,0"/>
+                                                    <ui:ToggleSwitch Content="Configs" IsChecked="{Binding SyncConfig, Mode=TwoWay}" Margin="0,0,20,0"/>
+                                                    <ui:ToggleSwitch Content="Mods" IsChecked="{Binding SyncMods, Mode=TwoWay}" Margin="0,0,20,0"/>
+                                                    <ui:ToggleSwitch Content="Plugins" IsChecked="{Binding SyncPlugins, Mode=TwoWay}" Margin="0,0,20,0"/>
+                                                </WrapPanel>
+
+                                                <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" CornerRadius="6" Padding="10,8" Margin="0,4,0,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding LockStatusText}" FontSize="12" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding LastSyncText}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,2,0,0"/>
+                                                        </StackPanel>
+                                                        <ui:Button Grid.Column="1" Content="Refresh Status" Command="{Binding RefreshLockStatusCommand}" Appearance="Subtle" Icon="{ui:SymbolIcon ArrowClockwise20}" VerticalAlignment="Center" Padding="6,4"/>
+                                                    </Grid>
+                                                </Border>
+
+                                                <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource VisibleIfTrue}}" Margin="0,8,0,0">
+                                                    <ProgressBar IsIndeterminate="True" Height="2"/>
+                                                    <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" Margin="0,4,0,0"/>
+                                                </StackPanel>
+                                            </StackPanel>
                                         </StackPanel>
                                     </ui:Card>
 
