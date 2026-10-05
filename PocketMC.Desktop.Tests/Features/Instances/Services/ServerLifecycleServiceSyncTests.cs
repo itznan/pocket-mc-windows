@@ -70,7 +70,7 @@ public sealed class ServerLifecycleServiceSyncTests
 
         await Assert.ThrowsAsync<ServerLockedException>(() => lifecycleService.StartAsync(meta));
         Assert.False(lifecycleService.IsRunning(meta.Id));
-        Assert.Contains(notifications.Messages, m => m.Contains("Server In Use") || m.Contains("Dave"));
+        Assert.Contains(notifications.Messages, m => m.Title.Contains("Server In Use") || m.Message.Contains("Dave"));
     }
 
     [Fact]

@@ -117,4 +117,18 @@ public sealed class ServerCloudSyncViewModelTests
 
         _syncServiceMock.Verify(s => s.ForceReleaseLockAsync(_metadata, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public void AutoSyncOnStart_WhenChanged_SavesMetadata()
+    {
+        var vm = new ServerCloudSyncViewModel(
+            _metadata,
+            _syncServiceMock.Object,
+            _dialogServiceMock.Object,
+            () => "/fake/dir",
+            () => _savedMetadata = true);
+
+        vm.AutoSyncOnStart = !vm.AutoSyncOnStart;
+        Assert.True(_savedMetadata);
+    }
 }
