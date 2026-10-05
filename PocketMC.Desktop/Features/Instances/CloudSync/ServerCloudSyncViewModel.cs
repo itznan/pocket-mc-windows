@@ -242,11 +242,12 @@ public class ServerCloudSyncViewModel : ViewModelBase
 
     public async Task ForceUnlockAsync()
     {
-        bool confirmed = _dialogService.ShowConfirmation(
+        var result = await _dialogService.ShowDialogAsync(
             "Force Unlock Server?",
-            "Forcing an unlock when another user is actively running the server can cause world corruption. Are you sure the previous session crashed or abandoned the lock?");
+            "Forcing an unlock when another user is actively running the server can cause world corruption. Are you sure the previous session crashed or abandoned the lock?",
+            DialogType.Warning);
 
-        if (!confirmed) return;
+        if (result != DialogResult.Yes && result != DialogResult.Ok) return;
 
         try
         {

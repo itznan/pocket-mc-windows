@@ -90,8 +90,17 @@ public sealed class ServerCloudSyncViewModelTests
     public async Task ForceUnlockAsync_InvokesService_WhenUserConfirms()
     {
         _dialogServiceMock
-            .Setup(d => d.ShowConfirmation(It.IsAny<string>(), It.IsAny<string>()))
-            .Returns(true);
+            .Setup(d => d.ShowDialogAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                DialogType.Warning,
+                It.IsAny<bool>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(DialogResult.Yes);
 
         _syncServiceMock
             .Setup(s => s.ForceReleaseLockAsync(_metadata, It.IsAny<CancellationToken>()))
