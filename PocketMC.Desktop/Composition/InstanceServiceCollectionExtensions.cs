@@ -89,9 +89,19 @@ namespace PocketMC.Desktop.Composition
                 client.DefaultRequestHeaders.Add("User-Agent", "PocketMC-Desktop/1.0");
             }).AddHttpMessageHandler<LoggingHttpMessageHandler>();
 
-            services.AddSingleton<ICloudBackupProvider, OneDriveBackupProvider>();
-            services.AddSingleton<ICloudBackupProvider, DropboxBackupProvider>();
-            services.AddSingleton<ICloudBackupProvider, GoogleDriveBackupProvider>();
+            services.AddSingleton<OneDriveBackupProvider>();
+            services.AddSingleton<ICloudBackupProvider>(sp => sp.GetRequiredService<OneDriveBackupProvider>());
+            services.AddSingleton<ICloudSyncProvider>(sp => sp.GetRequiredService<OneDriveBackupProvider>());
+
+            services.AddSingleton<DropboxBackupProvider>();
+            services.AddSingleton<ICloudBackupProvider>(sp => sp.GetRequiredService<DropboxBackupProvider>());
+            services.AddSingleton<ICloudSyncProvider>(sp => sp.GetRequiredService<DropboxBackupProvider>());
+
+            services.AddSingleton<GoogleDriveBackupProvider>();
+            services.AddSingleton<ICloudBackupProvider>(sp => sp.GetRequiredService<GoogleDriveBackupProvider>());
+            services.AddSingleton<ICloudSyncProvider>(sp => sp.GetRequiredService<GoogleDriveBackupProvider>());
+
+            services.AddSingleton<ICloudSyncService, CloudSyncService>();
             services.AddSingleton<InstancePathService>();
             services.AddSingleton<InstanceRegistry>();
             services.AddSingleton<InstanceManager>();

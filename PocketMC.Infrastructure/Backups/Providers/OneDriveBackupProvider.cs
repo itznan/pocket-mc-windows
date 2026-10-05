@@ -18,7 +18,7 @@ using PocketMC.Infrastructure.Telemetry;
 
 namespace PocketMC.Infrastructure.Backups.Providers;
 
-public class OneDriveBackupProvider : ICloudBackupProvider
+public class OneDriveBackupProvider : ICloudBackupProvider, ICloudSyncProvider
 {
     public const string ClientId = "b6d4713b-afdf-4e6e-bf14-08aa6633d6c9";
     private readonly string[] Scopes = new[] { "Files.ReadWrite.AppFolder", "offline_access", "User.Read" };
@@ -302,6 +302,195 @@ public class OneDriveBackupProvider : ICloudBackupProvider
         int bytesRead;
         long totalRead = 0;
         
+        while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+        {
+            await stream.WriteAsync(buffer, 0, bytesRead, ct);
+            totalRead += bytesRead;
+            if (totalSize > 0 && progress != null)
+            {
+                progress.Report((double)totalRead / totalSize * 100.0);
+            }
+        }
+    }
+
+    public async Task<ServerCloudLock?> ReadLockAsync(Guid instanceId, string instanceName, CancellationToken ct)
+    {
+        string? token = await GetValidAccessTokenAsync(ct);
+        if (token == null) return null;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string remotePath = $"/{sanitizedInstance}-{instanceId}/pocketmc-lock.json";
+        string url = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:{remotePath}:/content";
+
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var res = await _httpClient.SendAsync(req, ct);
+            if (!res.IsSuccessStatusCode) return null;
+
+            using var stream = await res.Content.ReadAsStreamAsync(ct);
+            return await JsonSerializer.DeserializeAsync<ServerCloudLock>(stream, cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read remote OneDrive lock for {InstanceName}.", instanceName);
+            return null;
+        }
+    }
+
+    public async Task<bool> WriteLockAsync(Guid instanceId, string instanceName, ServerCloudLock lockInfo, CancellationToken ct)
+    {
+        string? token = await GetValidAccessTokenAsync(ct);
+        if (token == null) return false;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string remotePath = $"/{sanitizedInstance}-{instanceId}/pocketmc-lock.json";
+        string url = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:{remotePath}:/content";
+
+        try
+        {
+            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(lockInfo);
+            var req = new HttpRequestMessage(HttpMethod.Put, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            req.Content = new ByteArrayContent(jsonBytes);
+            req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+            var res = await _httpClient.SendAsync(req, ct);
+            return res.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write remote OneDrive lock for {InstanceName}.", instanceName);
+            return false;
+        }
+    }
+
+    public async Task DeleteLockAsync(Guid instanceId, string instanceName, string lockToken, CancellationToken ct)
+    {
+        string? token = await GetValidAccessTokenAsync(ct);
+        if (token == null) return;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string remotePath = $"/{sanitizedInstance}-{instanceId}/pocketmc-lock.json";
+        string url = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:{remotePath}";
+
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Delete, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            await _httpClient.SendAsync(req, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete remote OneDrive lock for {InstanceName}.", instanceName);
+        }
+    }
+
+    public async Task<ServerSyncManifest?> GetRemoteManifestAsync(Guid instanceId, string instanceName, CancellationToken ct)
+    {
+        string? token = await GetValidAccessTokenAsync(ct);
+        if (token == null) return null;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string remotePath = $"/{sanitizedInstance}-{instanceId}/pocketmc-manifest.json";
+        string url = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:{remotePath}:/content";
+
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var res = await _httpClient.SendAsync(req, ct);
+            if (!res.IsSuccessStatusCode) return null;
+
+            using var stream = await res.Content.ReadAsStreamAsync(ct);
+            return await JsonSerializer.DeserializeAsync<ServerSyncManifest>(stream, cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read remote OneDrive manifest for {InstanceName}.", instanceName);
+            return null;
+        }
+    }
+
+    public async Task<CloudBackupUploadResult> UploadSyncPackageAsync(
+        Guid instanceId,
+        string instanceName,
+        string localPackagePath,
+        ServerSyncManifest manifest,
+        IProgress<CloudBackupProgress>? progress,
+        CancellationToken ct)
+    {
+        var uploadReq = new CloudBackupUploadRequest
+        {
+            InstanceId = instanceId,
+            InstanceName = instanceName,
+            LocalZipPath = localPackagePath,
+            BackupFileName = "pocketmc-sync.zip",
+            BackupCreatedUtc = DateTimeOffset.UtcNow,
+            CancellationToken = ct,
+            Progress = progress
+        };
+
+        var result = await UploadBackupAsync(uploadReq);
+
+        if (result.Success)
+        {
+            try
+            {
+                string? token = await GetValidAccessTokenAsync(ct);
+                if (token != null)
+                {
+                    string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+                    string remotePath = $"/{sanitizedInstance}-{instanceId}/pocketmc-manifest.json";
+                    string url = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:{remotePath}:/content";
+
+                    var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(manifest);
+                    var req = new HttpRequestMessage(HttpMethod.Put, url);
+                    req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    req.Content = new ByteArrayContent(jsonBytes);
+                    req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    await _httpClient.SendAsync(req, ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Uploaded sync package but failed to upload standalone OneDrive manifest.");
+            }
+        }
+
+        return result;
+    }
+
+    public async Task DownloadSyncPackageAsync(
+        Guid instanceId,
+        string instanceName,
+        string localDestinationPath,
+        IProgress<double>? progress,
+        CancellationToken ct)
+    {
+        string? token = await GetValidAccessTokenAsync(ct);
+        if (token == null) throw new UnauthorizedAccessException("OneDrive token is expired or missing.");
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string remotePath = $"/{sanitizedInstance}-{instanceId}/pocketmc-sync.zip";
+        string url = $"https://graph.microsoft.com/v1.0/me/drive/special/approot:{remotePath}:/content";
+
+        var requestMsg = new HttpRequestMessage(HttpMethod.Get, url);
+        requestMsg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await _httpClient.SendAsync(requestMsg, HttpCompletionOption.ResponseHeadersRead, ct);
+        response.EnsureSuccessStatusCode();
+
+        long totalSize = response.Content.Headers.ContentLength ?? 0;
+
+        using var stream = new FileStream(localDestinationPath, FileMode.Create, FileAccess.Write);
+        using var downloadStream = await response.Content.ReadAsStreamAsync(ct);
+
+        var buffer = new byte[81920];
+        int bytesRead;
+        long totalRead = 0;
+
         while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
         {
             await stream.WriteAsync(buffer, 0, bytesRead, ct);

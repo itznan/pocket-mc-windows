@@ -21,7 +21,7 @@ using PocketMC.Infrastructure.Telemetry;
 
 namespace PocketMC.Infrastructure.Backups.Providers;
 
-public class GoogleDriveBackupProvider : ICloudBackupProvider
+public class GoogleDriveBackupProvider : ICloudBackupProvider, ICloudSyncProvider
 {
     public const string ClientId = "10119503717-8rudcoou9k0iuhepsqgntk9ahuso6krc.apps.googleusercontent.com";
     private const string RedirectUri = "http://127.0.0.1:49384/callback";
@@ -448,5 +448,223 @@ public class GoogleDriveBackupProvider : ICloudBackupProvider
         }
 
         throw new HttpRequestException("Unable to reach authentication services. Please check your internet connection and try again.");
+    }
+
+    public async Task<ServerCloudLock?> ReadLockAsync(Guid instanceId, string instanceName, CancellationToken ct)
+    {
+        var service = await GetServiceAsync(ct);
+        if (service == null) return null;
+
+        try
+        {
+            string rootId = await GetOrCreateFolderAsync(service, "PocketMC Backups");
+            string instanceFolderName = $"{CloudPathSanitizer.SanitizeFolderName(instanceName)}-{instanceId}";
+            string instanceFolderId = await GetOrCreateFolderAsync(service, instanceFolderName, rootId);
+
+            var listReq = service.Files.List();
+            listReq.Q = $"name='pocketmc-lock.json' and '{EscapeDriveQueryStringLiteral(instanceFolderId)}' in parents and trashed=false";
+            listReq.Fields = "files(id, name)";
+            var res = await listReq.ExecuteAsync(ct);
+            var file = res.Files?.FirstOrDefault();
+            if (file == null) return null;
+
+            using var stream = new MemoryStream();
+            await service.Files.Get(file.Id).DownloadAsync(stream, ct);
+            stream.Position = 0;
+            return await JsonSerializer.DeserializeAsync<ServerCloudLock>(stream, cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read remote cloud lock for {InstanceName}.", instanceName);
+            return null;
+        }
+    }
+
+    public async Task<bool> WriteLockAsync(Guid instanceId, string instanceName, ServerCloudLock lockInfo, CancellationToken ct)
+    {
+        var service = await GetServiceAsync(ct);
+        if (service == null) return false;
+
+        try
+        {
+            string rootId = await GetOrCreateFolderAsync(service, "PocketMC Backups");
+            string instanceFolderName = $"{CloudPathSanitizer.SanitizeFolderName(instanceName)}-{instanceId}";
+            string instanceFolderId = await GetOrCreateFolderAsync(service, instanceFolderName, rootId);
+
+            var listReq = service.Files.List();
+            listReq.Q = $"name='pocketmc-lock.json' and '{EscapeDriveQueryStringLiteral(instanceFolderId)}' in parents and trashed=false";
+            listReq.Fields = "files(id, name)";
+            var res = await listReq.ExecuteAsync(ct);
+            if (res.Files != null)
+            {
+                foreach (var f in res.Files)
+                {
+                    try { await service.Files.Delete(f.Id).ExecuteAsync(ct); } catch { }
+                }
+            }
+
+            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(lockInfo);
+            using var stream = new MemoryStream(jsonBytes);
+
+            var fileMeta = new Google.Apis.Drive.v3.Data.File
+            {
+                Name = "pocketmc-lock.json",
+                Parents = new List<string> { instanceFolderId }
+            };
+
+            await service.Files.Create(fileMeta, stream, "application/json").UploadAsync(ct);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write cloud lock for {InstanceName}.", instanceName);
+            return false;
+        }
+    }
+
+    public async Task DeleteLockAsync(Guid instanceId, string instanceName, string lockToken, CancellationToken ct)
+    {
+        var service = await GetServiceAsync(ct);
+        if (service == null) return;
+
+        try
+        {
+            string rootId = await GetOrCreateFolderAsync(service, "PocketMC Backups");
+            string instanceFolderName = $"{CloudPathSanitizer.SanitizeFolderName(instanceName)}-{instanceId}";
+            string instanceFolderId = await GetOrCreateFolderAsync(service, instanceFolderName, rootId);
+
+            var listReq = service.Files.List();
+            listReq.Q = $"name='pocketmc-lock.json' and '{EscapeDriveQueryStringLiteral(instanceFolderId)}' in parents and trashed=false";
+            listReq.Fields = "files(id, name)";
+            var res = await listReq.ExecuteAsync(ct);
+            if (res.Files != null)
+            {
+                foreach (var f in res.Files)
+                {
+                    try { await service.Files.Delete(f.Id).ExecuteAsync(ct); } catch { }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete cloud lock for {InstanceName}.", instanceName);
+        }
+    }
+
+    public async Task<ServerSyncManifest?> GetRemoteManifestAsync(Guid instanceId, string instanceName, CancellationToken ct)
+    {
+        var service = await GetServiceAsync(ct);
+        if (service == null) return null;
+
+        try
+        {
+            string rootId = await GetOrCreateFolderAsync(service, "PocketMC Backups");
+            string instanceFolderName = $"{CloudPathSanitizer.SanitizeFolderName(instanceName)}-{instanceId}";
+            string instanceFolderId = await GetOrCreateFolderAsync(service, instanceFolderName, rootId);
+
+            var listReq = service.Files.List();
+            listReq.Q = $"name='pocketmc-manifest.json' and '{EscapeDriveQueryStringLiteral(instanceFolderId)}' in parents and trashed=false";
+            listReq.Fields = "files(id, name)";
+            var res = await listReq.ExecuteAsync(ct);
+            var file = res.Files?.FirstOrDefault();
+            if (file == null) return null;
+
+            using var stream = new MemoryStream();
+            await service.Files.Get(file.Id).DownloadAsync(stream, ct);
+            stream.Position = 0;
+            return await JsonSerializer.DeserializeAsync<ServerSyncManifest>(stream, cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read remote manifest for {InstanceName}.", instanceName);
+            return null;
+        }
+    }
+
+    public async Task<CloudBackupUploadResult> UploadSyncPackageAsync(
+        Guid instanceId,
+        string instanceName,
+        string localPackagePath,
+        ServerSyncManifest manifest,
+        IProgress<CloudBackupProgress>? progress,
+        CancellationToken ct)
+    {
+        var uploadReq = new CloudBackupUploadRequest
+        {
+            InstanceId = instanceId,
+            InstanceName = instanceName,
+            LocalZipPath = localPackagePath,
+            BackupFileName = "pocketmc-sync.zip",
+            BackupCreatedUtc = DateTimeOffset.UtcNow,
+            CancellationToken = ct,
+            Progress = progress
+        };
+
+        var result = await UploadBackupAsync(uploadReq);
+
+        if (result.Success)
+        {
+            try
+            {
+                var service = await GetServiceAsync(ct);
+                if (service != null)
+                {
+                    string rootId = await GetOrCreateFolderAsync(service, "PocketMC Backups");
+                    string instanceFolderName = $"{CloudPathSanitizer.SanitizeFolderName(instanceName)}-{instanceId}";
+                    string instanceFolderId = await GetOrCreateFolderAsync(service, instanceFolderName, rootId);
+
+                    var listReq = service.Files.List();
+                    listReq.Q = $"name='pocketmc-manifest.json' and '{EscapeDriveQueryStringLiteral(instanceFolderId)}' in parents and trashed=false";
+                    listReq.Fields = "files(id, name)";
+                    var res = await listReq.ExecuteAsync(ct);
+                    if (res.Files != null)
+                    {
+                        foreach (var f in res.Files)
+                        {
+                            try { await service.Files.Delete(f.Id).ExecuteAsync(ct); } catch { }
+                        }
+                    }
+
+                    var manifestBytes = JsonSerializer.SerializeToUtf8Bytes(manifest);
+                    using var manifestStream = new MemoryStream(manifestBytes);
+                    var fileMeta = new Google.Apis.Drive.v3.Data.File
+                    {
+                        Name = "pocketmc-manifest.json",
+                        Parents = new List<string> { instanceFolderId }
+                    };
+                    await service.Files.Create(fileMeta, manifestStream, "application/json").UploadAsync(ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Uploaded sync package but failed to upload standalone manifest.");
+            }
+        }
+
+        return result;
+    }
+
+    public async Task DownloadSyncPackageAsync(
+        Guid instanceId,
+        string instanceName,
+        string localDestinationPath,
+        IProgress<double>? progress,
+        CancellationToken ct)
+    {
+        var service = await GetServiceAsync(ct);
+        if (service == null) throw new UnauthorizedAccessException("Google Drive token is expired or missing.");
+
+        string rootId = await GetOrCreateFolderAsync(service, "PocketMC Backups");
+        string instanceFolderName = $"{CloudPathSanitizer.SanitizeFolderName(instanceName)}-{instanceId}";
+        string instanceFolderId = await GetOrCreateFolderAsync(service, instanceFolderName, rootId);
+
+        var listReq = service.Files.List();
+        listReq.Q = $"name='pocketmc-sync.zip' and '{EscapeDriveQueryStringLiteral(instanceFolderId)}' in parents and trashed=false";
+        listReq.Fields = "files(id, name)";
+        var res = await listReq.ExecuteAsync(ct);
+        var file = res.Files?.FirstOrDefault()
+            ?? throw new FileNotFoundException($"Remote pocketmc-sync.zip was not found for server '{instanceName}'.");
+
+        await DownloadBackupAsync(file.Id, localDestinationPath, ct, progress);
     }
 }

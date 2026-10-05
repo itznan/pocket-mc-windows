@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PocketMC.Application.Interfaces;
+using PocketMC.Application.Interfaces.Backups;
+using PocketMC.Application.Exceptions;
 using PocketMC.Infrastructure.Networking;
 using PocketMC.Desktop.Features.Shell.Interfaces;
 using PocketMC.Desktop.Features.Instances.Dialogs;
@@ -35,6 +37,7 @@ public class ServerLifecycleService : IServerLifecycleService, IDisposable
     private readonly PocketMC.Application.Interfaces.Instances.IGeyserDetector _geyserDetector;
     private readonly IAppNavigationService _navigationService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ICloudSyncService? _cloudSyncService;
     private string _appRootPath => _appState.GetRequiredAppRootPath();
 
     private readonly ConcurrentDictionary<Guid, int> _consecutiveRestarts = new();
@@ -59,7 +62,8 @@ public class ServerLifecycleService : IServerLifecycleService, IDisposable
         GeyserProvisioningService geyserProvisioningService,
         PocketMC.Application.Interfaces.Instances.IGeyserDetector geyserDetector,
         IAppNavigationService navigationService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        ICloudSyncService? cloudSyncService = null)
     {
         _processManager = processManager;
         _registry = registry;
@@ -74,6 +78,7 @@ public class ServerLifecycleService : IServerLifecycleService, IDisposable
         _geyserDetector = geyserDetector;
         _navigationService = navigationService;
         _serviceProvider = serviceProvider;
+        _cloudSyncService = cloudSyncService;
 
         _processManager.OnInstanceStateChanged += HandleInstanceStateChanged;
         _processManager.OnServerCrashed += HandleProcessManagerServerCrashed;
@@ -96,6 +101,19 @@ public class ServerLifecycleService : IServerLifecycleService, IDisposable
 
             string instancePath = _registry.GetPath(meta.Id)
                 ?? throw new DirectoryNotFoundException($"Could not locate directory for instance {meta.Name}.");
+
+            if (_cloudSyncService != null && meta.CloudSync.Enabled)
+            {
+                try
+                {
+                    await _cloudSyncService.PreStartSyncAsync(meta, instancePath);
+                }
+                catch (ServerLockedException ex)
+                {
+                    _notificationService.ShowInformation("Server In Use", ex.Message);
+                    throw;
+                }
+            }
 
             if (_geyserDetector.IsGeyserInstalled(instancePath))
             {
@@ -178,6 +196,23 @@ public class ServerLifecycleService : IServerLifecycleService, IDisposable
         AbortRestartDelay(instanceId);
         await _processManager.StopProcessAsync(instanceId);
         CleanupInstanceNetworking(instanceId);
+
+        var meta = _registry.GetById(instanceId);
+        if (meta != null && _cloudSyncService != null && meta.CloudSync.Enabled)
+        {
+            string? instancePath = _registry.GetPath(instanceId);
+            if (!string.IsNullOrEmpty(instancePath))
+            {
+                try
+                {
+                    await _cloudSyncService.PostStopSyncAsync(meta, instancePath);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to perform post-stop cloud sync for {ServerName}.", meta.Name);
+                }
+            }
+        }
     }
 
     public void Kill(Guid instanceId)

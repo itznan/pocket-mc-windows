@@ -18,7 +18,7 @@ using PocketMC.Infrastructure.Telemetry;
 
 namespace PocketMC.Infrastructure.Backups.Providers;
 
-public class DropboxBackupProvider : ICloudBackupProvider
+public class DropboxBackupProvider : ICloudBackupProvider, ICloudSyncProvider
 {
     public const string ClientId = "fie4wk21xomfr30";
     private const string RedirectUri = "http://127.0.0.1:49383/callback";
@@ -306,6 +306,179 @@ public class DropboxBackupProvider : ICloudBackupProvider
         int bytesRead;
         long totalRead = 0;
         
+        while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+        {
+            await stream.WriteAsync(buffer, 0, bytesRead, ct);
+            totalRead += bytesRead;
+            if (totalSize > 0 && progress != null)
+            {
+                progress.Report((double)totalRead / totalSize * 100.0);
+            }
+        }
+    }
+
+    public async Task<ServerCloudLock?> ReadLockAsync(Guid instanceId, string instanceName, CancellationToken ct)
+    {
+        var client = await GetClientAsync(ct);
+        if (client == null) return null;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string lockPath = $"/{sanitizedInstance}-{instanceId}/pocketmc-lock.json";
+
+        try
+        {
+            using var response = await client.Files.DownloadAsync(lockPath);
+            using var stream = await response.GetContentAsStreamAsync();
+            return await JsonSerializer.DeserializeAsync<ServerCloudLock>(stream, cancellationToken: ct);
+        }
+        catch (DropboxException)
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read remote Dropbox lock for {InstanceName}.", instanceName);
+            return null;
+        }
+    }
+
+    public async Task<bool> WriteLockAsync(Guid instanceId, string instanceName, ServerCloudLock lockInfo, CancellationToken ct)
+    {
+        var client = await GetClientAsync(ct);
+        if (client == null) return false;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string lockPath = $"/{sanitizedInstance}-{instanceId}/pocketmc-lock.json";
+
+        try
+        {
+            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(lockInfo);
+            using var stream = new MemoryStream(jsonBytes);
+            await client.Files.UploadAsync(lockPath, WriteMode.Overwrite.Instance, body: stream);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write remote Dropbox lock for {InstanceName}.", instanceName);
+            return false;
+        }
+    }
+
+    public async Task DeleteLockAsync(Guid instanceId, string instanceName, string lockToken, CancellationToken ct)
+    {
+        var client = await GetClientAsync(ct);
+        if (client == null) return;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string lockPath = $"/{sanitizedInstance}-{instanceId}/pocketmc-lock.json";
+
+        try
+        {
+            await client.Files.DeleteV2Async(lockPath);
+        }
+        catch (DropboxException)
+        {
+            // Lock was already deleted or doesn't exist
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete remote Dropbox lock for {InstanceName}.", instanceName);
+        }
+    }
+
+    public async Task<ServerSyncManifest?> GetRemoteManifestAsync(Guid instanceId, string instanceName, CancellationToken ct)
+    {
+        var client = await GetClientAsync(ct);
+        if (client == null) return null;
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string manifestPath = $"/{sanitizedInstance}-{instanceId}/pocketmc-manifest.json";
+
+        try
+        {
+            using var response = await client.Files.DownloadAsync(manifestPath);
+            using var stream = await response.GetContentAsStreamAsync();
+            return await JsonSerializer.DeserializeAsync<ServerSyncManifest>(stream, cancellationToken: ct);
+        }
+        catch (DropboxException)
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read remote Dropbox manifest for {InstanceName}.", instanceName);
+            return null;
+        }
+    }
+
+    public async Task<CloudBackupUploadResult> UploadSyncPackageAsync(
+        Guid instanceId,
+        string instanceName,
+        string localPackagePath,
+        ServerSyncManifest manifest,
+        IProgress<CloudBackupProgress>? progress,
+        CancellationToken ct)
+    {
+        var uploadReq = new CloudBackupUploadRequest
+        {
+            InstanceId = instanceId,
+            InstanceName = instanceName,
+            LocalZipPath = localPackagePath,
+            BackupFileName = "pocketmc-sync.zip",
+            BackupCreatedUtc = DateTimeOffset.UtcNow,
+            CancellationToken = ct,
+            Progress = progress
+        };
+
+        var result = await UploadBackupAsync(uploadReq);
+
+        if (result.Success)
+        {
+            try
+            {
+                var client = await GetClientAsync(ct);
+                if (client != null)
+                {
+                    string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+                    string manifestPath = $"/{sanitizedInstance}-{instanceId}/pocketmc-manifest.json";
+
+                    var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(manifest);
+                    using var stream = new MemoryStream(jsonBytes);
+                    await client.Files.UploadAsync(manifestPath, WriteMode.Overwrite.Instance, body: stream);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Uploaded sync package but failed to upload standalone Dropbox manifest.");
+            }
+        }
+
+        return result;
+    }
+
+    public async Task DownloadSyncPackageAsync(
+        Guid instanceId,
+        string instanceName,
+        string localDestinationPath,
+        IProgress<double>? progress,
+        CancellationToken ct)
+    {
+        var client = await GetClientAsync(ct);
+        if (client == null) throw new UnauthorizedAccessException("Dropbox token is expired or missing.");
+
+        string sanitizedInstance = CloudPathSanitizer.SanitizeFolderName(instanceName);
+        string remotePath = $"/{sanitizedInstance}-{instanceId}/pocketmc-sync.zip";
+
+        using var response = await client.Files.DownloadAsync(remotePath);
+        long totalSize = (long)response.Response.Size;
+
+        using var stream = new FileStream(localDestinationPath, FileMode.Create, FileAccess.Write);
+        using var downloadStream = await response.GetContentAsStreamAsync();
+
+        var buffer = new byte[81920];
+        int bytesRead;
+        long totalRead = 0;
+
         while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
         {
             await stream.WriteAsync(buffer, 0, bytesRead, ct);

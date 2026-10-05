@@ -75,6 +75,9 @@ namespace PocketMC.Domain.Models
         // Custom backup destination (added for local backup routing)
         public string? CustomBackupDirectory { get; set; } = null;
 
+        // Cloud Storage & Shared Server Access configuration
+        public InstanceCloudSyncConfig CloudSync { get; set; } = new();
+
         [System.Text.Json.Serialization.JsonIgnore]
         public EngineCompatibility Compatibility => new EngineCompatibility(ServerType);
     }
